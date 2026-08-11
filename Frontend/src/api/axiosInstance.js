@@ -29,8 +29,7 @@ export const setMaintenanceHandler = (fn) => {
   maintenanceHandler = fn;
 };
 
-const isDev = import.meta.env.DEV;
-const baseUrl = isDev ? "" : (import.meta.env.VITE_APP_URL || "http://localhost:3000");
+const baseUrl = import.meta.env.VITE_APP_URL;
 
 export const setAuthLogout = (logoutFn) => {
   authContextLogout = logoutFn;
@@ -137,7 +136,7 @@ axiosInstance.interceptors.request.use(
             localStorage.setItem('x-tenant-slug', decoded.tenantSlug);
           }
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     // Add device UUID to all requests
