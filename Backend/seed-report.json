@@ -1,0 +1,272 @@
+{
+  "success": true,
+  "seedRunId": "f37ad48f4d766c31",
+  "timestamp": "2026-08-11T09:11:40.934Z",
+  "durationMs": 63099,
+  "platform": {
+    "platformAdmin": "platform.admin@workhub.com",
+    "userType": "global_admin",
+    "scope": "tracker_global"
+  },
+  "global": {
+    "modulesCount": 10,
+    "sidebarsDiscoveredCount": 95,
+    "sidebarsInDbCount": 95
+  },
+  "internalTenant": {
+    "tenantId": "t_admin",
+    "dbName": "tracker_tenant_admin",
+    "superAdminEmail": "developer@workhub.com",
+    "enabledModules": [
+      "assets",
+      "attendance",
+      "core",
+      "crm",
+      "feed",
+      "hrms",
+      "payroll",
+      "recruitment",
+      "tasks",
+      "tickets"
+    ],
+    "sidebarsCount": 95
+  },
+  "clientTenant": {
+    "tenantId": "t_client",
+    "dbName": "tracker_tenant_client",
+    "superAdminEmail": "client.admin@workhub.com",
+    "enabledModules": [
+      "attendance",
+      "core",
+      "payroll"
+    ],
+    "sidebarsCount": 55,
+    "disabledModuleSidebarsCount": 0
+  },
+  "isolation": {
+    "employeeIsolationPassed": true,
+    "roleIsolationPassed": true,
+    "userScopeIsolationPassed": true,
+    "sidebarIsolationPassed": true
+  },
+  "verification": {
+    "passed": true,
+    "checksCount": 18,
+    "warningsCount": 0,
+    "errorsCount": 0
+  },
+  "checks": [
+    {
+      "name": "Platform Admin UserLogin Contract",
+      "passed": true,
+      "message": "Platform Admin exists with userType=global_admin, role=\"Platform Admin\", tenantId=admin, dbName=tracker_global",
+      "expected": {
+        "userType": "global_admin",
+        "role": "Platform Admin",
+        "tenantId": "admin",
+        "dbName": "tracker_global"
+      },
+      "actual": {
+        "userType": "global_admin",
+        "role": "Platform Admin",
+        "tenantId": "admin",
+        "dbName": "tracker_global"
+      }
+    },
+    {
+      "name": "Platform Admin Employee Unattached Isolation",
+      "passed": true,
+      "message": "Platform Admin is unattached to tenant employee data",
+      "expected": {
+        "employeeId": null
+      },
+      "actual": {
+        "employeeId": null
+      }
+    },
+    {
+      "name": "Global Modules Count",
+      "passed": true,
+      "message": "Found 10 global modules in tracker_global (expected 10)",
+      "expected": 10,
+      "actual": 10
+    },
+    {
+      "name": "Global Modules Integrity",
+      "passed": true,
+      "message": "All standard modules present in Global DB",
+      "expected": [],
+      "actual": []
+    },
+    {
+      "name": "Global DB Sidebar Registry Matching",
+      "passed": true,
+      "message": "Global DB sidebar collection exactly matches 95 discovered frontend pages",
+      "expected": {
+        "count": 95,
+        "missing": 0,
+        "unexpected": 0
+      },
+      "actual": {
+        "count": 95,
+        "missing": 0,
+        "unexpected": 0
+      }
+    },
+    {
+      "name": "Sidebar Module Mapping Resolution",
+      "passed": true,
+      "message": "All discovered sidebars successfully mapped to module keys",
+      "expected": 0,
+      "actual": 0
+    },
+    {
+      "name": "Internal Tenant Record",
+      "passed": true,
+      "message": "Internal tenant t_admin exists and is Active",
+      "expected": "Active",
+      "actual": "Active"
+    },
+    {
+      "name": "Internal Tenant Exact Module Entitlement",
+      "passed": true,
+      "message": "Internal tenant has all global active modules enabled",
+      "expected": [
+        "assets",
+        "attendance",
+        "core",
+        "crm",
+        "feed",
+        "hrms",
+        "payroll",
+        "recruitment",
+        "tasks",
+        "tickets"
+      ],
+      "actual": [
+        "assets",
+        "attendance",
+        "core",
+        "crm",
+        "feed",
+        "hrms",
+        "payroll",
+        "recruitment",
+        "tasks",
+        "tickets"
+      ]
+    },
+    {
+      "name": "Internal Super Admin UserLogin",
+      "passed": true,
+      "message": "Internal Super Admin UserLogin exists with employee scope in t_admin (dbName: tracker_admin)",
+      "expected": {
+        "userType": "employee",
+        "tenantId": "t_admin",
+        "dbName": "tracker_admin"
+      },
+      "actual": {
+        "userType": "employee",
+        "tenantId": "t_admin",
+        "dbName": "tracker_admin"
+      }
+    },
+    {
+      "name": "Internal Super Admin Employee",
+      "passed": true,
+      "message": "Internal Super Admin Employee record exists in tracker_tenant_admin",
+      "expected": "Employee Record Exists",
+      "actual": "Exists"
+    },
+    {
+      "name": "Internal Tenant Sidebars Identity Match",
+      "passed": true,
+      "message": "Internal tenant sidebars exactly match all 95 discovered sidebars",
+      "expected": 95,
+      "actual": 95
+    },
+    {
+      "name": "Client Tenant Record",
+      "passed": true,
+      "message": "Client tenant t_client exists and is Active",
+      "expected": "Active",
+      "actual": "Active"
+    },
+    {
+      "name": "Client Tenant Exact Module Entitlement",
+      "passed": true,
+      "message": "Client tenant has exactly Core + Attendance + Payroll",
+      "expected": [
+        "attendance",
+        "core",
+        "payroll"
+      ],
+      "actual": [
+        "attendance",
+        "core",
+        "payroll"
+      ]
+    },
+    {
+      "name": "Client Super Admin UserLogin",
+      "passed": true,
+      "message": "Client Super Admin UserLogin exists with employee scope in t_client",
+      "expected": {
+        "userType": "employee",
+        "tenantId": "t_client",
+        "dbName": "tracker_tenant_client"
+      },
+      "actual": {
+        "userType": "employee",
+        "tenantId": "t_client",
+        "dbName": "tracker_tenant_client"
+      }
+    },
+    {
+      "name": "Client Super Admin Employee",
+      "passed": true,
+      "message": "Client Super Admin Employee record exists in tracker_tenant_client",
+      "expected": "Employee Record Exists",
+      "actual": "Exists"
+    },
+    {
+      "name": "Client Tenant Sidebars Identity & Isolation Match",
+      "passed": true,
+      "message": "Client tenant sidebars exactly match 55 allowed items with 0 disabled module leaks",
+      "expected": {
+        "expectedCount": 55,
+        "leaked": 0
+      },
+      "actual": {
+        "actualCount": 55,
+        "leaked": 0
+      }
+    },
+    {
+      "name": "Sidebar Parent-Child Hierarchy Consistency",
+      "passed": true,
+      "message": "No orphaned child sidebars detected in client tenant",
+      "expected": 0,
+      "actual": 0
+    },
+    {
+      "name": "Cross-Tenant Isolation Suite",
+      "passed": true,
+      "message": "All tenant isolation invariants (Employees, Roles, UserScopes, Sidebars) passed",
+      "expected": {
+        "employeeIsolation": true,
+        "roleIsolation": true,
+        "userScopeIsolation": true,
+        "sidebarIsolation": true
+      },
+      "actual": {
+        "employeeIsolation": true,
+        "roleIsolation": true,
+        "userScopeIsolation": true,
+        "sidebarIsolation": true
+      }
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}
