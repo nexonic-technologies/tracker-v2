@@ -1,0 +1,24 @@
+[
+    {
+        "leaves" : [
+            {
+                "leaveType" : "690d72b0b420f9b36997890b",
+                "maxDaysPerMonth" : 2,
+                "maxDaysPerYear" : 24,
+                "carryForward" : false
+            },
+            {
+                "leaveType" : "690d72b0b420f9b36997890c",
+                "maxDaysPerMonth" : 1,
+                "maxDaysPerYear" : 12,
+                "carryForward" : true
+            },
+            {
+                "leaveType" : "690d72b0b420f9b36997890d",
+                "maxDaysPerMonth" : 15,
+                "maxDaysPerYear" : 180,
+                "carryForward" : true
+            }
+        ]
+    }
+]

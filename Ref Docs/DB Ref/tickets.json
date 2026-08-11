@@ -1,0 +1,27 @@
+[{
+  "_id": {
+    "$oid": "69598b06f4b939c817bf9ded"
+  },
+  "title": "Test Ticket from Agent",
+  "description": "Agent External Next JS ticket",
+  "category": "General",
+  "clientId": {
+    "$oid": "695963af4728d34c96d0a072"
+  },
+  "priority": "Low",
+  "status": "Open",
+  "createdBy": {
+    "$oid": "695969b56053ea5f88aee379"
+  },
+  "isConvertedToTask": false,
+  "attachments": [],
+  "comments": [],
+  "createdAt": {
+    "$date": "2026-01-03T21:32:54.757Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-03T21:32:54.757Z"
+  },
+  "ticketId": "TKT000001",
+  "__v": 0
+}]

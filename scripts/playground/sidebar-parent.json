@@ -1,0 +1,263 @@
+[
+    {
+        "_id": "6a659f888d8a0317a6a4b5e0",
+        "title": "Dashboard",
+        "icon": {
+            "iconName": "MdDashboard",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "/dashboard",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9a30",
+            "6a67393351e2b55fc18f9a31",
+            "6a67393351e2b55fc18f9a32",
+            "6a67393351e2b55fc18f9a33"
+        ],
+        "parentId": null,
+        "hasChildren": false,
+        "isParent": false,
+        "order": 0
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5ec",
+        "title": "Feed",
+        "icon": {
+            "iconName": "MdRssFeed",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "/feed",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9a90",
+            "6a67393351e2b55fc18f9a91",
+            "6a67393351e2b55fc18f9a92",
+            "6a67393351e2b55fc18f9a93"
+        ],
+        "parentId": null,
+        "hasChildren": false,
+        "isParent": false,
+        "order": 1
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5e1",
+        "title": "Time & Attendance",
+        "icon": {
+            "iconName": "MdAccessTimeFilled",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "#",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9a70",
+            "6a67393351e2b55fc18f9a71",
+            "6a67393351e2b55fc18f9a72",
+            "6a67393351e2b55fc18f9a73"
+        ],
+        "routes": [],
+        "parentId": null,
+        "hasChildren": true,
+        "isParent": true,
+        "order": 2
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5e2",
+        "title": "Project Management",
+        "icon": {
+            "iconName": "MdTimeline",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "#",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9ad4",
+            "6a67393351e2b55fc18f9ad5",
+            "6a67393351e2b55fc18f9ad6",
+            "6a67393351e2b55fc18f9ad7"
+        ],
+        "parentId": null,
+        "hasChildren": true,
+        "isParent": true,
+        "order": 3
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5e3",
+        "title": "Helpdesk",
+        "icon": {
+            "iconName": "MdHeadsetMic",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "#",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9a34",
+            "6a67393351e2b55fc18f9a35",
+            "6a67393351e2b55fc18f9a36",
+            "6a67393351e2b55fc18f9a37"
+        ],
+        "parentId": null,
+        "hasChildren": true,
+        "isParent": true,
+        "order": 4
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5e4",
+        "title": "Sales Management",
+        "icon": {
+            "iconName": "MdBusinessCenter",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "#",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9a84",
+            "6a67393351e2b55fc18f9a85",
+            "6a67393351e2b55fc18f9a86",
+            "6a67393351e2b55fc18f9a87"
+        ],
+        "parentId": null,
+        "hasChildren": true,
+        "isParent": true,
+        "order": 5
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5e5",
+        "title": "Accounts",
+        "icon": {
+            "iconName": "MdAccountBalanceWallet",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "#",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9a3c",
+            "6a67393351e2b55fc18f9a3d",
+            "6a67393351e2b55fc18f9a3e",
+            "6a67393351e2b55fc18f9a3f"
+        ],
+        "parentId": null,
+        "hasChildren": true,
+        "isParent": true,
+        "order": 6
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5e6",
+        "title": "Assets",
+        "icon": {
+            "iconName": "MdWebAsset",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "#",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9a4c",
+            "6a67393351e2b55fc18f9a4d",
+            "6a67393351e2b55fc18f9a4e",
+            "6a67393351e2b55fc18f9a4f"
+        ],
+        "parentId": null,
+        "hasChildren": true,
+        "isParent": true,
+        "order": 7
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5e7",
+        "title": "HRMS",
+        "icon": {
+            "iconName": "MdSupervisedUserCircle",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "#",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9a94",
+            "6a67393351e2b55fc18f9a95",
+            "6a67393351e2b55fc18f9a96",
+            "6a67393351e2b55fc18f9a97"
+        ],
+        "parentId": null,
+        "hasChildren": false,
+        "isParent": true,
+        "order": 8
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5e8",
+        "title": "Payroll",
+        "icon": {
+            "iconName": "MdPayment",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "#",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9a9c",
+            "6a67393351e2b55fc18f9a9d",
+            "6a67393351e2b55fc18f9a9e",
+            "6a67393351e2b55fc18f9a9f"
+        ],
+        "parentId": null,
+        "hasChildren": true,
+        "isParent": true,
+        "order": 9
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5e9",
+        "title": "Profile",
+        "icon": {
+            "iconName": "MdPerson",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "/profile",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9ab4",
+            "6a67393351e2b55fc18f9ab5",
+            "6a67393351e2b55fc18f9ab6",
+            "6a67393351e2b55fc18f9ab7"
+        ],
+        "parentId": null,
+        "hasChildren": false,
+        "isParent": false,
+        "order": 10
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5ea",
+        "title": "Reports",
+        "icon": {
+            "iconName": "MdReports",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "#",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9a48",
+            "6a67393351e2b55fc18f9a49",
+            "6a67393351e2b55fc18f9a4a",
+            "6a67393351e2b55fc18f9a4b"
+        ],
+        "parentId": null,
+        "hasChildren": true,
+        "isParent": true,
+        "order": 11
+    },
+    {
+        "_id": "6a659f888d8a0317a6a4b5eb",
+        "title": "Settings",
+        "icon": {
+            "iconName": "MdSettingsApplications",
+            "iconPackage": "react-icons/md"
+        },
+        "mainRoute": "#",
+        "visibility": "protected",
+        "capabilities": [
+            "6a67393351e2b55fc18f9abc",
+            "6a67393351e2b55fc18f9abd",
+            "6a67393351e2b55fc18f9abe",
+            "6a67393351e2b55fc18f9abf"
+        ],
+        "parentId": null,
+        "hasChildren": true,
+        "isParent": true,
+        "order": 12
+    }
+]

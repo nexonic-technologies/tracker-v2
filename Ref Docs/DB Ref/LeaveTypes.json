@@ -1,0 +1,14 @@
+[
+    {
+        "name" : "Casual Leave",
+        "Description" : "A Employee monthly privilege to get Leave occasionally"
+    },
+    {
+        "name" : "Sick Leave",
+        "Description" : "A Employee monthly Optional Leave handling for Health reasons"
+    },
+    {
+        "name" : "Compensation Leave",
+        "Description" : "A Employee Leave Handling for Critical support Over time handling"
+    }
+]

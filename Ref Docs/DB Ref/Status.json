@@ -1,0 +1,14 @@
+[
+    {
+        "name" : "Pending",
+        "description" : "Waiting to be approved"
+    },
+    {
+        "name" : "Approved",
+        "description" : "Approved by Authority"
+    },
+    {
+        "name" : "Rejected",
+        "description" : "Rejected by Authority"
+    }
+]

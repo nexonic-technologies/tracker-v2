@@ -1,0 +1,19 @@
+[
+  {
+    "groupName": "Leave",
+    "statusArray": [
+      {
+        "statusDetails": "69121b1cd664e361c6738b1f",
+        "orderKey": 0
+      },
+      {
+        "statusDetails": "69121b1cd664e361c6738b20",
+        "orderKey": 1
+      },
+      {
+        "statusDetails": "69121b1cd664e361c6738b21",
+        "orderKey": 2
+      }
+    ]
+  }
+]

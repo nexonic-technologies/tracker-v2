@@ -1,0 +1,74 @@
+[
+  {
+    "basicInfo": {
+      "firstName": "Ganesh Pandi",
+      "phone": 9344853257
+    },
+    "professionalInfo": {
+      "empId": "LMX001",
+      "designation": "",
+      "department": "",
+      "role": "68d8b980f397d1d97620ba96",
+      "reportingManager": "",
+      "teamLead": ""
+    },
+    "authInfo": {
+      "workEmail": "ganesh@Workhubindia.com",
+      "password": "$2b$10$UYReggV.7UeZArTqL0vYFOF1WnbMUOpC4F/YLL0.rt6SgfeM0nwXu"
+    }
+  },
+  {
+    "basicInfo": {
+      "firstName": "Arunbharathi",
+      "phone": 9344853256
+    },
+    "professionalInfo": {
+      "empId": "LMX002",
+      "designation": "",
+      "department": "",
+      "role": "68d8b98af397d1d97620ba97",
+      "reportingManager": "",
+      "teamLead": ""
+    },
+    "authInfo": {
+      "workEmail": "arunbharathi@Workhubindia.com",
+      "password": "$2b$10$UYReggV.7UeZArTqL0vYFOF1WnbMUOpC4F/YLL0.rt6SgfeM0nwXu"
+    }
+  },
+  {
+    "basicInfo": {
+      "firstName": "Vinothini",
+      "phone": 1234567890
+    },
+    "professionalInfo": {
+      "empId": "LMX003",
+      "designation": "",
+      "department": "",
+      "role": "68d8b8caf397d1d97620ba93",
+      "reportingManager": "",
+      "teamLead": ""
+    },
+    "authInfo": {
+      "workEmail": "vinothini@Workhubindia.com",
+      "password": "$2b$10$UYReggV.7UeZArTqL0vYFOF1WnbMUOpC4F/YLL0.rt6SgfeM0nwXu"
+    }
+  },
+  {
+    "basicInfo": {
+      "firstName": "Loganathan",
+      "phone": 1234567891
+    },
+    "professionalInfo": {
+      "empId": "LMX000",
+      "designation": "",
+      "department": "",
+      "role": "68d8b94ef397d1d97620ba94",
+      "reportingManager": "",
+      "teamLead": ""
+    },
+    "authInfo": {
+      "workEmail": "loganathan@Workhubindia.com",
+      "password": "$2b$10$UYReggV.7UeZArTqL0vYFOF1WnbMUOpC4F/YLL0.rt6SgfeM0nwXu"
+    }
+  }
+]

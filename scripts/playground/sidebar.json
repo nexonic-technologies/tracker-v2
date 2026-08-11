@@ -1,0 +1,2122 @@
+[
+  {
+    "_id": "6a562c03f17a75c0cf9bf180",
+    "title": "Accounts",
+    "icon": {
+      "iconName": "MdAccountBalanceWallet",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/accounts",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706889bfc76f7de54e82e",
+      "6a5706889bfc76f7de54e832",
+      "6a5706889bfc76f7de54e836",
+      "6a5706889bfc76f7de54e839"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": true,
+    "isParent": true,
+    "order": 2,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:30:59.506Z",
+    "updatedAt": "2026-07-15T04:11:28.855Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c03f17a75c0cf9bf183",
+    "title": "Ledger",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/accounts/ledger",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706889bfc76f7de54e83d"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf180",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:30:59.547Z",
+    "updatedAt": "2026-07-15T04:03:21.173Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c03f17a75c0cf9bf185",
+    "title": "Payments",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/accounts/payments",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706899bfc76f7de54e84a",
+      "6a5706899bfc76f7de54e84d",
+      "6a5706899bfc76f7de54e850",
+      "6a5706899bfc76f7de54e853"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf180",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:30:59.588Z",
+    "updatedAt": "2026-07-15T04:13:03.506Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c03f17a75c0cf9bf187",
+    "title": "Reports",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/accounts/reports",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706899bfc76f7de54e857"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf180",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:30:59.635Z",
+    "updatedAt": "2026-07-15T04:03:22.161Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c03f17a75c0cf9bf189",
+    "title": "Assets",
+    "icon": {
+      "iconName": "MdWebAsset",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068a9bfc76f7de54e864"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": true,
+    "isParent": true,
+    "order": 3,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:30:59.684Z",
+    "updatedAt": "2026-07-15T04:03:22.619Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c03f17a75c0cf9bf18c",
+    "title": "Allocations",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/allocations",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068a9bfc76f7de54e871"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf189",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:30:59.741Z",
+    "updatedAt": "2026-07-15T04:03:23.097Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c03f17a75c0cf9bf18e",
+    "title": "Categories",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/categories",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068b9bfc76f7de54e87e"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf189",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:30:59.785Z",
+    "updatedAt": "2026-07-15T04:03:23.543Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c03f17a75c0cf9bf190",
+    "title": "Grn",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/grn",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068b9bfc76f7de54e88b"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf189",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:30:59.840Z",
+    "updatedAt": "2026-07-15T04:03:24.032Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c03f17a75c0cf9bf192",
+    "title": "Incidents",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/incidents",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068c9bfc76f7de54e898"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf189",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:30:59.881Z",
+    "updatedAt": "2026-07-15T04:03:24.498Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c03f17a75c0cf9bf194",
+    "title": "Invoices",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/invoices",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068c9bfc76f7de54e8a5"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf189",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:30:59.927Z",
+    "updatedAt": "2026-07-15T04:03:24.954Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c03f17a75c0cf9bf196",
+    "title": "Payments",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/payments",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706899bfc76f7de54e84a"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf189",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 6,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:30:59.979Z",
+    "updatedAt": "2026-07-15T04:03:25.197Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf198",
+    "title": "Register",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/register",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068d9bfc76f7de54e8b7"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf189",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 7,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.025Z",
+    "updatedAt": "2026-07-15T04:03:25.656Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf19a",
+    "title": "Repairs",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/repairs",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068d9bfc76f7de54e8c4"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf189",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 8,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.097Z",
+    "updatedAt": "2026-07-15T04:03:26.108Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf19c",
+    "title": "Reports",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/reports",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706899bfc76f7de54e857"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf189",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 9,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.137Z",
+    "updatedAt": "2026-07-15T04:03:26.360Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf19e",
+    "title": "Vendors",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/vendors",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068e9bfc76f7de54e8d6"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf189",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 10,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.187Z",
+    "updatedAt": "2026-07-15T04:03:26.825Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1a0",
+    "title": "Attendance",
+    "icon": {
+      "iconName": "MdCalendarToday",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "#",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068e9bfc76f7de54e8e3"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": true,
+    "isParent": true,
+    "order": 2,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.234Z",
+    "updatedAt": "2026-07-15T15:38:07.417Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1a3",
+    "title": "Leave Regularization",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/attendance/leave-regularization",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068f9bfc76f7de54e8f0"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1a0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.284Z",
+    "updatedAt": "2026-07-15T04:03:27.804Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1a5",
+    "title": "Monthly Summary",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/attendance/monthly-summary",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57068f9bfc76f7de54e8fd"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1a0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.324Z",
+    "updatedAt": "2026-07-15T04:03:28.263Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1a7",
+    "title": "Pending Approvals",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/attendance/pending-approvals",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706909bfc76f7de54e90a"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1a0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.365Z",
+    "updatedAt": "2026-07-15T04:03:28.748Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1a9",
+    "title": "Reports",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/attendance/reports",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706899bfc76f7de54e857"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1a0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.413Z",
+    "updatedAt": "2026-07-15T04:03:28.991Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1ab",
+    "title": "Shift Roster",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/attendance/shift-roster",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706919bfc76f7de54e91c"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1a0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.453Z",
+    "updatedAt": "2026-07-15T04:03:29.449Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1ad",
+    "title": "CRM",
+    "icon": {
+      "iconName": "MdPeople",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/crm",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706919bfc76f7de54e929"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": true,
+    "isParent": true,
+    "order": 5,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.514Z",
+    "updatedAt": "2026-07-15T04:03:29.909Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1b0",
+    "title": "Calendar",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/crm/calendar",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706929bfc76f7de54e936"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1ad",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.573Z",
+    "updatedAt": "2026-07-15T04:03:30.368Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1b2",
+    "title": "Dashboard",
+    "icon": {
+      "iconName": "MdDashboard",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/dashboard",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5665bd147887622cc1ea3b",
+      "6a5706929bfc76f7de54e943"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": true,
+    "isParent": true,
+    "order": 0,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.620Z",
+    "updatedAt": "2026-07-15T04:03:30.824Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1b5",
+    "title": "Productivity",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/dashboard/productivity",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706929bfc76f7de54e950"
+    ],
+    "routes": [],
+    "parentId": "6a562c03f17a75c0cf9bf180",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.662Z",
+    "updatedAt": "2026-07-15T15:39:03.176Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1b7",
+    "title": "Feed",
+    "icon": {
+      "iconName": "MdRssFeed",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/feed",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706939bfc76f7de54e95d"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": true,
+    "isParent": true,
+    "order": 1,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.739Z",
+    "updatedAt": "2026-07-15T04:03:31.748Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1b9",
+    "title": "HRMS",
+    "icon": {
+      "iconName": "MdSupervisedUserCircle",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/hrms",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706939bfc76f7de54e96a"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": false,
+    "isParent": true,
+    "order": 8,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.798Z",
+    "updatedAt": "2026-07-15T04:03:32.209Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1bb",
+    "title": "Logout",
+    "icon": {
+      "iconName": "MdExitToApp",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/logout",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706949bfc76f7de54e977"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": false,
+    "isParent": true,
+    "order": 9,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.849Z",
+    "updatedAt": "2026-07-15T04:03:32.685Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1bd",
+    "title": "Payroll",
+    "icon": {
+      "iconName": "MdPayment",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/payroll",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706949bfc76f7de54e984"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": true,
+    "isParent": true,
+    "order": 10,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.921Z",
+    "updatedAt": "2026-07-15T04:03:33.154Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c04f17a75c0cf9bf1c0",
+    "title": "Dashboard",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/payroll/dashboard",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706929bfc76f7de54e943"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1bd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:00.969Z",
+    "updatedAt": "2026-07-15T04:03:33.411Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1c2",
+    "title": "MyPayslipsTab",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/payroll/mypayslipstab",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706959bfc76f7de54e996"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1bd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.021Z",
+    "updatedAt": "2026-07-15T04:03:33.893Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1c4",
+    "title": "payroll_runsTab",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/payroll/payroll_runstab",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706959bfc76f7de54e9a3"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1bd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.063Z",
+    "updatedAt": "2026-07-15T04:03:34.398Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1c6",
+    "title": "period_closuresTab",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/payroll/period_closurestab",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706969bfc76f7de54e9b0"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1bd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.116Z",
+    "updatedAt": "2026-07-15T04:03:34.899Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1c8",
+    "title": "salary_structuresTab",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/payroll/salary_structurestab",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706969bfc76f7de54e9bd"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1bd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.169Z",
+    "updatedAt": "2026-07-15T04:03:35.388Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1ca",
+    "title": "Policies",
+    "icon": {
+      "iconName": "MdPolicy",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/policies",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706979bfc76f7de54e9ca"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": false,
+    "isParent": true,
+    "order": 11,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.212Z",
+    "updatedAt": "2026-07-15T04:03:35.847Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1cc",
+    "title": "Profile",
+    "icon": {
+      "iconName": "MdPerson",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/profile",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706979bfc76f7de54e9d7"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": false,
+    "isParent": true,
+    "order": 12,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.254Z",
+    "updatedAt": "2026-07-15T04:03:36.298Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1ce",
+    "title": "Search",
+    "icon": {
+      "iconName": "MdSearch",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/search",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706989bfc76f7de54e9e4"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": false,
+    "isParent": true,
+    "order": 13,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.322Z",
+    "updatedAt": "2026-07-15T04:03:36.754Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1d0",
+    "title": "Settings",
+    "icon": {
+      "iconName": "MdSettings",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706989bfc76f7de54e9f1"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": true,
+    "isParent": true,
+    "order": 14,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.363Z",
+    "updatedAt": "2026-07-15T04:03:37.216Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1d3",
+    "title": "Capabilities",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/capabilities",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706999bfc76f7de54e9fe"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1d0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.431Z",
+    "updatedAt": "2026-07-15T04:03:37.693Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1d5",
+    "title": "Designation Permissions",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/designation-permissions",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706999bfc76f7de54ea0b"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1d0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.488Z",
+    "updatedAt": "2026-07-15T04:03:38.158Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1d7",
+    "title": "General",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/general",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069a9bfc76f7de54ea18"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1d0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.527Z",
+    "updatedAt": "2026-07-15T04:03:38.634Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1d9",
+    "title": "Role Permissions",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/role-permissions",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069a9bfc76f7de54ea25"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1d0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.585Z",
+    "updatedAt": "2026-07-15T04:03:39.114Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1db",
+    "title": "SidebarPolicy",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/sidebar-policy",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069b9bfc76f7de54ea32",
+      "6a57069b9bfc76f7de54ea35",
+      "6a57069b9bfc76f7de54ea38",
+      "6a57069b9bfc76f7de54ea3b"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1d0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.624Z",
+    "updatedAt": "2026-07-15T15:35:39.778Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1dd",
+    "title": "Tasks",
+    "icon": {
+      "iconName": "MdAssignment",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/t",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069b9bfc76f7de54ea3f"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": true,
+    "isParent": true,
+    "order": 15,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.664Z",
+    "updatedAt": "2026-07-25T18:42:17.277Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1e0",
+    "title": "Activity Timeline",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/tasks/activity-timeline",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069c9bfc76f7de54ea4c"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1dd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.745Z",
+    "updatedAt": "2026-07-15T04:03:40.488Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c05f17a75c0cf9bf1e2",
+    "title": "EmployeeGanttView",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/tasks/employeeganttview",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069c9bfc76f7de54ea59"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1dd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:01.862Z",
+    "updatedAt": "2026-07-15T04:03:40.953Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c06f17a75c0cf9bf1e4",
+    "title": "Form",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/tasks/form",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069d9bfc76f7de54ea66"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1dd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:02.006Z",
+    "updatedAt": "2026-07-15T04:03:41.433Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c06f17a75c0cf9bf1e6",
+    "title": "GanttView",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/tasks/ganttview",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069d9bfc76f7de54ea73"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1dd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:02.045Z",
+    "updatedAt": "2026-07-15T04:03:41.918Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c06f17a75c0cf9bf1e8",
+    "title": "My Tasks",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/tasks/my-tasks",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069e9bfc76f7de54ea80"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1dd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:02.106Z",
+    "updatedAt": "2026-07-15T04:03:42.380Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c06f17a75c0cf9bf1ea",
+    "title": "Reports",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/tasks/reports",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706899bfc76f7de54e857"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1dd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 6,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:02.300Z",
+    "updatedAt": "2026-07-15T04:03:42.626Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c06f17a75c0cf9bf1ec",
+    "title": "Task",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/tasks",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069e9bfc76f7de54ea92"
+    ],
+    "routes": [],
+    "parentId": "6a562c05f17a75c0cf9bf1dd",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 7,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:02.342Z",
+    "updatedAt": "2026-07-25T18:43:04.350Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c06f17a75c0cf9bf1ee",
+    "title": "Teams",
+    "icon": {
+      "iconName": "MdGroup",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/teams",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069f9bfc76f7de54ea9f"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": false,
+    "isParent": true,
+    "order": 16,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:02.384Z",
+    "updatedAt": "2026-07-15T04:03:43.543Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c06f17a75c0cf9bf1f0",
+    "title": "Tickets",
+    "icon": {
+      "iconName": "MdConfirmationNumber",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/tickets",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a56675e147887622cc1ebd9",
+      "6a57069f9bfc76f7de54eaac"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": true,
+    "isParent": true,
+    "order": 3,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:02.442Z",
+    "updatedAt": "2026-07-15T04:03:44.018Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c06f17a75c0cf9bf1f3",
+    "title": "Form",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/tickets/form",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a57069d9bfc76f7de54ea66"
+    ],
+    "routes": [],
+    "parentId": "6a562c06f17a75c0cf9bf1f0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:02.490Z",
+    "updatedAt": "2026-07-15T04:03:44.271Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c06f17a75c0cf9bf1f5",
+    "title": "My Tickets",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/tickets/my-tickets",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a56675e147887622cc1ebd9",
+      "6a5706a09bfc76f7de54eabe"
+    ],
+    "routes": [],
+    "parentId": "6a562c06f17a75c0cf9bf1f0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:02.536Z",
+    "updatedAt": "2026-07-15T04:03:44.724Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c06f17a75c0cf9bf1f7",
+    "title": "Reports",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/tickets/reports",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706899bfc76f7de54e857"
+    ],
+    "routes": [],
+    "parentId": "6a562c06f17a75c0cf9bf1f0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:02.581Z",
+    "updatedAt": "2026-07-15T04:03:44.980Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a562c06f17a75c0cf9bf1f9",
+    "title": "Travel Expenses",
+    "icon": {
+      "iconName": "MdReceipt",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/travel-expenses",
+    "visibility": "protected",
+    "resourceId": null,
+    "allowedDepartments": [],
+    "allowedDesignations": [],
+    "capabilities": [
+      "6a5706a19bfc76f7de54ead0"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": false,
+    "isParent": true,
+    "order": 18,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-14T12:31:02.624Z",
+    "updatedAt": "2026-07-15T04:03:45.451Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a568c066d4b687b6f9547e2",
+    "title": "Menu",
+    "icon": {
+      "iconName": "MdMenu",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/menu",
+    "visiblity": "protected",
+    "capabilities": [
+      "6a568afe06823e6bfca972a0",
+      "6a568b2406823e6bfca972b5",
+      "6a5706a19bfc76f7de54eadd"
+    ],
+    "order": 0,
+    "hasChildren": false,
+    "isActive": true,
+    "isParent": false,
+    "parentId": "6a562c05f17a75c0cf9bf1d0",
+    "updatedAt": "2026-07-15T04:03:45.925Z",
+    "visibility": "protected",
+    "__v": 1,
+    "isDeleted": false,
+    "routes": []
+  },
+  {
+    "_id": "6a5706819bfc76f7de54e622",
+    "title": "Master Data",
+    "icon": {
+      "iconName": "MdGridOn",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a29bfc76f7de54eaea"
+    ],
+    "routes": [],
+    "parentId": null,
+    "hasChildren": true,
+    "isParent": true,
+    "order": 25,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:13.316Z",
+    "updatedAt": "2026-07-15T04:03:46.393Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706839bfc76f7de54e6bf",
+    "title": "Agents",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Agents",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a29bfc76f7de54eaf7"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:15.212Z",
+    "updatedAt": "2026-07-15T04:03:46.833Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706849bfc76f7de54e724",
+    "title": "Attendance Policies",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Attendance-Policies",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a29bfc76f7de54eb04"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:16.574Z",
+    "updatedAt": "2026-07-15T04:03:47.283Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706859bfc76f7de54e75d",
+    "title": "Clients",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Clients",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a39bfc76f7de54eb11"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:17.068Z",
+    "updatedAt": "2026-07-15T04:03:47.753Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706859bfc76f7de54e773",
+    "title": "Departments",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Departments",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a39bfc76f7de54eb1e"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:17.592Z",
+    "updatedAt": "2026-07-15T04:03:48.212Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706859bfc76f7de54e787",
+    "title": "Designations",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Designations",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a49bfc76f7de54eb2b"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:17.731Z",
+    "updatedAt": "2026-07-15T04:03:48.693Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706859bfc76f7de54e791",
+    "title": "Employees",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Employees",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a49bfc76f7de54eb38"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 6,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:17.866Z",
+    "updatedAt": "2026-07-15T04:03:49.150Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706869bfc76f7de54e7a3",
+    "title": "HR Policies",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/HR-Policies",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a59bfc76f7de54eb45"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 7,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:18.006Z",
+    "updatedAt": "2026-07-15T04:03:49.614Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706869bfc76f7de54e7b3",
+    "title": "Holidays",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Holidays",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a59bfc76f7de54eb52"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 8,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:18.145Z",
+    "updatedAt": "2026-07-15T04:03:50.087Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706869bfc76f7de54e7c5",
+    "title": "Job Categories",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Job-Categories",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a69bfc76f7de54eb5f"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 9,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:18.273Z",
+    "updatedAt": "2026-07-15T04:03:50.550Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706869bfc76f7de54e7d2",
+    "title": "Job Types",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Job-Types",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a69bfc76f7de54eb6c"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 10,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:18.541Z",
+    "updatedAt": "2026-07-15T04:03:51.023Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706869bfc76f7de54e7dc",
+    "title": "Lead Types",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Lead-Types",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a79bfc76f7de54eb79"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 11,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:18.641Z",
+    "updatedAt": "2026-07-15T04:03:51.488Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706869bfc76f7de54e7e3",
+    "title": "Leave Policies",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Leave-Policies",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a79bfc76f7de54eb86"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 12,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:18.743Z",
+    "updatedAt": "2026-07-15T04:03:51.953Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706869bfc76f7de54e7eb",
+    "title": "Leave Transactions",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Leave-Transactions",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a89bfc76f7de54eb93"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 13,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:18.842Z",
+    "updatedAt": "2026-07-15T04:03:52.431Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706869bfc76f7de54e7f4",
+    "title": "Leave Types",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Leave-Types",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a89bfc76f7de54eba0"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 14,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:18.947Z",
+    "updatedAt": "2026-07-15T04:03:52.889Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706879bfc76f7de54e7fb",
+    "title": "Milestones",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Milestones",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a89bfc76f7de54ebad"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 15,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:19.053Z",
+    "updatedAt": "2026-07-15T04:03:53.343Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706879bfc76f7de54e802",
+    "title": "Products",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Products",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a99bfc76f7de54ebba"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 16,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:19.154Z",
+    "updatedAt": "2026-07-15T04:03:53.822Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706879bfc76f7de54e807",
+    "title": "Project Types",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Project-Types",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706a99bfc76f7de54ebc7"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 17,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:19.267Z",
+    "updatedAt": "2026-07-15T04:03:54.300Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706879bfc76f7de54e80c",
+    "title": "Reference Types",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Reference-Types",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706aa9bfc76f7de54ebd4"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 18,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:19.367Z",
+    "updatedAt": "2026-07-15T04:03:54.762Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706879bfc76f7de54e810",
+    "title": "Roles",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Roles",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706aa9bfc76f7de54ebe1"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 19,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:19.463Z",
+    "updatedAt": "2026-07-15T04:03:55.227Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706879bfc76f7de54e815",
+    "title": "Service Providers",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Service-Providers",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706ab9bfc76f7de54ebee"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 20,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:19.573Z",
+    "updatedAt": "2026-07-15T04:03:55.699Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706879bfc76f7de54e81a",
+    "title": "Shifts",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Shifts",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706ab9bfc76f7de54ebfb"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 21,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:19.684Z",
+    "updatedAt": "2026-07-15T04:03:56.153Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706879bfc76f7de54e81e",
+    "title": "Status Master",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Status-Master",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706ac9bfc76f7de54ec08"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 22,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:19.774Z",
+    "updatedAt": "2026-07-15T04:03:56.608Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706879bfc76f7de54e822",
+    "title": "Task Types",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Task-Types",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706ac9bfc76f7de54ec15"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 23,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:19.877Z",
+    "updatedAt": "2026-07-15T04:03:57.051Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a5706879bfc76f7de54e826",
+    "title": "Workflows",
+    "icon": {
+      "iconName": "MdInsertDriveFile",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/Master-Data/Workflows",
+    "visibility": "protected",
+    "capabilities": [
+      "6a5706ad9bfc76f7de54ec22"
+    ],
+    "routes": [],
+    "parentId": "6a5706819bfc76f7de54e622",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 24,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T04:03:19.981Z",
+    "updatedAt": "2026-07-15T04:03:57.505Z",
+    "__v": 1
+  },
+  {
+    "_id": "6a57a9fdb5c920f93f6e8888",
+    "title": "Check IN",
+    "icon": {
+      "iconName": "MdCoPresent",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/attendance",
+    "visibility": "protected",
+    "capabilities": [
+      "6a57068e9bfc76f7de54e8e3",
+      "6a57068f9bfc76f7de54e8e6",
+      "6a57068f9bfc76f7de54e8e9",
+      "6a57068f9bfc76f7de54e8ec"
+    ],
+    "routes": [],
+    "parentId": "6a562c04f17a75c0cf9bf1a0",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2026-07-15T15:40:45.397Z",
+    "updatedAt": "2026-07-15T15:40:45.397Z",
+    "__v": 0
+  }
+]

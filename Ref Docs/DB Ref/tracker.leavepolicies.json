@@ -1,0 +1,23 @@
+[
+  {
+  "leaves": [
+    {
+      "leaveType": "",
+      "maxDaysPerMonth": 2,
+      "maxDaysPerYear": 24,
+      "carryForward": false
+    },
+    {
+      "leaveType": "",
+      "maxDaysPerMonth": 1,
+      "maxDaysPerYear": 12,
+      "carryForward": true
+    },
+    {
+      "leaveType": "",
+      "maxDaysPerMonth": 15,
+      "maxDaysPerYear": 180,
+      "carryForward": true
+    }
+  ]
+}]

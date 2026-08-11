@@ -1,0 +1,42 @@
+[{
+  "_id": {
+    "$oid": "68d9ff422cb84728f399c06e"
+  },
+  "name": "WEBSITE",
+  "description": "Website related projects"
+},
+{
+  "_id": {
+    "$oid": "68d9ff422cb84728f399c06f"
+  },
+  "name": "MOBILE APP",
+  "description": "Mobile Application related projects"
+},
+{
+  "_id": {
+    "$oid": "68d9ff422cb84728f399c06c"
+  },
+  "name": "CRM",
+  "description": "Customer Relationship Management related projects"
+},
+{
+  "_id": {
+    "$oid": "68d9ff422cb84728f399c06a"
+  },
+  "name": "BULLION TRADE",
+  "descriptiom": "Bullion Trade related projects"
+},
+{
+  "_id": {
+    "$oid": "68d9ff422cb84728f399c06b"
+  },
+  "name": "BULLION LITE",
+  "description": "Bullion Lite related projects"
+},
+{
+  "_id": {
+    "$oid": "68d9ff422cb84728f399c06d"
+  },
+  "name": "ERP",
+  "description": "Enterprise Resource Planning related projects"
+}]

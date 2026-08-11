@@ -1,0 +1,39 @@
+[
+  {
+    "role": "68d8b98af397d1d97620ba97",
+    "modelName": "leave_policies",
+    "permissions": {
+      "read": true,
+      "create": true,
+      "update": true,
+      "delete": true
+    },
+    "forbiddenAccess": {
+      "read": [],
+      "create": [],
+      "update": [],
+      "delete": []
+    },
+    "allowAccess": {
+      "read": [
+        "*"
+      ],
+      "create": [
+        "*"
+      ],
+      "update": [
+        "*"
+      ],
+      "delete": [
+        "*"
+      ]
+    },
+    "registry": [],
+    "conditions": {
+      "read": [],
+      "update": [],
+      "create": [],
+      "delete": []
+    }
+  }
+]

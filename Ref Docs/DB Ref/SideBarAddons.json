@@ -1,0 +1,25 @@
+[
+  {
+    "title": "Pending Approvals",
+    "icon": {
+      "iconName": "MdPendingActions",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/attendence/pending-approvals",
+    "parentId": "time-attendance",
+    "isParent": false,
+    "hasChildren": false,
+    "order": 6
+  },
+  {
+    "title": "Teams",
+    "icon": {
+      "iconName": "MdGroups",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/teams",
+    "isParent": false,
+    "hasChildren": false,
+    "order": 15
+  }
+]

@@ -1,0 +1,3482 @@
+[
+  {
+    "_id": "6a67393351e2b55fc18f9a30",
+    "key": "Dashboard:view",
+    "name": "dashboard.view",
+    "action": "view",
+    "label": "View Dashboard",
+    "description": "Access to view dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a31",
+    "key": "Dashboard:create",
+    "name": "dashboard.create",
+    "action": "create",
+    "label": "Create Dashboard",
+    "description": "Access to create dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a32",
+    "key": "Dashboard:update",
+    "name": "dashboard.update",
+    "action": "update",
+    "label": "Update Dashboard",
+    "description": "Access to update dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a33",
+    "key": "Dashboard:delete",
+    "name": "dashboard.delete",
+    "action": "delete",
+    "label": "Delete Dashboard",
+    "description": "Access to delete dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a34",
+    "key": "Tickets:view",
+    "name": "tickets.view",
+    "action": "view",
+    "label": "View Tickets List",
+    "description": "Access to view tickets list",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a35",
+    "key": "Tickets:create",
+    "name": "tickets.create",
+    "action": "create",
+    "label": "Create Tickets List",
+    "description": "Access to create tickets list",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a36",
+    "key": "Tickets:update",
+    "name": "tickets.update",
+    "action": "update",
+    "label": "Update Tickets List",
+    "description": "Access to update tickets list",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a37",
+    "key": "Tickets:delete",
+    "name": "tickets.delete",
+    "action": "delete",
+    "label": "Delete Tickets List",
+    "description": "Access to delete tickets list",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a38",
+    "key": "Menu:view",
+    "name": "menu.view",
+    "action": "view",
+    "label": "View Menu",
+    "description": "Access to view menu",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a39",
+    "key": "Menu:create",
+    "name": "menu.create",
+    "action": "create",
+    "label": "Create Menu",
+    "description": "Access to create menu",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a3a",
+    "key": "Menu:update",
+    "name": "menu.update",
+    "action": "update",
+    "label": "Update Menu",
+    "description": "Access to update menu",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a3b",
+    "key": "Menu:delete",
+    "name": "menu.delete",
+    "action": "delete",
+    "label": "Delete Menu",
+    "description": "Access to delete menu",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a3c",
+    "key": "Accounts:view",
+    "name": "accounts.view",
+    "action": "view",
+    "label": "View Accounts",
+    "description": "Access to view accounts",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a3d",
+    "key": "Accounts:create",
+    "name": "accounts.create",
+    "action": "create",
+    "label": "Create Accounts",
+    "description": "Access to create accounts",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a3e",
+    "key": "Accounts:update",
+    "name": "accounts.update",
+    "action": "update",
+    "label": "Update Accounts",
+    "description": "Access to update accounts",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a3f",
+    "key": "Accounts:delete",
+    "name": "accounts.delete",
+    "action": "delete",
+    "label": "Delete Accounts",
+    "description": "Access to delete accounts",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a40",
+    "key": "Ledger:view",
+    "name": "ledger.view",
+    "action": "view",
+    "label": "View Ledger",
+    "description": "Access to view ledger",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a41",
+    "key": "Ledger:create",
+    "name": "ledger.create",
+    "action": "create",
+    "label": "Create Ledger",
+    "description": "Access to create ledger",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a42",
+    "key": "Ledger:update",
+    "name": "ledger.update",
+    "action": "update",
+    "label": "Update Ledger",
+    "description": "Access to update ledger",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a43",
+    "key": "Ledger:delete",
+    "name": "ledger.delete",
+    "action": "delete",
+    "label": "Delete Ledger",
+    "description": "Access to delete ledger",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a44",
+    "key": "Payments:view",
+    "name": "payments.view",
+    "action": "view",
+    "label": "View Payments",
+    "description": "Access to view payments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a45",
+    "key": "Payments:create",
+    "name": "payments.create",
+    "action": "create",
+    "label": "Create Payments",
+    "description": "Access to create payments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a46",
+    "key": "Payments:update",
+    "name": "payments.update",
+    "action": "update",
+    "label": "Update Payments",
+    "description": "Access to update payments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a47",
+    "key": "Payments:delete",
+    "name": "payments.delete",
+    "action": "delete",
+    "label": "Delete Payments",
+    "description": "Access to delete payments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a48",
+    "key": "Reports:view",
+    "name": "reports.view",
+    "action": "view",
+    "label": "View Reports",
+    "description": "Access to view reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a49",
+    "key": "Reports:create",
+    "name": "reports.create",
+    "action": "create",
+    "label": "Create Reports",
+    "description": "Access to create reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a4a",
+    "key": "Reports:update",
+    "name": "reports.update",
+    "action": "update",
+    "label": "Update Reports",
+    "description": "Access to update reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a4b",
+    "key": "Reports:delete",
+    "name": "reports.delete",
+    "action": "delete",
+    "label": "Delete Reports",
+    "description": "Access to delete reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a4c",
+    "key": "Assets:view",
+    "name": "assets.view",
+    "action": "view",
+    "label": "View Assets",
+    "description": "Access to view assets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a4d",
+    "key": "Assets:create",
+    "name": "assets.create",
+    "action": "create",
+    "label": "Create Assets",
+    "description": "Access to create assets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a4e",
+    "key": "Assets:update",
+    "name": "assets.update",
+    "action": "update",
+    "label": "Update Assets",
+    "description": "Access to update assets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a4f",
+    "key": "Assets:delete",
+    "name": "assets.delete",
+    "action": "delete",
+    "label": "Delete Assets",
+    "description": "Access to delete assets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a50",
+    "key": "Allocations:view",
+    "name": "allocations.view",
+    "action": "view",
+    "label": "View Allocations",
+    "description": "Access to view allocations",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a51",
+    "key": "Allocations:create",
+    "name": "allocations.create",
+    "action": "create",
+    "label": "Create Allocations",
+    "description": "Access to create allocations",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a52",
+    "key": "Allocations:update",
+    "name": "allocations.update",
+    "action": "update",
+    "label": "Update Allocations",
+    "description": "Access to update allocations",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a53",
+    "key": "Allocations:delete",
+    "name": "allocations.delete",
+    "action": "delete",
+    "label": "Delete Allocations",
+    "description": "Access to delete allocations",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a54",
+    "key": "Categories:view",
+    "name": "categories.view",
+    "action": "view",
+    "label": "View Categories",
+    "description": "Access to view categories",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a55",
+    "key": "Categories:create",
+    "name": "categories.create",
+    "action": "create",
+    "label": "Create Categories",
+    "description": "Access to create categories",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a56",
+    "key": "Categories:update",
+    "name": "categories.update",
+    "action": "update",
+    "label": "Update Categories",
+    "description": "Access to update categories",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a57",
+    "key": "Categories:delete",
+    "name": "categories.delete",
+    "action": "delete",
+    "label": "Delete Categories",
+    "description": "Access to delete categories",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a58",
+    "key": "Grn:view",
+    "name": "grn.view",
+    "action": "view",
+    "label": "View Grn",
+    "description": "Access to view grn",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a59",
+    "key": "Grn:create",
+    "name": "grn.create",
+    "action": "create",
+    "label": "Create Grn",
+    "description": "Access to create grn",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a5a",
+    "key": "Grn:update",
+    "name": "grn.update",
+    "action": "update",
+    "label": "Update Grn",
+    "description": "Access to update grn",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a5b",
+    "key": "Grn:delete",
+    "name": "grn.delete",
+    "action": "delete",
+    "label": "Delete Grn",
+    "description": "Access to delete grn",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a5c",
+    "key": "Incidents:view",
+    "name": "incidents.view",
+    "action": "view",
+    "label": "View Incidents",
+    "description": "Access to view incidents",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a5d",
+    "key": "Incidents:create",
+    "name": "incidents.create",
+    "action": "create",
+    "label": "Create Incidents",
+    "description": "Access to create incidents",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a5e",
+    "key": "Incidents:update",
+    "name": "incidents.update",
+    "action": "update",
+    "label": "Update Incidents",
+    "description": "Access to update incidents",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a5f",
+    "key": "Incidents:delete",
+    "name": "incidents.delete",
+    "action": "delete",
+    "label": "Delete Incidents",
+    "description": "Access to delete incidents",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a60",
+    "key": "Invoices:view",
+    "name": "invoices.view",
+    "action": "view",
+    "label": "View Invoices",
+    "description": "Access to view invoices",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a61",
+    "key": "Invoices:create",
+    "name": "invoices.create",
+    "action": "create",
+    "label": "Create Invoices",
+    "description": "Access to create invoices",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a62",
+    "key": "Invoices:update",
+    "name": "invoices.update",
+    "action": "update",
+    "label": "Update Invoices",
+    "description": "Access to update invoices",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a63",
+    "key": "Invoices:delete",
+    "name": "invoices.delete",
+    "action": "delete",
+    "label": "Delete Invoices",
+    "description": "Access to delete invoices",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a64",
+    "key": "Register:view",
+    "name": "register.view",
+    "action": "view",
+    "label": "View Register",
+    "description": "Access to view register",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a65",
+    "key": "Register:create",
+    "name": "register.create",
+    "action": "create",
+    "label": "Create Register",
+    "description": "Access to create register",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a66",
+    "key": "Register:update",
+    "name": "register.update",
+    "action": "update",
+    "label": "Update Register",
+    "description": "Access to update register",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a67",
+    "key": "Register:delete",
+    "name": "register.delete",
+    "action": "delete",
+    "label": "Delete Register",
+    "description": "Access to delete register",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a68",
+    "key": "Repairs:view",
+    "name": "repairs.view",
+    "action": "view",
+    "label": "View Repairs",
+    "description": "Access to view repairs",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a69",
+    "key": "Repairs:create",
+    "name": "repairs.create",
+    "action": "create",
+    "label": "Create Repairs",
+    "description": "Access to create repairs",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a6a",
+    "key": "Repairs:update",
+    "name": "repairs.update",
+    "action": "update",
+    "label": "Update Repairs",
+    "description": "Access to update repairs",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a6b",
+    "key": "Repairs:delete",
+    "name": "repairs.delete",
+    "action": "delete",
+    "label": "Delete Repairs",
+    "description": "Access to delete repairs",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a6c",
+    "key": "Vendors:view",
+    "name": "vendors.view",
+    "action": "view",
+    "label": "View Vendors",
+    "description": "Access to view vendors",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a6d",
+    "key": "Vendors:create",
+    "name": "vendors.create",
+    "action": "create",
+    "label": "Create Vendors",
+    "description": "Access to create vendors",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a6e",
+    "key": "Vendors:update",
+    "name": "vendors.update",
+    "action": "update",
+    "label": "Update Vendors",
+    "description": "Access to update vendors",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a6f",
+    "key": "Vendors:delete",
+    "name": "vendors.delete",
+    "action": "delete",
+    "label": "Delete Vendors",
+    "description": "Access to delete vendors",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a70",
+    "key": "Attendance:view",
+    "name": "attendance.view",
+    "action": "view",
+    "label": "View Attendance",
+    "description": "Access to view attendance",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a71",
+    "key": "Attendance:create",
+    "name": "attendance.create",
+    "action": "create",
+    "label": "Create Attendance",
+    "description": "Access to create attendance",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a72",
+    "key": "Attendance:update",
+    "name": "attendance.update",
+    "action": "update",
+    "label": "Update Attendance",
+    "description": "Access to update attendance",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a73",
+    "key": "Attendance:delete",
+    "name": "attendance.delete",
+    "action": "delete",
+    "label": "Delete Attendance",
+    "description": "Access to delete attendance",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a74",
+    "key": "LeaveRegularization:view",
+    "name": "leaveregularization.view",
+    "action": "view",
+    "label": "View Leave Regularization",
+    "description": "Access to view leave regularization",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a75",
+    "key": "LeaveRegularization:create",
+    "name": "leaveregularization.create",
+    "action": "create",
+    "label": "Create Leave Regularization",
+    "description": "Access to create leave regularization",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a76",
+    "key": "LeaveRegularization:update",
+    "name": "leaveregularization.update",
+    "action": "update",
+    "label": "Update Leave Regularization",
+    "description": "Access to update leave regularization",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a77",
+    "key": "LeaveRegularization:delete",
+    "name": "leaveregularization.delete",
+    "action": "delete",
+    "label": "Delete Leave Regularization",
+    "description": "Access to delete leave regularization",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a78",
+    "key": "MonthlySummary:view",
+    "name": "monthlysummary.view",
+    "action": "view",
+    "label": "View Monthly Summary",
+    "description": "Access to view monthly summary",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a79",
+    "key": "MonthlySummary:create",
+    "name": "monthlysummary.create",
+    "action": "create",
+    "label": "Create Monthly Summary",
+    "description": "Access to create monthly summary",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a7a",
+    "key": "MonthlySummary:update",
+    "name": "monthlysummary.update",
+    "action": "update",
+    "label": "Update Monthly Summary",
+    "description": "Access to update monthly summary",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a7b",
+    "key": "MonthlySummary:delete",
+    "name": "monthlysummary.delete",
+    "action": "delete",
+    "label": "Delete Monthly Summary",
+    "description": "Access to delete monthly summary",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a7c",
+    "key": "PendingApprovals:view",
+    "name": "pendingapprovals.view",
+    "action": "view",
+    "label": "View Pending Approvals",
+    "description": "Access to view pending approvals",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a7d",
+    "key": "PendingApprovals:create",
+    "name": "pendingapprovals.create",
+    "action": "create",
+    "label": "Create Pending Approvals",
+    "description": "Access to create pending approvals",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a7e",
+    "key": "PendingApprovals:update",
+    "name": "pendingapprovals.update",
+    "action": "update",
+    "label": "Update Pending Approvals",
+    "description": "Access to update pending approvals",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a7f",
+    "key": "PendingApprovals:delete",
+    "name": "pendingapprovals.delete",
+    "action": "delete",
+    "label": "Delete Pending Approvals",
+    "description": "Access to delete pending approvals",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a80",
+    "key": "ShiftRoster:view",
+    "name": "shiftroster.view",
+    "action": "view",
+    "label": "View Shift Roster",
+    "description": "Access to view shift roster",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a81",
+    "key": "ShiftRoster:create",
+    "name": "shiftroster.create",
+    "action": "create",
+    "label": "Create Shift Roster",
+    "description": "Access to create shift roster",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a82",
+    "key": "ShiftRoster:update",
+    "name": "shiftroster.update",
+    "action": "update",
+    "label": "Update Shift Roster",
+    "description": "Access to update shift roster",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a83",
+    "key": "ShiftRoster:delete",
+    "name": "shiftroster.delete",
+    "action": "delete",
+    "label": "Delete Shift Roster",
+    "description": "Access to delete shift roster",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a84",
+    "key": "CRM:view",
+    "name": "crm.view",
+    "action": "view",
+    "label": "View CRM",
+    "description": "Access to view crm",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a85",
+    "key": "CRM:create",
+    "name": "crm.create",
+    "action": "create",
+    "label": "Create CRM",
+    "description": "Access to create crm",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a86",
+    "key": "CRM:update",
+    "name": "crm.update",
+    "action": "update",
+    "label": "Update CRM",
+    "description": "Access to update crm",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a87",
+    "key": "CRM:delete",
+    "name": "crm.delete",
+    "action": "delete",
+    "label": "Delete CRM",
+    "description": "Access to delete crm",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a88",
+    "key": "Calendar:view",
+    "name": "calendar.view",
+    "action": "view",
+    "label": "View Calendar",
+    "description": "Access to view calendar",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a89",
+    "key": "Calendar:create",
+    "name": "calendar.create",
+    "action": "create",
+    "label": "Create Calendar",
+    "description": "Access to create calendar",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a8a",
+    "key": "Calendar:update",
+    "name": "calendar.update",
+    "action": "update",
+    "label": "Update Calendar",
+    "description": "Access to update calendar",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a8b",
+    "key": "Calendar:delete",
+    "name": "calendar.delete",
+    "action": "delete",
+    "label": "Delete Calendar",
+    "description": "Access to delete calendar",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a8c",
+    "key": "Productivity:view",
+    "name": "productivity.view",
+    "action": "view",
+    "label": "View Productivity",
+    "description": "Access to view productivity",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a8d",
+    "key": "Productivity:create",
+    "name": "productivity.create",
+    "action": "create",
+    "label": "Create Productivity",
+    "description": "Access to create productivity",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a8e",
+    "key": "Productivity:update",
+    "name": "productivity.update",
+    "action": "update",
+    "label": "Update Productivity",
+    "description": "Access to update productivity",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a8f",
+    "key": "Productivity:delete",
+    "name": "productivity.delete",
+    "action": "delete",
+    "label": "Delete Productivity",
+    "description": "Access to delete productivity",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a90",
+    "key": "Feed:view",
+    "name": "feed.view",
+    "action": "view",
+    "label": "View Feed",
+    "description": "Access to view feed",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a91",
+    "key": "Feed:create",
+    "name": "feed.create",
+    "action": "create",
+    "label": "Create Feed",
+    "description": "Access to create feed",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a92",
+    "key": "Feed:update",
+    "name": "feed.update",
+    "action": "update",
+    "label": "Update Feed",
+    "description": "Access to update feed",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a93",
+    "key": "Feed:delete",
+    "name": "feed.delete",
+    "action": "delete",
+    "label": "Delete Feed",
+    "description": "Access to delete feed",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a94",
+    "key": "HRMS:view",
+    "name": "hrms.view",
+    "action": "view",
+    "label": "View HRMS",
+    "description": "Access to view hrms",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a95",
+    "key": "HRMS:create",
+    "name": "hrms.create",
+    "action": "create",
+    "label": "Create HRMS",
+    "description": "Access to create hrms",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a96",
+    "key": "HRMS:update",
+    "name": "hrms.update",
+    "action": "update",
+    "label": "Update HRMS",
+    "description": "Access to update hrms",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a97",
+    "key": "HRMS:delete",
+    "name": "hrms.delete",
+    "action": "delete",
+    "label": "Delete HRMS",
+    "description": "Access to delete hrms",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a98",
+    "key": "Logout:view",
+    "name": "logout.view",
+    "action": "view",
+    "label": "View Logout",
+    "description": "Access to view logout",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a99",
+    "key": "Logout:create",
+    "name": "logout.create",
+    "action": "create",
+    "label": "Create Logout",
+    "description": "Access to create logout",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a9a",
+    "key": "Logout:update",
+    "name": "logout.update",
+    "action": "update",
+    "label": "Update Logout",
+    "description": "Access to update logout",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a9b",
+    "key": "Logout:delete",
+    "name": "logout.delete",
+    "action": "delete",
+    "label": "Delete Logout",
+    "description": "Access to delete logout",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a9c",
+    "key": "Payroll:view",
+    "name": "payroll.view",
+    "action": "view",
+    "label": "View Payroll",
+    "description": "Access to view payroll",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a9d",
+    "key": "Payroll:create",
+    "name": "payroll.create",
+    "action": "create",
+    "label": "Create Payroll",
+    "description": "Access to create payroll",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a9e",
+    "key": "Payroll:update",
+    "name": "payroll.update",
+    "action": "update",
+    "label": "Update Payroll",
+    "description": "Access to update payroll",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9a9f",
+    "key": "Payroll:delete",
+    "name": "payroll.delete",
+    "action": "delete",
+    "label": "Delete Payroll",
+    "description": "Access to delete payroll",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aa0",
+    "key": "MyPayslipsTab:view",
+    "name": "mypayslipstab.view",
+    "action": "view",
+    "label": "View MyPayslipsTab",
+    "description": "Access to view mypayslipstab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aa1",
+    "key": "MyPayslipsTab:create",
+    "name": "mypayslipstab.create",
+    "action": "create",
+    "label": "Create MyPayslipsTab",
+    "description": "Access to create mypayslipstab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aa2",
+    "key": "MyPayslipsTab:update",
+    "name": "mypayslipstab.update",
+    "action": "update",
+    "label": "Update MyPayslipsTab",
+    "description": "Access to update mypayslipstab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aa3",
+    "key": "MyPayslipsTab:delete",
+    "name": "mypayslipstab.delete",
+    "action": "delete",
+    "label": "Delete MyPayslipsTab",
+    "description": "Access to delete mypayslipstab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aa4",
+    "key": "payroll_runsTab:view",
+    "name": "payroll_runstab.view",
+    "action": "view",
+    "label": "View payroll_runsTab",
+    "description": "Access to view payroll_runstab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aa5",
+    "key": "payroll_runsTab:create",
+    "name": "payroll_runstab.create",
+    "action": "create",
+    "label": "Create payroll_runsTab",
+    "description": "Access to create payroll_runstab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aa6",
+    "key": "payroll_runsTab:update",
+    "name": "payroll_runstab.update",
+    "action": "update",
+    "label": "Update payroll_runsTab",
+    "description": "Access to update payroll_runstab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aa7",
+    "key": "payroll_runsTab:delete",
+    "name": "payroll_runstab.delete",
+    "action": "delete",
+    "label": "Delete payroll_runsTab",
+    "description": "Access to delete payroll_runstab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aa8",
+    "key": "period_closuresTab:view",
+    "name": "period_closurestab.view",
+    "action": "view",
+    "label": "View period_closuresTab",
+    "description": "Access to view period_closurestab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aa9",
+    "key": "period_closuresTab:create",
+    "name": "period_closurestab.create",
+    "action": "create",
+    "label": "Create period_closuresTab",
+    "description": "Access to create period_closurestab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aaa",
+    "key": "period_closuresTab:update",
+    "name": "period_closurestab.update",
+    "action": "update",
+    "label": "Update period_closuresTab",
+    "description": "Access to update period_closurestab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aab",
+    "key": "period_closuresTab:delete",
+    "name": "period_closurestab.delete",
+    "action": "delete",
+    "label": "Delete period_closuresTab",
+    "description": "Access to delete period_closurestab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aac",
+    "key": "salary_structuresTab:view",
+    "name": "salary_structurestab.view",
+    "action": "view",
+    "label": "View salary_structuresTab",
+    "description": "Access to view salary_structurestab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aad",
+    "key": "salary_structuresTab:create",
+    "name": "salary_structurestab.create",
+    "action": "create",
+    "label": "Create salary_structuresTab",
+    "description": "Access to create salary_structurestab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aae",
+    "key": "salary_structuresTab:update",
+    "name": "salary_structurestab.update",
+    "action": "update",
+    "label": "Update salary_structuresTab",
+    "description": "Access to update salary_structurestab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aaf",
+    "key": "salary_structuresTab:delete",
+    "name": "salary_structurestab.delete",
+    "action": "delete",
+    "label": "Delete salary_structuresTab",
+    "description": "Access to delete salary_structurestab",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ab0",
+    "key": "Policies:view",
+    "name": "policies.view",
+    "action": "view",
+    "label": "View Policies",
+    "description": "Access to view policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ab1",
+    "key": "Policies:create",
+    "name": "policies.create",
+    "action": "create",
+    "label": "Create Policies",
+    "description": "Access to create policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ab2",
+    "key": "Policies:update",
+    "name": "policies.update",
+    "action": "update",
+    "label": "Update Policies",
+    "description": "Access to update policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ab3",
+    "key": "Policies:delete",
+    "name": "policies.delete",
+    "action": "delete",
+    "label": "Delete Policies",
+    "description": "Access to delete policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ab4",
+    "key": "Profile:view",
+    "name": "profile.view",
+    "action": "view",
+    "label": "View Profile",
+    "description": "Access to view profile",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ab5",
+    "key": "Profile:create",
+    "name": "profile.create",
+    "action": "create",
+    "label": "Create Profile",
+    "description": "Access to create profile",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ab6",
+    "key": "Profile:update",
+    "name": "profile.update",
+    "action": "update",
+    "label": "Update Profile",
+    "description": "Access to update profile",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ab7",
+    "key": "Profile:delete",
+    "name": "profile.delete",
+    "action": "delete",
+    "label": "Delete Profile",
+    "description": "Access to delete profile",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ab8",
+    "key": "Search:view",
+    "name": "search.view",
+    "action": "view",
+    "label": "View Search",
+    "description": "Access to view search",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ab9",
+    "key": "Search:create",
+    "name": "search.create",
+    "action": "create",
+    "label": "Create Search",
+    "description": "Access to create search",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aba",
+    "key": "Search:update",
+    "name": "search.update",
+    "action": "update",
+    "label": "Update Search",
+    "description": "Access to update search",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9abb",
+    "key": "Search:delete",
+    "name": "search.delete",
+    "action": "delete",
+    "label": "Delete Search",
+    "description": "Access to delete search",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9abc",
+    "key": "Settings:view",
+    "name": "settings.view",
+    "action": "view",
+    "label": "View Settings",
+    "description": "Access to view settings",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9abd",
+    "key": "Settings:create",
+    "name": "settings.create",
+    "action": "create",
+    "label": "Create Settings",
+    "description": "Access to create settings",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9abe",
+    "key": "Settings:update",
+    "name": "settings.update",
+    "action": "update",
+    "label": "Update Settings",
+    "description": "Access to update settings",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9abf",
+    "key": "Settings:delete",
+    "name": "settings.delete",
+    "action": "delete",
+    "label": "Delete Settings",
+    "description": "Access to delete settings",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ac0",
+    "key": "Capabilities:view",
+    "name": "capabilities.view",
+    "action": "view",
+    "label": "View Capabilities",
+    "description": "Access to view capabilities",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ac1",
+    "key": "Capabilities:create",
+    "name": "capabilities.create",
+    "action": "create",
+    "label": "Create Capabilities",
+    "description": "Access to create capabilities",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ac2",
+    "key": "Capabilities:update",
+    "name": "capabilities.update",
+    "action": "update",
+    "label": "Update Capabilities",
+    "description": "Access to update capabilities",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ac3",
+    "key": "Capabilities:delete",
+    "name": "capabilities.delete",
+    "action": "delete",
+    "label": "Delete Capabilities",
+    "description": "Access to delete capabilities",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ac4",
+    "key": "DesignationPermissions:view",
+    "name": "designationpermissions.view",
+    "action": "view",
+    "label": "View Designation Permissions",
+    "description": "Access to view designation permissions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ac5",
+    "key": "DesignationPermissions:create",
+    "name": "designationpermissions.create",
+    "action": "create",
+    "label": "Create Designation Permissions",
+    "description": "Access to create designation permissions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ac6",
+    "key": "DesignationPermissions:update",
+    "name": "designationpermissions.update",
+    "action": "update",
+    "label": "Update Designation Permissions",
+    "description": "Access to update designation permissions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ac7",
+    "key": "DesignationPermissions:delete",
+    "name": "designationpermissions.delete",
+    "action": "delete",
+    "label": "Delete Designation Permissions",
+    "description": "Access to delete designation permissions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ac8",
+    "key": "General:view",
+    "name": "general.view",
+    "action": "view",
+    "label": "View General",
+    "description": "Access to view general",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ac9",
+    "key": "General:create",
+    "name": "general.create",
+    "action": "create",
+    "label": "Create General",
+    "description": "Access to create general",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aca",
+    "key": "General:update",
+    "name": "general.update",
+    "action": "update",
+    "label": "Update General",
+    "description": "Access to update general",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9acb",
+    "key": "General:delete",
+    "name": "general.delete",
+    "action": "delete",
+    "label": "Delete General",
+    "description": "Access to delete general",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9acc",
+    "key": "RolePermissions:view",
+    "name": "rolepermissions.view",
+    "action": "view",
+    "label": "View Role Permissions",
+    "description": "Access to view role permissions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9acd",
+    "key": "RolePermissions:create",
+    "name": "rolepermissions.create",
+    "action": "create",
+    "label": "Create Role Permissions",
+    "description": "Access to create role permissions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ace",
+    "key": "RolePermissions:update",
+    "name": "rolepermissions.update",
+    "action": "update",
+    "label": "Update Role Permissions",
+    "description": "Access to update role permissions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9acf",
+    "key": "RolePermissions:delete",
+    "name": "rolepermissions.delete",
+    "action": "delete",
+    "label": "Delete Role Permissions",
+    "description": "Access to delete role permissions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ad0",
+    "key": "SidebarPolicy:view",
+    "name": "sidebarpolicy.view",
+    "action": "view",
+    "label": "View SidebarPolicy",
+    "description": "Access to view sidebarpolicy",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ad1",
+    "key": "SidebarPolicy:create",
+    "name": "sidebarpolicy.create",
+    "action": "create",
+    "label": "Create SidebarPolicy",
+    "description": "Access to create sidebarpolicy",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ad2",
+    "key": "SidebarPolicy:update",
+    "name": "sidebarpolicy.update",
+    "action": "update",
+    "label": "Update SidebarPolicy",
+    "description": "Access to update sidebarpolicy",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ad3",
+    "key": "SidebarPolicy:delete",
+    "name": "sidebarpolicy.delete",
+    "action": "delete",
+    "label": "Delete SidebarPolicy",
+    "description": "Access to delete sidebarpolicy",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ad4",
+    "key": "Tasks:view",
+    "name": "tasks.view",
+    "action": "view",
+    "label": "View Tasks",
+    "description": "Access to view tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ad5",
+    "key": "Tasks:create",
+    "name": "tasks.create",
+    "action": "create",
+    "label": "Create Tasks",
+    "description": "Access to create tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ad6",
+    "key": "Tasks:update",
+    "name": "tasks.update",
+    "action": "update",
+    "label": "Update Tasks",
+    "description": "Access to update tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ad7",
+    "key": "Tasks:delete",
+    "name": "tasks.delete",
+    "action": "delete",
+    "label": "Delete Tasks",
+    "description": "Access to delete tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ad8",
+    "key": "ActivityTimeline:view",
+    "name": "activitytimeline.view",
+    "action": "view",
+    "label": "View Activity Timeline",
+    "description": "Access to view activity timeline",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ad9",
+    "key": "ActivityTimeline:create",
+    "name": "activitytimeline.create",
+    "action": "create",
+    "label": "Create Activity Timeline",
+    "description": "Access to create activity timeline",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ada",
+    "key": "ActivityTimeline:update",
+    "name": "activitytimeline.update",
+    "action": "update",
+    "label": "Update Activity Timeline",
+    "description": "Access to update activity timeline",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9adb",
+    "key": "ActivityTimeline:delete",
+    "name": "activitytimeline.delete",
+    "action": "delete",
+    "label": "Delete Activity Timeline",
+    "description": "Access to delete activity timeline",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9adc",
+    "key": "EmployeeGanttView:view",
+    "name": "employeeganttview.view",
+    "action": "view",
+    "label": "View EmployeeGanttView",
+    "description": "Access to view employeeganttview",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9add",
+    "key": "EmployeeGanttView:create",
+    "name": "employeeganttview.create",
+    "action": "create",
+    "label": "Create EmployeeGanttView",
+    "description": "Access to create employeeganttview",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ade",
+    "key": "EmployeeGanttView:update",
+    "name": "employeeganttview.update",
+    "action": "update",
+    "label": "Update EmployeeGanttView",
+    "description": "Access to update employeeganttview",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9adf",
+    "key": "EmployeeGanttView:delete",
+    "name": "employeeganttview.delete",
+    "action": "delete",
+    "label": "Delete EmployeeGanttView",
+    "description": "Access to delete employeeganttview",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ae0",
+    "key": "Form:view",
+    "name": "form.view",
+    "action": "view",
+    "label": "View Form",
+    "description": "Access to view form",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ae1",
+    "key": "Form:create",
+    "name": "form.create",
+    "action": "create",
+    "label": "Create Form",
+    "description": "Access to create form",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ae2",
+    "key": "Form:update",
+    "name": "form.update",
+    "action": "update",
+    "label": "Update Form",
+    "description": "Access to update form",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ae3",
+    "key": "Form:delete",
+    "name": "form.delete",
+    "action": "delete",
+    "label": "Delete Form",
+    "description": "Access to delete form",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ae4",
+    "key": "GanttView:view",
+    "name": "ganttview.view",
+    "action": "view",
+    "label": "View GanttView",
+    "description": "Access to view ganttview",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ae5",
+    "key": "GanttView:create",
+    "name": "ganttview.create",
+    "action": "create",
+    "label": "Create GanttView",
+    "description": "Access to create ganttview",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ae6",
+    "key": "GanttView:update",
+    "name": "ganttview.update",
+    "action": "update",
+    "label": "Update GanttView",
+    "description": "Access to update ganttview",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ae7",
+    "key": "GanttView:delete",
+    "name": "ganttview.delete",
+    "action": "delete",
+    "label": "Delete GanttView",
+    "description": "Access to delete ganttview",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ae8",
+    "key": "MyTasks:view",
+    "name": "mytasks.view",
+    "action": "view",
+    "label": "View My Tasks",
+    "description": "Access to view my tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9ae9",
+    "key": "MyTasks:create",
+    "name": "mytasks.create",
+    "action": "create",
+    "label": "Create My Tasks",
+    "description": "Access to create my tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aea",
+    "key": "MyTasks:update",
+    "name": "mytasks.update",
+    "action": "update",
+    "label": "Update My Tasks",
+    "description": "Access to update my tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aeb",
+    "key": "MyTasks:delete",
+    "name": "mytasks.delete",
+    "action": "delete",
+    "label": "Delete My Tasks",
+    "description": "Access to delete my tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aec",
+    "key": "Teams:view",
+    "name": "teams.view",
+    "action": "view",
+    "label": "View Teams",
+    "description": "Access to view teams",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aed",
+    "key": "Teams:create",
+    "name": "teams.create",
+    "action": "create",
+    "label": "Create Teams",
+    "description": "Access to create teams",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aee",
+    "key": "Teams:update",
+    "name": "teams.update",
+    "action": "update",
+    "label": "Update Teams",
+    "description": "Access to update teams",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aef",
+    "key": "Teams:delete",
+    "name": "teams.delete",
+    "action": "delete",
+    "label": "Delete Teams",
+    "description": "Access to delete teams",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9af0",
+    "key": "MyTickets:view",
+    "name": "mytickets.view",
+    "action": "view",
+    "label": "View My Tickets",
+    "description": "Access to view my tickets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9af1",
+    "key": "MyTickets:create",
+    "name": "mytickets.create",
+    "action": "create",
+    "label": "Create My Tickets",
+    "description": "Access to create my tickets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9af2",
+    "key": "MyTickets:update",
+    "name": "mytickets.update",
+    "action": "update",
+    "label": "Update My Tickets",
+    "description": "Access to update my tickets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9af3",
+    "key": "MyTickets:delete",
+    "name": "mytickets.delete",
+    "action": "delete",
+    "label": "Delete My Tickets",
+    "description": "Access to delete my tickets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9af4",
+    "key": "TravelExpenses:view",
+    "name": "travelexpenses.view",
+    "action": "view",
+    "label": "View Travel Expenses",
+    "description": "Access to view travel expenses",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9af5",
+    "key": "TravelExpenses:create",
+    "name": "travelexpenses.create",
+    "action": "create",
+    "label": "Create Travel Expenses",
+    "description": "Access to create travel expenses",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9af6",
+    "key": "TravelExpenses:update",
+    "name": "travelexpenses.update",
+    "action": "update",
+    "label": "Update Travel Expenses",
+    "description": "Access to update travel expenses",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9af7",
+    "key": "TravelExpenses:delete",
+    "name": "travelexpenses.delete",
+    "action": "delete",
+    "label": "Delete Travel Expenses",
+    "description": "Access to delete travel expenses",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9af8",
+    "key": "MasterData:view",
+    "name": "masterdata.view",
+    "action": "view",
+    "label": "View Master Data",
+    "description": "Access to view master data",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9af9",
+    "key": "MasterData:create",
+    "name": "masterdata.create",
+    "action": "create",
+    "label": "Create Master Data",
+    "description": "Access to create master data",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9afa",
+    "key": "MasterData:update",
+    "name": "masterdata.update",
+    "action": "update",
+    "label": "Update Master Data",
+    "description": "Access to update master data",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9afb",
+    "key": "MasterData:delete",
+    "name": "masterdata.delete",
+    "action": "delete",
+    "label": "Delete Master Data",
+    "description": "Access to delete master data",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9afc",
+    "key": "Agent:view",
+    "name": "agent.view",
+    "action": "view",
+    "label": "View Agents",
+    "description": "Access to view agents",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9afd",
+    "key": "Agent:create",
+    "name": "agent.create",
+    "action": "create",
+    "label": "Create Agents",
+    "description": "Access to create agents",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9afe",
+    "key": "Agent:update",
+    "name": "agent.update",
+    "action": "update",
+    "label": "Update Agents",
+    "description": "Access to update agents",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9aff",
+    "key": "Agent:delete",
+    "name": "agent.delete",
+    "action": "delete",
+    "label": "Delete Agents",
+    "description": "Access to delete agents",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b00",
+    "key": "AttendancePolicy:view",
+    "name": "attendancepolicy.view",
+    "action": "view",
+    "label": "View Attendance Policies",
+    "description": "Access to view attendance policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b01",
+    "key": "AttendancePolicy:create",
+    "name": "attendancepolicy.create",
+    "action": "create",
+    "label": "Create Attendance Policies",
+    "description": "Access to create attendance policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b02",
+    "key": "AttendancePolicy:update",
+    "name": "attendancepolicy.update",
+    "action": "update",
+    "label": "Update Attendance Policies",
+    "description": "Access to update attendance policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b03",
+    "key": "AttendancePolicy:delete",
+    "name": "attendancepolicy.delete",
+    "action": "delete",
+    "label": "Delete Attendance Policies",
+    "description": "Access to delete attendance policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b04",
+    "key": "Client:view",
+    "name": "client.view",
+    "action": "view",
+    "label": "View Clients",
+    "description": "Access to view clients",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b05",
+    "key": "Client:create",
+    "name": "client.create",
+    "action": "create",
+    "label": "Create Clients",
+    "description": "Access to create clients",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b06",
+    "key": "Client:update",
+    "name": "client.update",
+    "action": "update",
+    "label": "Update Clients",
+    "description": "Access to update clients",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b07",
+    "key": "Client:delete",
+    "name": "client.delete",
+    "action": "delete",
+    "label": "Delete Clients",
+    "description": "Access to delete clients",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b08",
+    "key": "Department:view",
+    "name": "department.view",
+    "action": "view",
+    "label": "View Departments",
+    "description": "Access to view departments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b09",
+    "key": "Department:create",
+    "name": "department.create",
+    "action": "create",
+    "label": "Create Departments",
+    "description": "Access to create departments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b0a",
+    "key": "Department:update",
+    "name": "department.update",
+    "action": "update",
+    "label": "Update Departments",
+    "description": "Access to update departments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b0b",
+    "key": "Department:delete",
+    "name": "department.delete",
+    "action": "delete",
+    "label": "Delete Departments",
+    "description": "Access to delete departments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b0c",
+    "key": "Designation:view",
+    "name": "designation.view",
+    "action": "view",
+    "label": "View Designations",
+    "description": "Access to view designations",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b0d",
+    "key": "Designation:create",
+    "name": "designation.create",
+    "action": "create",
+    "label": "Create Designations",
+    "description": "Access to create designations",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b0e",
+    "key": "Designation:update",
+    "name": "designation.update",
+    "action": "update",
+    "label": "Update Designations",
+    "description": "Access to update designations",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b0f",
+    "key": "Designation:delete",
+    "name": "designation.delete",
+    "action": "delete",
+    "label": "Delete Designations",
+    "description": "Access to delete designations",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b10",
+    "key": "Employee:view",
+    "name": "employee.view",
+    "action": "view",
+    "label": "View Employees",
+    "description": "Access to view employees",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b11",
+    "key": "Employee:create",
+    "name": "employee.create",
+    "action": "create",
+    "label": "Create Employees",
+    "description": "Access to create employees",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b12",
+    "key": "Employee:update",
+    "name": "employee.update",
+    "action": "update",
+    "label": "Update Employees",
+    "description": "Access to update employees",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b13",
+    "key": "Employee:delete",
+    "name": "employee.delete",
+    "action": "delete",
+    "label": "Delete Employees",
+    "description": "Access to delete employees",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b14",
+    "key": "hr_policies:view",
+    "name": "hr_policies.view",
+    "action": "view",
+    "label": "View HR Policies",
+    "description": "Access to view hr policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b15",
+    "key": "hr_policies:create",
+    "name": "hr_policies.create",
+    "action": "create",
+    "label": "Create HR Policies",
+    "description": "Access to create hr policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b16",
+    "key": "hr_policies:update",
+    "name": "hr_policies.update",
+    "action": "update",
+    "label": "Update HR Policies",
+    "description": "Access to update hr policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b17",
+    "key": "hr_policies:delete",
+    "name": "hr_policies.delete",
+    "action": "delete",
+    "label": "Delete HR Policies",
+    "description": "Access to delete hr policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b18",
+    "key": "Holiday:view",
+    "name": "holiday.view",
+    "action": "view",
+    "label": "View Holidays",
+    "description": "Access to view holidays",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b19",
+    "key": "Holiday:create",
+    "name": "holiday.create",
+    "action": "create",
+    "label": "Create Holidays",
+    "description": "Access to create holidays",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b1a",
+    "key": "Holiday:update",
+    "name": "holiday.update",
+    "action": "update",
+    "label": "Update Holidays",
+    "description": "Access to update holidays",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b1b",
+    "key": "Holiday:delete",
+    "name": "holiday.delete",
+    "action": "delete",
+    "label": "Delete Holidays",
+    "description": "Access to delete holidays",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b1c",
+    "key": "JobCategory:view",
+    "name": "jobcategory.view",
+    "action": "view",
+    "label": "View Job Categories",
+    "description": "Access to view job categories",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b1d",
+    "key": "JobCategory:create",
+    "name": "jobcategory.create",
+    "action": "create",
+    "label": "Create Job Categories",
+    "description": "Access to create job categories",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b1e",
+    "key": "JobCategory:update",
+    "name": "jobcategory.update",
+    "action": "update",
+    "label": "Update Job Categories",
+    "description": "Access to update job categories",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b1f",
+    "key": "JobCategory:delete",
+    "name": "jobcategory.delete",
+    "action": "delete",
+    "label": "Delete Job Categories",
+    "description": "Access to delete job categories",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b20",
+    "key": "JobType:view",
+    "name": "jobtype.view",
+    "action": "view",
+    "label": "View Job Types",
+    "description": "Access to view job types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b21",
+    "key": "JobType:create",
+    "name": "jobtype.create",
+    "action": "create",
+    "label": "Create Job Types",
+    "description": "Access to create job types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b22",
+    "key": "JobType:update",
+    "name": "jobtype.update",
+    "action": "update",
+    "label": "Update Job Types",
+    "description": "Access to update job types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b23",
+    "key": "JobType:delete",
+    "name": "jobtype.delete",
+    "action": "delete",
+    "label": "Delete Job Types",
+    "description": "Access to delete job types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b24",
+    "key": "LeadType:view",
+    "name": "leadtype.view",
+    "action": "view",
+    "label": "View Lead Types",
+    "description": "Access to view lead types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b25",
+    "key": "LeadType:create",
+    "name": "leadtype.create",
+    "action": "create",
+    "label": "Create Lead Types",
+    "description": "Access to create lead types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b26",
+    "key": "LeadType:update",
+    "name": "leadtype.update",
+    "action": "update",
+    "label": "Update Lead Types",
+    "description": "Access to update lead types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b27",
+    "key": "LeadType:delete",
+    "name": "leadtype.delete",
+    "action": "delete",
+    "label": "Delete Lead Types",
+    "description": "Access to delete lead types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b28",
+    "key": "LeavePolicy:view",
+    "name": "leavepolicy.view",
+    "action": "view",
+    "label": "View Leave Policies",
+    "description": "Access to view leave policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b29",
+    "key": "LeavePolicy:create",
+    "name": "leavepolicy.create",
+    "action": "create",
+    "label": "Create Leave Policies",
+    "description": "Access to create leave policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b2a",
+    "key": "LeavePolicy:update",
+    "name": "leavepolicy.update",
+    "action": "update",
+    "label": "Update Leave Policies",
+    "description": "Access to update leave policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b2b",
+    "key": "LeavePolicy:delete",
+    "name": "leavepolicy.delete",
+    "action": "delete",
+    "label": "Delete Leave Policies",
+    "description": "Access to delete leave policies",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b2c",
+    "key": "LeaveTransaction:view",
+    "name": "leavetransaction.view",
+    "action": "view",
+    "label": "View Leave Transactions",
+    "description": "Access to view leave transactions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b2d",
+    "key": "LeaveTransaction:create",
+    "name": "leavetransaction.create",
+    "action": "create",
+    "label": "Create Leave Transactions",
+    "description": "Access to create leave transactions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b2e",
+    "key": "LeaveTransaction:update",
+    "name": "leavetransaction.update",
+    "action": "update",
+    "label": "Update Leave Transactions",
+    "description": "Access to update leave transactions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b2f",
+    "key": "LeaveTransaction:delete",
+    "name": "leavetransaction.delete",
+    "action": "delete",
+    "label": "Delete Leave Transactions",
+    "description": "Access to delete leave transactions",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b30",
+    "key": "LeaveType:view",
+    "name": "leavetype.view",
+    "action": "view",
+    "label": "View Leave Types",
+    "description": "Access to view leave types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b31",
+    "key": "LeaveType:create",
+    "name": "leavetype.create",
+    "action": "create",
+    "label": "Create Leave Types",
+    "description": "Access to create leave types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b32",
+    "key": "LeaveType:update",
+    "name": "leavetype.update",
+    "action": "update",
+    "label": "Update Leave Types",
+    "description": "Access to update leave types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b33",
+    "key": "LeaveType:delete",
+    "name": "leavetype.delete",
+    "action": "delete",
+    "label": "Delete Leave Types",
+    "description": "Access to delete leave types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b34",
+    "key": "Milestone:view",
+    "name": "milestone.view",
+    "action": "view",
+    "label": "View Milestones",
+    "description": "Access to view milestones",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b35",
+    "key": "Milestone:create",
+    "name": "milestone.create",
+    "action": "create",
+    "label": "Create Milestones",
+    "description": "Access to create milestones",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b36",
+    "key": "Milestone:update",
+    "name": "milestone.update",
+    "action": "update",
+    "label": "Update Milestones",
+    "description": "Access to update milestones",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b37",
+    "key": "Milestone:delete",
+    "name": "milestone.delete",
+    "action": "delete",
+    "label": "Delete Milestones",
+    "description": "Access to delete milestones",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b38",
+    "key": "Product:view",
+    "name": "product.view",
+    "action": "view",
+    "label": "View Products",
+    "description": "Access to view products",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b39",
+    "key": "Product:create",
+    "name": "product.create",
+    "action": "create",
+    "label": "Create Products",
+    "description": "Access to create products",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b3a",
+    "key": "Product:update",
+    "name": "product.update",
+    "action": "update",
+    "label": "Update Products",
+    "description": "Access to update products",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b3b",
+    "key": "Product:delete",
+    "name": "product.delete",
+    "action": "delete",
+    "label": "Delete Products",
+    "description": "Access to delete products",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b3c",
+    "key": "ProjectType:view",
+    "name": "projecttype.view",
+    "action": "view",
+    "label": "View Project Types",
+    "description": "Access to view project types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b3d",
+    "key": "ProjectType:create",
+    "name": "projecttype.create",
+    "action": "create",
+    "label": "Create Project Types",
+    "description": "Access to create project types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b3e",
+    "key": "ProjectType:update",
+    "name": "projecttype.update",
+    "action": "update",
+    "label": "Update Project Types",
+    "description": "Access to update project types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b3f",
+    "key": "ProjectType:delete",
+    "name": "projecttype.delete",
+    "action": "delete",
+    "label": "Delete Project Types",
+    "description": "Access to delete project types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b40",
+    "key": "ReferenceType:view",
+    "name": "referencetype.view",
+    "action": "view",
+    "label": "View Reference Types",
+    "description": "Access to view reference types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b41",
+    "key": "ReferenceType:create",
+    "name": "referencetype.create",
+    "action": "create",
+    "label": "Create Reference Types",
+    "description": "Access to create reference types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b42",
+    "key": "ReferenceType:update",
+    "name": "referencetype.update",
+    "action": "update",
+    "label": "Update Reference Types",
+    "description": "Access to update reference types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b43",
+    "key": "ReferenceType:delete",
+    "name": "referencetype.delete",
+    "action": "delete",
+    "label": "Delete Reference Types",
+    "description": "Access to delete reference types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b44",
+    "key": "Role:view",
+    "name": "role.view",
+    "action": "view",
+    "label": "View Roles",
+    "description": "Access to view roles",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b45",
+    "key": "Role:create",
+    "name": "role.create",
+    "action": "create",
+    "label": "Create Roles",
+    "description": "Access to create roles",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b46",
+    "key": "Role:update",
+    "name": "role.update",
+    "action": "update",
+    "label": "Update Roles",
+    "description": "Access to update roles",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b47",
+    "key": "Role:delete",
+    "name": "role.delete",
+    "action": "delete",
+    "label": "Delete Roles",
+    "description": "Access to delete roles",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b48",
+    "key": "ServiceProvider:view",
+    "name": "serviceprovider.view",
+    "action": "view",
+    "label": "View Service Providers",
+    "description": "Access to view service providers",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b49",
+    "key": "ServiceProvider:create",
+    "name": "serviceprovider.create",
+    "action": "create",
+    "label": "Create Service Providers",
+    "description": "Access to create service providers",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b4a",
+    "key": "ServiceProvider:update",
+    "name": "serviceprovider.update",
+    "action": "update",
+    "label": "Update Service Providers",
+    "description": "Access to update service providers",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b4b",
+    "key": "ServiceProvider:delete",
+    "name": "serviceprovider.delete",
+    "action": "delete",
+    "label": "Delete Service Providers",
+    "description": "Access to delete service providers",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b4c",
+    "key": "Shift:view",
+    "name": "shift.view",
+    "action": "view",
+    "label": "View Shifts",
+    "description": "Access to view shifts",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b4d",
+    "key": "Shift:create",
+    "name": "shift.create",
+    "action": "create",
+    "label": "Create Shifts",
+    "description": "Access to create shifts",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b4e",
+    "key": "Shift:update",
+    "name": "shift.update",
+    "action": "update",
+    "label": "Update Shifts",
+    "description": "Access to update shifts",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b4f",
+    "key": "Shift:delete",
+    "name": "shift.delete",
+    "action": "delete",
+    "label": "Delete Shifts",
+    "description": "Access to delete shifts",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b50",
+    "key": "StatusMaster:view",
+    "name": "statusmaster.view",
+    "action": "view",
+    "label": "View Status Master",
+    "description": "Access to view status master",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b51",
+    "key": "StatusMaster:create",
+    "name": "statusmaster.create",
+    "action": "create",
+    "label": "Create Status Master",
+    "description": "Access to create status master",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b52",
+    "key": "StatusMaster:update",
+    "name": "statusmaster.update",
+    "action": "update",
+    "label": "Update Status Master",
+    "description": "Access to update status master",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b53",
+    "key": "StatusMaster:delete",
+    "name": "statusmaster.delete",
+    "action": "delete",
+    "label": "Delete Status Master",
+    "description": "Access to delete status master",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b54",
+    "key": "TaskType:view",
+    "name": "tasktype.view",
+    "action": "view",
+    "label": "View Task Types",
+    "description": "Access to view task types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b55",
+    "key": "TaskType:create",
+    "name": "tasktype.create",
+    "action": "create",
+    "label": "Create Task Types",
+    "description": "Access to create task types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b56",
+    "key": "TaskType:update",
+    "name": "tasktype.update",
+    "action": "update",
+    "label": "Update Task Types",
+    "description": "Access to update task types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b57",
+    "key": "TaskType:delete",
+    "name": "tasktype.delete",
+    "action": "delete",
+    "label": "Delete Task Types",
+    "description": "Access to delete task types",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b58",
+    "key": "Workflow:view",
+    "name": "workflow.view",
+    "action": "view",
+    "label": "View Workflows",
+    "description": "Access to view workflows",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b59",
+    "key": "Workflow:create",
+    "name": "workflow.create",
+    "action": "create",
+    "label": "Create Workflows",
+    "description": "Access to create workflows",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b5a",
+    "key": "Workflow:update",
+    "name": "workflow.update",
+    "action": "update",
+    "label": "Update Workflows",
+    "description": "Access to update workflows",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b5b",
+    "key": "Workflow:delete",
+    "name": "workflow.delete",
+    "action": "delete",
+    "label": "Delete Workflows",
+    "description": "Access to delete workflows",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b5c",
+    "key": "CheckIn:view",
+    "name": "checkin.view",
+    "action": "view",
+    "label": "View Check IN",
+    "description": "Access to view check in",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b5d",
+    "key": "CheckIn:create",
+    "name": "checkin.create",
+    "action": "create",
+    "label": "Create Check IN",
+    "description": "Access to create check in",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b5e",
+    "key": "CheckIn:update",
+    "name": "checkin.update",
+    "action": "update",
+    "label": "Update Check IN",
+    "description": "Access to update check in",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b5f",
+    "key": "CheckIn:delete",
+    "name": "checkin.delete",
+    "action": "delete",
+    "label": "Delete Check IN",
+    "description": "Access to delete check in",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b60",
+    "key": "AttendanceReports:view",
+    "name": "attendancereports.view",
+    "action": "view",
+    "label": "View Attendance Reports",
+    "description": "Access to view attendance reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b61",
+    "key": "AttendanceReports:create",
+    "name": "attendancereports.create",
+    "action": "create",
+    "label": "Create Attendance Reports",
+    "description": "Access to create attendance reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b62",
+    "key": "AttendanceReports:update",
+    "name": "attendancereports.update",
+    "action": "update",
+    "label": "Update Attendance Reports",
+    "description": "Access to update attendance reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b63",
+    "key": "AttendanceReports:delete",
+    "name": "attendancereports.delete",
+    "action": "delete",
+    "label": "Delete Attendance Reports",
+    "description": "Access to delete attendance reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b64",
+    "key": "AllTasks:view",
+    "name": "alltasks.view",
+    "action": "view",
+    "label": "View All Tasks",
+    "description": "Access to view all tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b65",
+    "key": "AllTasks:create",
+    "name": "alltasks.create",
+    "action": "create",
+    "label": "Create All Tasks",
+    "description": "Access to create all tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b66",
+    "key": "AllTasks:update",
+    "name": "alltasks.update",
+    "action": "update",
+    "label": "Update All Tasks",
+    "description": "Access to update all tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b67",
+    "key": "AllTasks:delete",
+    "name": "alltasks.delete",
+    "action": "delete",
+    "label": "Delete All Tasks",
+    "description": "Access to delete all tasks",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b68",
+    "key": "TaskReports:view",
+    "name": "taskreports.view",
+    "action": "view",
+    "label": "View Task Reports",
+    "description": "Access to view task reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b69",
+    "key": "TaskReports:create",
+    "name": "taskreports.create",
+    "action": "create",
+    "label": "Create Task Reports",
+    "description": "Access to create task reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b6a",
+    "key": "TaskReports:update",
+    "name": "taskreports.update",
+    "action": "update",
+    "label": "Update Task Reports",
+    "description": "Access to update task reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b6b",
+    "key": "TaskReports:delete",
+    "name": "taskreports.delete",
+    "action": "delete",
+    "label": "Delete Task Reports",
+    "description": "Access to delete task reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b6c",
+    "key": "AllTickets:view",
+    "name": "alltickets.view",
+    "action": "view",
+    "label": "View All Tickets",
+    "description": "Access to view all tickets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b6d",
+    "key": "AllTickets:create",
+    "name": "alltickets.create",
+    "action": "create",
+    "label": "Create All Tickets",
+    "description": "Access to create all tickets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b6e",
+    "key": "AllTickets:update",
+    "name": "alltickets.update",
+    "action": "update",
+    "label": "Update All Tickets",
+    "description": "Access to update all tickets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b6f",
+    "key": "AllTickets:delete",
+    "name": "alltickets.delete",
+    "action": "delete",
+    "label": "Delete All Tickets",
+    "description": "Access to delete all tickets",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b70",
+    "key": "TicketReports:view",
+    "name": "ticketreports.view",
+    "action": "view",
+    "label": "View Ticket Reports",
+    "description": "Access to view ticket reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b71",
+    "key": "TicketReports:create",
+    "name": "ticketreports.create",
+    "action": "create",
+    "label": "Create Ticket Reports",
+    "description": "Access to create ticket reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b72",
+    "key": "TicketReports:update",
+    "name": "ticketreports.update",
+    "action": "update",
+    "label": "Update Ticket Reports",
+    "description": "Access to update ticket reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b73",
+    "key": "TicketReports:delete",
+    "name": "ticketreports.delete",
+    "action": "delete",
+    "label": "Delete Ticket Reports",
+    "description": "Access to delete ticket reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b74",
+    "key": "CRMDashboard:view",
+    "name": "crmdashboard.view",
+    "action": "view",
+    "label": "View CRM Dashboard",
+    "description": "Access to view crm dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b75",
+    "key": "CRMDashboard:create",
+    "name": "crmdashboard.create",
+    "action": "create",
+    "label": "Create CRM Dashboard",
+    "description": "Access to create crm dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b76",
+    "key": "CRMDashboard:update",
+    "name": "crmdashboard.update",
+    "action": "update",
+    "label": "Update CRM Dashboard",
+    "description": "Access to update crm dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b77",
+    "key": "CRMDashboard:delete",
+    "name": "crmdashboard.delete",
+    "action": "delete",
+    "label": "Delete CRM Dashboard",
+    "description": "Access to delete crm dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b78",
+    "key": "AccountsReports:view",
+    "name": "accountsreports.view",
+    "action": "view",
+    "label": "View Accounts Reports",
+    "description": "Access to view accounts reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b79",
+    "key": "AccountsReports:create",
+    "name": "accountsreports.create",
+    "action": "create",
+    "label": "Create Accounts Reports",
+    "description": "Access to create accounts reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b7a",
+    "key": "AccountsReports:update",
+    "name": "accountsreports.update",
+    "action": "update",
+    "label": "Update Accounts Reports",
+    "description": "Access to update accounts reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b7b",
+    "key": "AccountsReports:delete",
+    "name": "accountsreports.delete",
+    "action": "delete",
+    "label": "Delete Accounts Reports",
+    "description": "Access to delete accounts reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b7c",
+    "key": "SupplierPayments:view",
+    "name": "supplierpayments.view",
+    "action": "view",
+    "label": "View Supplier Payments",
+    "description": "Access to view supplier payments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b7d",
+    "key": "SupplierPayments:create",
+    "name": "supplierpayments.create",
+    "action": "create",
+    "label": "Create Supplier Payments",
+    "description": "Access to create supplier payments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b7e",
+    "key": "SupplierPayments:update",
+    "name": "supplierpayments.update",
+    "action": "update",
+    "label": "Update Supplier Payments",
+    "description": "Access to update supplier payments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b7f",
+    "key": "SupplierPayments:delete",
+    "name": "supplierpayments.delete",
+    "action": "delete",
+    "label": "Delete Supplier Payments",
+    "description": "Access to delete supplier payments",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b80",
+    "key": "AssetReports:view",
+    "name": "assetreports.view",
+    "action": "view",
+    "label": "View Asset Reports",
+    "description": "Access to view asset reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b81",
+    "key": "AssetReports:create",
+    "name": "assetreports.create",
+    "action": "create",
+    "label": "Create Asset Reports",
+    "description": "Access to create asset reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b82",
+    "key": "AssetReports:update",
+    "name": "assetreports.update",
+    "action": "update",
+    "label": "Update Asset Reports",
+    "description": "Access to update asset reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b83",
+    "key": "AssetReports:delete",
+    "name": "assetreports.delete",
+    "action": "delete",
+    "label": "Delete Asset Reports",
+    "description": "Access to delete asset reports",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b84",
+    "key": "PayrollDashboard:view",
+    "name": "payrolldashboard.view",
+    "action": "view",
+    "label": "View Payroll Dashboard",
+    "description": "Access to view payroll dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b85",
+    "key": "PayrollDashboard:create",
+    "name": "payrolldashboard.create",
+    "action": "create",
+    "label": "Create Payroll Dashboard",
+    "description": "Access to create payroll dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b86",
+    "key": "PayrollDashboard:update",
+    "name": "payrolldashboard.update",
+    "action": "update",
+    "label": "Update Payroll Dashboard",
+    "description": "Access to update payroll dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b87",
+    "key": "PayrollDashboard:delete",
+    "name": "payrolldashboard.delete",
+    "action": "delete",
+    "label": "Delete Payroll Dashboard",
+    "description": "Access to delete payroll dashboard",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b88",
+    "key": "MyPayslips:view",
+    "name": "mypayslips.view",
+    "action": "view",
+    "label": "View My Payslips",
+    "description": "Access to view my payslips",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b89",
+    "key": "MyPayslips:create",
+    "name": "mypayslips.create",
+    "action": "create",
+    "label": "Create My Payslips",
+    "description": "Access to create my payslips",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b8a",
+    "key": "MyPayslips:update",
+    "name": "mypayslips.update",
+    "action": "update",
+    "label": "Update My Payslips",
+    "description": "Access to update my payslips",
+    "status": "active",
+    "type": "ui"
+  },
+  {
+    "_id": "6a67393351e2b55fc18f9b8b",
+    "key": "MyPayslips:delete",
+    "name": "mypayslips.delete",
+    "action": "delete",
+    "label": "Delete My Payslips",
+    "description": "Access to delete my payslips",
+    "status": "active",
+    "type": "ui"
+  }
+]

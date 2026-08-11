@@ -1,0 +1,31 @@
+[
+  {
+    "role": "admin",
+    "modelName": "tickets",
+    "permissions": {
+      "read": true,
+      "create": true,
+      "update": true,
+      "delete": false
+    },
+    "forbiddenAccess": {
+      "read": [],
+      "create": [],
+      "update": [],
+      "delete": []
+    },
+    "allowAccess": {
+      "read": ["*"],
+      "create": ["*"],
+      "update": ["*"],
+      "delete": []
+    },
+    "registry": [],
+    "conditions": {
+      "read": [],
+      "update": [],
+      "create": [],
+      "delete": []
+    }
+  }
+]

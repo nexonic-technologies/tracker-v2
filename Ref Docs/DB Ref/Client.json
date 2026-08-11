@@ -1,0 +1,19 @@
+[
+  {
+    "name": "Aiswaryam Thangamaligai",
+    "email": "aiswaryamthangamaligai@gmail.com",
+    "phone": "9751123707",
+    "address": {
+      "street": "Periya Kadai Street",
+      "city": "Ariyalur",
+      "state": "Tamil Nadu",
+      "zip": "621704"
+    },
+    "contactPerson": "Vignesh",
+    "project_types": [
+      "68d9ff422cb84728f399c06d",
+      "68d9ff422cb84728f399c06c",
+      "68d9ff422cb84728f399c06f"
+    ]
+  }
+]
