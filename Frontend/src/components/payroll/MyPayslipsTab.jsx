@@ -3,7 +3,7 @@ import { PayrollService } from "@services";
 import { useAuth } from "@providers/AuthProvider";
 import toast from "react-hot-toast";
 import { BadgeDollarSign, Loader2 } from "lucide-react";
-import { PayslipModal } from "@pages/Payroll/index";
+import { PayslipModal } from "@pages/payroll/index";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
