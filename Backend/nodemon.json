@@ -1,0 +1,17 @@
+{
+  "watch": [
+    "src",
+    "server.js"
+  ],
+  "ext": "js,json",
+  "ignore": [
+    "uploads/*",
+    "logs/*",
+    "node_modules/*",
+    "tmp/*",
+    "*.test.js",
+    "graphify-out/*"
+  ],
+  "delay": "1000",
+  "exec": "node --max-old-space-size=4096 --expose-gc"
+}
