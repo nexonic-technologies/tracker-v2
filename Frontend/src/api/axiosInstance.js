@@ -29,8 +29,7 @@ export const setMaintenanceHandler = (fn) => {
   maintenanceHandler = fn;
 };
 
-const isDev = import.meta.env.DEV;
-const baseUrl = import.meta.env.VITE_APP_URL;
+const envAppUrl = (import.meta.env.VITE_APP_URL || "").trim().replace(/\/+$/, "");
 
 export const setAuthLogout = (logoutFn) => {
   authContextLogout = logoutFn;
@@ -51,7 +50,8 @@ const incrementFailedCount = async () => {
 const forceLogout = async () => {
   try {
     // Call logout API
-    await axios.post(`${baseUrl}/api/auth/logout`, {}, {
+    const logoutUrl = envAppUrl ? `${envAppUrl}/api/auth/logout` : "/api/auth/logout";
+    await axios.post(logoutUrl, {}, {
       headers: {
         'x-device-uuid': getDeviceUUID(),
         'Authorization': `Bearer ${Cookies.get('auth_token') || localStorage.getItem('auth_token')}`
@@ -83,7 +83,7 @@ const forceLogout = async () => {
 };
 
 const axiosInstance = axios.create({
-  baseURL: isDev ? '/api' : `${baseUrl}/api`,
+  baseURL: envAppUrl ? `${envAppUrl}/api` : "/api",
   timeout: 100000,
   withCredentials: true,
 });
