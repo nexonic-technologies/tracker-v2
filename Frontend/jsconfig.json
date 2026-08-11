@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["src/*"],
+      "@api": ["src/api/index.js"],
+      "@api/*": ["src/api/*"],
+      "@assets/*": ["src/assets/*"],
+      "@components": ["src/components/index.js"],
+      "@components/*": ["src/components/*"],
+      "@constants/*": ["src/constants/*"],
+      "@context/*": ["src/context/*"],
+      "@hooks": ["src/hooks/index.js"],
+      "@hooks/*": ["src/hooks/*"],
+      "@layouts/*": ["src/layouts/*"],
+      "@pages/*": ["src/pages/*"],
+      "@providers/*": ["src/providers/*"],
+      "@services": ["src/services/index.js"],
+      "@services/*": ["src/services/*"],
+      "@store/*": ["src/store/*"],
+      "@styles/*": ["src/styles/*"],
+      "@utilities": ["src/utilities/index.js"],
+      "@utilities/*": ["src/utilities/*"],
+      "@utils/*": ["src/utils/*"],
+      "@widgets": ["src/widgets/index.js"],
+      "@widgets/*": ["src/widgets/*"]
+    }
+  },
+  "include": ["src/**/*"]
+}

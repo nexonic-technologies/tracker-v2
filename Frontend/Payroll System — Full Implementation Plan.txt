@@ -1,0 +1,262 @@
+Payroll System — Full Implementation Plan
+What We Already Have
+Backend:
+
+Payroll.js model — has basic fields (basicSalary, allowances, deductions, gross/net, status Draft/Processed/Paid)
+
+payrolls.js service — only has beforeCreate/beforeUpdate guards; no real business logic
+
+computationService.js — Bull queue for heavy jobs; generateMonthlyReport already pulls Attendance + Leave data
+
+Employee.js — has salaryDetails (package, basic, ctc, allowances, deductions) and personalDocuments.pf/esi/pan
+
+Attendance.js — has status, workHours, checkIn/checkOut per day
+
+Leave.js — has totalDays, status (Approved), date range
+
+Frontend:
+
+Payroll/index.jsx — functional but manual-only: HR fills every number by hand; no auto-computation from Attendance/Leave; no salary structure; no bulk run; no employee self-view
+
+Gap: No salary structure model, no auto-computation engine, no payroll run workflow, no employee self-view, no access policies for payrolls model.
+
+New Files to Create
+Backend — Models
+SalaryStructure.js (new model)
+Stores the CTC breakdown template per employee. This is the "source of truth" that the computation engine reads.
+
+Fields:
+  employeeId        → ref: employees (unique)
+  ctc               → Number (annual)
+  basic             → Number (% of CTC or fixed)
+  hra               → Number
+  transport         → Number
+  medical           → Number
+  specialAllowance  → Number
+  pfEmployer        → Number  (employer PF contribution %)
+  pfEmployee        → Number  (employee PF deduction %)
+  esiApplicable     → Boolean (triggered if gross < 21000)
+  tdsMonthly        → Number  (flat TDS override, else auto-computed)
+  effectiveFrom     → Date
+  createdBy         → ref: employees
+
+Copy
+Links to: employees (1:1), referenced by Payroll during run.
+
+PayrollRun.js (new model)
+One record per batch execution (e.g. "June 2025 run"). Tracks which employees were processed and the overall run status.
+
+Fields:
+  month             → Number
+  year              → Number
+  status            → enum: Draft | Processing | Completed | Approved | Paid
+  totalEmployees    → Number
+  processedCount    → Number
+  totalGross        → Number
+  totalNet          → Number
+  initiatedBy       → ref: employees
+  approvedBy        → ref: employees
+  approvedAt        → Date
+  paidAt            → Date
+  notes             → String
+  payrollIds        → [ref: payrolls]  (all Payroll records in this run)
+
+Copy
+Links to: employees, payrolls. This is the "batch envelope".
+
+Backend — Services
+payrollEngine.js (new service — the core business logic)
+
+This is the most important new file. Responsibilities:
+
+computeAttendanceSummary(employeeId, month, year) — queries attendances collection, counts:
+
+presentDays (Present + WFH + Late Entry)
+
+lopDays (LOP status)
+
+leaveDays from approved leaves in that month
+
+workingDays = calendar days − weekoffs − holidays
+
+overtimeHours from days where workHours > shift.overtimeThreshold
+
+computeSalary(employeeId, month, year, attendanceSummary) — reads SalaryStructure for the employee, then:
+
+earnedBasic = (basic / workingDays) * presentDays
+
+earnedHRA = (hra / workingDays) * presentDays (proportional)
+
+lopDeduction = (basic / workingDays) * lopDays
+
+pfDeduction = earnedBasic * pfEmployee% (capped at ₹15,000 PF ceiling)
+
+esiDeduction = gross < 21000 ? gross * 0.0075 : 0 (Indian ESI rule)
+
+tds = employee.salaryDetails.tdsMonthly or bracket-based estimate
+
+grossSalary = earnedBasic + allowances + overtimePay
+
+netSalary = grossSalary − pfDeduction − esiDeduction − tds − other
+
+runPayrollForEmployee(employeeId, month, year, processedBy) — orchestrates 1+2, creates/updates the Payroll record with status Processed, links to PayrollRun
+
+runBulkPayroll(month, year, employeeIds, initiatedBy) — creates a PayrollRun document, queues each employee via the existing Bull computationService queue (new job type: payroll-compute), updates PayrollRun.status to Processing → Completed
+
+approvePayrollRun(runId, approvedBy) — transitions PayrollRun.status Draft→Approved, validates all records are Processed
+
+markRunAsPaid(runId, paidBy) — bulk-updates all Payroll records in the run to Paid, stamps paidAt
+
+Updates to Existing Files
+payrolls.js service — replace the stub with real hooks:
+
+beforeCreate → call payrollEngine.computeSalary to recompute and overwrite client-sent gross/net
+
+beforeUpdate → block direct salary field mutation unless role is HR/Admin; allow status transitions only per valid flow (Draft→Processed→Paid, no reverse)
+
+computationService.js — add a new processor:
+
+this.computeQueue.process('payroll-compute', 3, async (job) => {
+  const { employeeId, month, year, runId, processedBy } = job.data;
+  return await payrollEngine.runPayrollForEmployee(employeeId, month, year, processedBy, runId);
+});
+
+Copy
+js
+defaultPopulateFields.js — add:
+
+payrolls: {
+  'employeeId': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,professionalInfo.empId',
+  'processedBy': 'basicInfo.firstName,basicInfo.lastName',
+  'approvedBy': 'basicInfo.firstName,basicInfo.lastName'
+},
+salary_structures: {
+  'employeeId': 'basicInfo.firstName,basicInfo.lastName,professionalInfo.empId',
+  'createdBy': 'basicInfo.firstName,basicInfo.lastName'
+},
+payroll_runs: {
+  'initiatedBy': 'basicInfo.firstName,basicInfo.lastName',
+  'approvedBy': 'basicInfo.firstName,basicInfo.lastName'
+}
+
+Copy
+js
+Payroll.js model — add missing fields to align with engine output:
+
+lopDays: Number
+
+salaryStructureId: ref: salary_structures
+
+payrollRunId: ref: payroll_runs
+
+approvedBy: ref: employees
+
+remarks: String
+
+Collection.js — register SalaryStructure and PayrollRun models.
+
+Backend — Routes
+No new route file needed. Everything flows through the existing /populate/:action/:model/:id generic API:
+
+POST /populate/create/salary_structures
+
+POST /populate/read/payrolls
+
+POST /populate/create/payroll_runs
+
+etc.
+
+One dedicated route is needed for the bulk run trigger (because it's not a simple CRUD — it fires the queue):
+
+Add to populateRoutes.js or a new payrollRoutes.js:
+
+POST /payroll/run          → payrollEngine.runBulkPayroll(month, year, employeeIds)
+POST /payroll/approve/:id  → payrollEngine.approvePayrollRun(runId)
+POST /payroll/pay/:id      → payrollEngine.markRunAsPaid(runId)
+GET  /payroll/slip/:id     → returns single Payroll record (for self-view)
+
+Copy
+Frontend — Files to Create / Modify
+frontend/src/pages/Payroll/index.jsx — becomes the HR Admin view with tabs:
+
+Tab 1: Run Payroll (select month/year, pick employees or "All Active", trigger bulk run, see PayrollRun status)
+
+Tab 2: Records (current table view, keep existing)
+
+Tab 3: Salary Structures (table of SalaryStructure records per employee)
+
+frontend/src/pages/Payroll/PayrollRunView.jsx (new) — shows a PayrollRun with per-employee computed breakdown, approve/pay buttons
+
+frontend/src/pages/Payroll/SalaryStructureForm.jsx (new) — form to create/edit a SalaryStructure for an employee; live-preview of monthly breakdown as you type CTC
+
+frontend/src/pages/Payroll/MyPayslips.jsx (new) — employee self-view; reads /populate/read/payrolls filtered by employeeId=self; existing PayslipModal reused; no salary structure access
+
+Access Policies to Define
+Follows the existing pattern in complete_access_policies.json. New entries needed in the DB (seeded via fixPolicies.js or a new seed script):
+
+payrolls model
+Role	read	create	update	delete	Key restrictions
+Super Admin / HR Admin	✅ all	✅	✅ all fields	✅	none
+Manager	✅ team only	❌	❌	❌	isTeamMember condition; forbid salaryDetails, deductions, netSalary on read
+Employee	✅ self only	❌	❌	❌	isSelf condition on employeeId; forbid nothing (they can see their own slip)
+salary_structures model
+Role	read	create	update	delete	Key restrictions
+Super Admin / HR Admin	✅	✅	✅	✅	none
+Manager	❌	❌	❌	❌	completely hidden
+Employee	❌	❌	❌	❌	completely hidden (salary structure is confidential)
+payroll_runs model
+Role	read	create	update	delete
+Super Admin / HR Admin	✅	✅	✅ (approve/pay fields)	❌
+Manager	❌	❌	❌	❌
+Employee	❌	❌	❌	❌
+The payrolls.js service beforeUpdate already blocks salary field mutation — this is the second layer of defense on top of access policies.
+
+Business Logic Rules (the engine decisions)
+Scenario	Rule
+Employee absent with no approved leave	Status = LOP; lopDays incremented; salary deducted proportionally
+Approved leave (within leave balance)	No deduction; presentDays counted
+LOP leave (leave balance exhausted)	Treated same as absent — proportional deduction
+PF	Employee: 12% of basic (capped at ₹1,800/month if basic > ₹15,000). Employer: 12% of basic (stored separately in SalaryStructure, not deducted from net)
+ESI	Applicable only if gross salary ≤ ₹21,000. Employee: 0.75%, Employer: 3.25%
+TDS	Use flat monthly value from SalaryStructure.tdsMonthly. Future: compute from annual bracket
+Overtime	overtimeHours * overtimeRate (rate from SalaryStructure or passed at run time)
+Duplicate prevention	Payroll has unique index on {employeeId, month, year} — re-running replaces existing Draft/Processed record, blocked if status = Paid
+Payroll Run state machine	Draft → Processing → Completed → Approved → Paid (no reverse)
+Employee inactive/terminated	Excluded from bulk run unless explicitly included
+Data Flow Summary
+HR triggers bulk run (month/year)
+  → POST /payroll/run
+  → payrollEngine.runBulkPayroll()
+  → creates PayrollRun (status: Processing)
+  → queues N jobs in Bull (payroll-compute)
+    → for each employee:
+       computeAttendanceSummary() → reads attendances + leaves
+       computeSalary()           → reads salary_structures
+       upsert Payroll record     → status: Processed
+  → PayrollRun status: Completed
+
+HR reviews & approves
+  → POST /payroll/approve/:runId
+  → PayrollRun status: Approved, all Payroll records: Processed
+
+HR marks as paid
+  → POST /payroll/pay/:runId
+  → PayrollRun status: Paid, all Payroll records: Paid, paidAt stamped
+
+Employee reads own slip
+  → GET /populate/read/payrolls (filter: employeeId=self, month, year)
+  → Access policy: isSelf → allowed
+  → Returns single record with salary breakdown
+
+Copy
+Brain Update Required
+After implementation, create knowledge_brain/Payroll/MODULE_BRAIN.md with:
+
+Models: payrolls, salary_structures, payroll_runs
+
+Services: payrollEngine.js, computationService (payroll-compute job)
+
+Cross-module: reads attendances, leaves, employees.salaryDetails
+
+Access: HR/Admin full, Employee self-read only, Manager none
+
