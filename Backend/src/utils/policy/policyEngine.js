@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { setCache, getPolicy, getRoleMeta } from "../cache.js";
 import { getService } from "../servicesCache.js";
 import { getModel } from "../appRegistry.js";
@@ -29,9 +30,6 @@ export async function buildQuery(ctx) {
   ctx.tenantContext = tenantContext;
 
   let role = user?.role || ctx.role;
-  if (role === 'agent') {
-    role = '6a25cbc1cd36294f5e578696';
-  }
   const userId = user?.id || ctx.userId;
 
   // Normalize action aliases so "list" → "read", "statistics" → "report", etc.
@@ -43,19 +41,40 @@ export async function buildQuery(ctx) {
   const Model = typeof tenantContext.getModel === 'function' ? tenantContext.getModel(modelName) : getModel(modelName);
   if (!Model) throw new Error(`Model "${modelName}" not found in active tenant context`);
 
-  // Load role metadata to check for Admin & Super Admin
+  // Load role metadata from cache or dynamic tenant DB lookup
   const roleIdOrName = typeof role === 'object' ? (role._id || role.id || role.name || '') : role;
-  const roleMeta = getRoleMeta(roleIdOrName) || getRoleMeta(role);
-  const roleNameLower = (roleMeta?.name || (typeof role === 'object' ? role.name : role?.toString()) || '').trim().toLowerCase();
-  const isSuperAdmin = !!roleMeta?.isSuperAdmin ||
-    !!(typeof role === 'object' && role?.isSuperAdmin) ||
-    role === 'agent' ||
-    role === '6a25cbc1cd36294f5e578696';
+  let roleMeta = getRoleMeta(roleIdOrName) || getRoleMeta(role);
+
+  if (!roleMeta && tenantContext && typeof tenantContext.getModel === 'function') {
+    try {
+      const RoleModel = tenantContext.getModel('roles');
+      if (RoleModel) {
+        const isObjId = mongoose.Types.ObjectId.isValid(roleIdOrName);
+        const roleDoc = await RoleModel.findOne({
+          $or: [
+            ...(isObjId ? [{ _id: roleIdOrName }] : []),
+            { name: roleIdOrName }
+          ]
+        }).lean();
+        if (roleDoc) {
+          roleMeta = {
+            id: roleDoc._id?.toString(),
+            name: roleDoc.name,
+            isSuperAdmin: !!roleDoc.isSuperAdmin,
+            level: roleDoc.level || 1
+          };
+        }
+      }
+    } catch (_) {}
+  }
+
+  const isSuperAdmin = !!user?.isSuperAdmin ||
+    !!roleMeta?.isSuperAdmin ||
+    (typeof role === 'object' && !!role?.isSuperAdmin);
 
   const isAdmin = isSuperAdmin ||
-    roleNameLower === 'admin' ||
-    roleNameLower === 'company_admin' ||
-    roleNameLower === 'tenant_admin';
+    !!roleMeta?.isAdmin ||
+    roleMeta?.level === 1;
 
   // Load model-specific policy (checking tenantContext overrides first) or construct virtual policy
   let policy = tenantContext?.policyOverrides?.[role]?.[modelName] ||

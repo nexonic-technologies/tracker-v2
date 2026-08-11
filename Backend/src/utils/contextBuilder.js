@@ -129,7 +129,7 @@ export async function buildUserContext(userId, roleId) {
   });
 
   // 4. Determine if Super Admin
-  const isSuperAdmin = !!roleMeta?.isSuperAdmin || roleMeta?.name === 'Super Admin' || roleStr === 'agent' || roleStr === '6a25cbc1cd36294f5e578696';
+  const isSuperAdmin = !!roleMeta?.isSuperAdmin;
 
   // 5. Build or retrieve cached navigation tree
   const userDept = user.professionalInfo?.department?._id;

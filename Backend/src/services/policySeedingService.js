@@ -16,7 +16,7 @@ export async function seedDefaultPolicyForModel(modelName, moduleId = 'core') {
   const createdPolicies = [];
 
   for (const role of roles) {
-    const isSuperAdmin = role.isSuperAdmin || role.name === 'Super Admin' || role.name === 'CompanyAdmin';
+    const isSuperAdmin = !!role.isSuperAdmin;
     const isManager = role.name === 'Manager' || role.level >= 5;
 
     let actions = ['read'];

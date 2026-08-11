@@ -150,15 +150,17 @@ export function getRoleLevel(roleId) {
  * @returns {object|null} { name, isSuperAdmin, level, capabilities }
  */
 export function getRoleMeta(roleId) {
-    if (!cacheInitialized || !roleId) return null;
+    if (!roleId || !cacheInitialized) return null;
     const str = roleId.toString().trim();
-    let meta = roleMetaCache.get(str) || roleMetaCache.get(str.toLowerCase());
+    let meta = roleMetaCache.get(str);
     if (!meta) {
-        // Fallback: linear search by name (trimmed and lowercased)
         const target = str.toLowerCase();
-        for (const [, v] of roleMetaCache.entries()) {
-            if (v.name && v.name.trim().toLowerCase() === target) {
-                return v;
+        meta = roleMetaCache.get(target);
+        if (!meta) {
+            for (const [, v] of roleMetaCache.entries()) {
+                if (v.name && v.name.trim().toLowerCase() === target) {
+                    return v;
+                }
             }
         }
     }

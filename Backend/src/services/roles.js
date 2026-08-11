@@ -10,7 +10,7 @@ export default function () {
     beforeCreate: async (ctx) => {
       const { body, user } = ctx;
       if (body && body.isSuperAdmin === true) {
-        const isSuperAdmin = user?.role === 'Super Admin' || user?.role === 'superadmin' || user?.isSuperAdmin === true;
+        const isSuperAdmin = user?.isSuperAdmin === true;
         if (!isSuperAdmin) {
           throw new Error("Privilege escalation protection: Only Super Admins can create a role with isSuperAdmin=true");
         }
@@ -19,7 +19,7 @@ export default function () {
     beforeUpdate: async (ctx) => {
       const { body, user } = ctx;
       if (body && body.isSuperAdmin === true) {
-        const isSuperAdmin = user?.role === 'Super Admin' || user?.role === 'superadmin' || user?.isSuperAdmin === true;
+        const isSuperAdmin = user?.isSuperAdmin === true;
         if (!isSuperAdmin) {
           throw new Error("Privilege escalation protection: Only Super Admins can update a role with isSuperAdmin=true");
         }

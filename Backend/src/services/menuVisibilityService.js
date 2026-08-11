@@ -42,7 +42,7 @@ function isUtilityRoute(route) {
 
 export function isMenuItemVisible(menuItem, user, userCapabilities, roleMeta) {
   // Super Admin bypasses visibility checks and can see all menu items
-  if (roleMeta?.isSuperAdmin || roleMeta?.name === 'Super Admin' || user?.isSuperAdmin || user?.role === 'Super Admin') {
+  if (roleMeta?.isSuperAdmin || user?.isSuperAdmin) {
     return true;
   }
 

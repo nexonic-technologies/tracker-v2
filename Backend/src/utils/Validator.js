@@ -20,12 +20,6 @@ function extractRoleInfo(r) {
   }
 
   const str = String(r).trim();
-  if (str === "agent") {
-    const agentId = "6a25cbc1cd36294f5e578696";
-    const meta = getRoleMeta(agentId) || {};
-    return { id: agentId, name: meta.name || "Agent", isSuperAdmin: true };
-  }
-
   const meta = getRoleMeta(str);
   if (meta) {
     return {
@@ -39,7 +33,7 @@ function extractRoleInfo(r) {
   return {
     id: isName ? "" : str,
     name: isName ? str : "",
-    isSuperAdmin: str === "6a25cbc1cd36294f5e578696"
+    isSuperAdmin: false
   };
 }
 

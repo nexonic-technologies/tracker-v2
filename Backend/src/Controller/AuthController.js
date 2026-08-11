@@ -116,7 +116,7 @@ export const login = async (req, res, next) => {
       tenantId,
       tenantSlug: user.tenantSlug || (tenantId === 'default' || tenantId === 'admin' ? 'admin' : tenantId),
       dbName,
-      isGlobalAdmin: userType === 'global_admin' || (tenantId === 'admin' && (user.role === 'Super Admin' || user.role?.name === 'Super Admin')),
+      isGlobalAdmin: userType === 'global_admin' || (tenantId === 'admin' && (!!user.isSuperAdmin || !!user.role?.isSuperAdmin)),
     };
 
     if (userType === "employee") {

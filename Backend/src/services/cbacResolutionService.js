@@ -40,13 +40,13 @@ export async function resolveUserCapabilities(user) {
   if (roleId) {
     const { getRoleMeta } = await import('../utils/cache.js');
     const roleMeta = getRoleMeta(roleId.toString());
-    if (roleMeta?.isSuperAdmin || roleMeta?.name === 'Super Admin') {
+    if (roleMeta?.isSuperAdmin) {
       const allKeys = await getActiveCapabilityKeys();
       return new Set(allKeys);
     }
   }
 
-  if (user.isSuperAdmin || user.role === 'Super Admin' || user.role?.name === 'Super Admin') {
+  if (user?.isSuperAdmin || user?.role?.isSuperAdmin) {
     const allKeys = await getActiveCapabilityKeys();
     return new Set(allKeys);
   }

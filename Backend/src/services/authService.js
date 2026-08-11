@@ -12,7 +12,7 @@ export async function can(user, action, modelName, docId = null, body = null) {
   if (!role || !modelName) return false;
 
   const roleMeta = getRoleMeta(role);
-  const isSuperAdmin = !!roleMeta?.isSuperAdmin || role === 'super admin';
+  const isSuperAdmin = !!roleMeta?.isSuperAdmin || user?.isSuperAdmin === true;
 
   if (isSuperAdmin) return true;
 
@@ -41,7 +41,7 @@ export function canUpdateField(user, modelName, field, docId = null) {
   if (!role || !modelName) return false;
 
   const roleMeta = getRoleMeta(role);
-  if (roleMeta?.isSuperAdmin || role === 'super admin') return true;
+  if (roleMeta?.isSuperAdmin || user?.isSuperAdmin === true) return true;
 
   const policy = getPolicy(role, modelName);
   if (!policy) return false;
@@ -67,7 +67,7 @@ export function canReadUnrestricted(user, modelName) {
   if (!role || !modelName) return false;
 
   const roleMeta = getRoleMeta(role);
-  if (roleMeta?.isSuperAdmin || role === 'super admin') return true;
+  if (roleMeta?.isSuperAdmin || user?.isSuperAdmin === true) return true;
 
   const policy = getPolicy(role, modelName);
   if (!policy) return false;
