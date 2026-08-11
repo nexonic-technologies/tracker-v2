@@ -166,20 +166,11 @@ export function aggregateValidator({ filter, role, action, modelName, getPolicy 
 export default function validator({ action, modelName, role, userId, docId, filter, fields, body, policy, getPolicy }) {
   const userRoleInfo = extractRoleInfo(role);
 
-  if (userRoleInfo.isSuperAdmin) {
+  if (userRoleInfo.isSuperAdmin || policy?.isSuperAdmin) {
     return { filter: filter || {}, fields, body };
   }
 
   if (!policy) return { filter: filter || {}, fields, body };
-
-  const policyRoleInfo = extractRoleInfo(policy.role);
-  const matchesId = userRoleInfo.id && policyRoleInfo.id && userRoleInfo.id === policyRoleInfo.id;
-  const matchesName = userRoleInfo.name && policyRoleInfo.name && userRoleInfo.name.toLowerCase() === policyRoleInfo.name.toLowerCase();
-  const matchesRaw = String(policy.role) === String(role) || String(policy.role) === userRoleInfo.id;
-
-  if (!matchesId && !matchesName && !matchesRaw) {
-    throw new Error(`⛔ Role mismatch`);
-  }
 
   if (policy.permissions?.[action] === false) {
     throw new Error(`⛔ '${role}' has no permission to ${action} '${modelName}'`);
