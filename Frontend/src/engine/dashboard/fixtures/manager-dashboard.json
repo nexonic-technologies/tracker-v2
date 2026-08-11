@@ -1,0 +1,97 @@
+{
+  "id": "manager-default",
+  "name": "Manager Dashboard",
+  "description": "Team overview for managers",
+  "widgets": [
+    {
+      "id": "w-pulse-mgr",
+      "type": "status",
+      "title": "Team Pulse",
+      "layout": { "x": 0, "y": 0, "w": 12, "h": 2 },
+      "config": {
+        "dataSource": "pulse",
+        "variant": "pulse-bar",
+        "scope": "team",
+        "emptyMessage": "No team attendance data"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": []
+    },
+    {
+      "id": "w-metric-approvals-mgr",
+      "type": "metric",
+      "title": "Pending Approvals",
+      "layout": { "x": 0, "y": 2, "w": 4, "h": 2 },
+      "config": {
+        "dataSource": "stats.pendingApprovals",
+        "valueKey": "value",
+        "format": "number",
+        "semanticColor": "warning",
+        "icon": "ClipboardCheck",
+        "emptyMessage": "No pending approvals"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": [{ "label": "Approve leaves", "action": "navigate:/Attendance/leaves" }]
+    },
+    {
+      "id": "w-metric-overdue-mgr",
+      "type": "metric",
+      "title": "Overdue Tasks",
+      "layout": { "x": 4, "y": 2, "w": 4, "h": 2 },
+      "config": {
+        "dataSource": "stats.overdueTasks",
+        "valueKey": "value",
+        "format": "number",
+        "semanticColor": "negative",
+        "icon": "AlertCircle",
+        "emptyMessage": "No overdue tasks"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": [{ "label": "View tasks", "action": "navigate:/tasks" }]
+    },
+    {
+      "id": "w-metric-tickets-mgr",
+      "type": "metric",
+      "title": "Open Tickets",
+      "layout": { "x": 8, "y": 2, "w": 4, "h": 2 },
+      "config": {
+        "dataSource": "stats.openTickets",
+        "valueKey": "value",
+        "format": "number",
+        "semanticColor": "info",
+        "icon": "Ticket",
+        "emptyMessage": "No open tickets"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": [{ "label": "View tickets", "action": "navigate:/tickets" }]
+    },
+    {
+      "id": "w-team-grid",
+      "type": "status",
+      "title": "Team Attendance",
+      "layout": { "x": 0, "y": 4, "w": 5, "h": 4 },
+      "config": {
+        "dataSource": "teamGrid",
+        "variant": "team-grid",
+        "emptyMessage": "No team members found",
+        "emptySuggestion": "Team members will appear once attendance is configured"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": [{ "label": "View tracker", "action": "navigate:/Attendance/Daily-tracker" }]
+    },
+    {
+      "id": "w-action-center-mgr",
+      "type": "collection",
+      "title": "Action Center",
+      "layout": { "x": 5, "y": 4, "w": 7, "h": 4 },
+      "config": {
+        "dataSource": "actionCenter",
+        "variant": "action-queue",
+        "maxItems": 8,
+        "emptyMessage": "No items need your attention"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": []
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+export const TASK_CREATE_TABS = [
+  {
+    id: "details",
+    label: "Details",
+    fieldNames: [
+      "title",
+      "url",
+      "startDate",
+      "dueDate",
+      "priorityLevel",
+      "projectTypeId",
+      "taskTypeId",
+      "clientId",
+      "milestoneId",
+      "assignedTo",
+    ],
+  },
+  {
+    id: "spec",
+    label: "Specification",
+    fieldNames: ["userStory", "impactAnalysis", "acceptanceCriteria", "checklist"],
+  },
+];
+
+export function buildTaskCreateFields(selectedClient) {
+  return [
+    {
+      name: "title",
+      label: "Title",
+      type: "text",
+      placeholder: "Enter task title",
+      gridClass: "col-span-2",
+    },
+    { name: "url", label: "URL", type: "url", placeholder: "Related URL", gridClass: "col-span-2" },
+    {
+      name: "checklist",
+      label: "Checklist",
+      type: "SubForm",
+      multiple: true,
+      gridClass: "col-span-2",
+      subFormFields: [
+        { name: "item", label: "Checklist Item", type: "text", placeholder: "Enter checklist item" },
+        { name: "completed", label: "Completed", type: "checkbox" },
+      ],
+    },
+    {
+      name: "userStory",
+      label: "User Story",
+      type: "textarea",
+      placeholder: "As a user, I want...",
+      rows: 4,
+      gridClass: "col-span-2",
+    },
+    {
+      name: "impactAnalysis",
+      label: "Impact Analysis",
+      type: "textarea",
+      placeholder: "Impact analysis...",
+      rows: 3,
+      gridClass: "col-span-2",
+    },
+    {
+      name: "acceptanceCriteria",
+      label: "Acceptance Criteria",
+      type: "textarea",
+      placeholder: "Define when this task is complete...",
+      rows: 3,
+      gridClass: "col-span-2",
+    },
+    { name: "startDate", label: "Start Date", type: "date", value: new Date().toISOString().split("T")[0] },
+    { name: "dueDate", label: "Due Date", type: "date" },
+    {
+      name: "priorityLevel",
+      label: "Priority",
+      type: "AutoComplete",
+      source: "",
+      options: [
+        { _id: "Low", name: "Low" },
+        { _id: "Medium", name: "Medium" },
+        { _id: "High", name: "High" },
+        { _id: "Weekly Priority", name: "Weekly Priority" },
+      ],
+    },
+    {
+      name: "projectTypeId",
+      label: "Product Type",
+      type: "AutoComplete",
+      source: "/populate/read/project_types",
+    },
+    {
+      name: "taskTypeId",
+      label: "Task Type",
+      type: "AutoComplete",
+      source: "/populate/read/task_types",
+    },
+    {
+      name: "clientId",
+      label: "Client",
+      type: "AutoComplete",
+      source: "/populate/read/clients",
+      value: selectedClient ? { _id: selectedClient._id, name: selectedClient.name } : null,
+      external: !!selectedClient,
+      externalValue: selectedClient?.name,
+    },
+    {
+      name: "milestoneId",
+      label: "Milestone",
+      type: "AutoComplete",
+      options: selectedClient?.milestones?.map(m => ({ _id: m.milestoneId, name: m.notes })) || [],
+      placeholder: selectedClient ? "Select a milestone" : "Select client first to see milestones",
+    },
+    {
+      name: "assignedTo",
+      label: "Assign To",
+      type: "AutoComplete",
+      multiple: true,
+      source: "/populate/read/employees",
+      gridClass: "col-span-2",
+    },
+  ];
+}

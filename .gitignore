@@ -41,13 +41,9 @@ build/Release
 node_modules/
 jspm_packages/
 
-<<<<<<< Updated upstream
-backend/node_modules/
-=======
 Backend/node_modules/
 Frontend/node_modules/
 External/node_modules/
->>>>>>> Stashed changes
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/

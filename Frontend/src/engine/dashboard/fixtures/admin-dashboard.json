@@ -1,0 +1,113 @@
+{
+  "id": "admin-default",
+  "name": "Admin Dashboard",
+  "description": "Organization overview for administrators",
+  "widgets": [
+    {
+      "id": "w-pulse-1",
+      "type": "status",
+      "title": "Workforce Pulse",
+      "layout": { "x": 0, "y": 0, "w": 12, "h": 2 },
+      "config": {
+        "dataSource": "pulse",
+        "variant": "pulse-bar",
+        "emptyMessage": "No attendance data for today"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": []
+    },
+    {
+      "id": "w-metric-approvals",
+      "type": "metric",
+      "title": "Pending Approvals",
+      "layout": { "x": 0, "y": 2, "w": 3, "h": 2 },
+      "config": {
+        "dataSource": "stats.pendingApprovals",
+        "valueKey": "value",
+        "format": "number",
+        "semanticColor": "warning",
+        "icon": "ClipboardCheck",
+        "emptyMessage": "No pending approvals"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": [{ "label": "View all", "action": "navigate:/Attendance/leaves" }]
+    },
+    {
+      "id": "w-metric-overdue",
+      "type": "metric",
+      "title": "Overdue Tasks",
+      "layout": { "x": 3, "y": 2, "w": 3, "h": 2 },
+      "config": {
+        "dataSource": "stats.overdueTasks",
+        "valueKey": "value",
+        "format": "number",
+        "semanticColor": "negative",
+        "icon": "AlertCircle",
+        "emptyMessage": "No overdue tasks"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": [{ "label": "View tasks", "action": "navigate:/tasks" }]
+    },
+    {
+      "id": "w-metric-tickets",
+      "type": "metric",
+      "title": "Open Tickets",
+      "layout": { "x": 6, "y": 2, "w": 3, "h": 2 },
+      "config": {
+        "dataSource": "stats.openTickets",
+        "valueKey": "value",
+        "format": "number",
+        "semanticColor": "info",
+        "icon": "Ticket",
+        "emptyMessage": "No open tickets"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": [{ "label": "View tickets", "action": "navigate:/tickets" }]
+    },
+    {
+      "id": "w-metric-health",
+      "type": "metric",
+      "title": "Workforce Health",
+      "layout": { "x": 9, "y": 2, "w": 3, "h": 2 },
+      "config": {
+        "dataSource": "stats.workforceHealth",
+        "valueKey": "value",
+        "format": "percentage",
+        "semanticColor": "auto",
+        "icon": "HeartPulse",
+        "thresholds": { "positive": 85, "warning": 70 },
+        "emptyMessage": "No workforce data"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": []
+    },
+    {
+      "id": "w-action-center",
+      "type": "collection",
+      "title": "Action Center",
+      "layout": { "x": 0, "y": 4, "w": 8, "h": 4 },
+      "config": {
+        "dataSource": "actionCenter",
+        "variant": "action-queue",
+        "maxItems": 10,
+        "emptyMessage": "No items need your attention",
+        "emptySuggestion": "All approvals and escalations are handled"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": []
+    },
+    {
+      "id": "w-celebrations",
+      "type": "feed",
+      "title": "Celebrations",
+      "layout": { "x": 8, "y": 4, "w": 4, "h": 4 },
+      "config": {
+        "dataSource": "celebrations",
+        "variant": "celebrations",
+        "emptyMessage": "No upcoming celebrations this week"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": []
+    }
+  ]
+}
