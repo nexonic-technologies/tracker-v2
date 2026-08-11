@@ -1,0 +1,63 @@
+{
+  "id": "employee-default",
+  "name": "Employee Dashboard",
+  "description": "Personal dashboard for employees",
+  "widgets": [
+    {
+      "id": "w-shift-arc",
+      "type": "goal",
+      "title": "My Day",
+      "layout": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "config": {
+        "dataSource": "employee.attendance",
+        "variant": "shift-arc",
+        "emptyMessage": "Not checked in yet",
+        "emptySuggestion": "Clock in to start tracking your shift"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": []
+    },
+    {
+      "id": "w-my-tasks",
+      "type": "collection",
+      "title": "My Priority Tasks",
+      "layout": { "x": 4, "y": 0, "w": 5, "h": 4 },
+      "config": {
+        "dataSource": "employee.tasks",
+        "variant": "task-list",
+        "maxItems": 5,
+        "emptyMessage": "No tasks assigned",
+        "emptySuggestion": "Check with your manager for new assignments"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": [{ "label": "View all tasks", "action": "navigate:/tasks" }]
+    },
+    {
+      "id": "w-leave-balance",
+      "type": "status",
+      "title": "Leave Balance",
+      "layout": { "x": 9, "y": 0, "w": 3, "h": 4 },
+      "config": {
+        "dataSource": "employee.leaveBalance",
+        "variant": "leave-balance",
+        "emptyMessage": "No leave data available",
+        "emptySuggestion": "Leave allocation will appear once configured by HR"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": [{ "label": "Apply leave", "action": "navigate:/Attendance/leaves" }]
+    },
+    {
+      "id": "w-celebrations-emp",
+      "type": "feed",
+      "title": "Celebrations",
+      "layout": { "x": 0, "y": 4, "w": 12, "h": 3 },
+      "config": {
+        "dataSource": "celebrations",
+        "variant": "celebrations",
+        "emptyMessage": "No upcoming celebrations this week"
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": []
+    }
+  ]
+}

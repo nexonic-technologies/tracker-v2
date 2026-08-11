@@ -1,0 +1,1087 @@
+/**
+ * Workhub ERP design tokens — source: backend/DESIGN.md v2.0
+ * Use semantic utilities: bg-canvas, text-ink, border-default, tracker-btn-brand, etc.
+ * Theme: .dark on html (ThemeProvider). Module: data-module="hr|project|ticket|payroll"
+ */
+
+:root {
+  /* Brand */
+  --brand-from: #6c3de8;
+  --brand-mid: #8b5cf6;
+  --brand-to: #c026d3;
+  --brand-solid: #6c3de8;
+  --brand-teal: #0ea5e9;
+  --brand-teal-light: #e0f2fe;
+
+  /* Canvas & surfaces */
+  --tracker-canvas: #f7f8fc;
+  --tracker-canvas-muted: #f7f8fc;
+  --tracker-surface: #ffffff;
+  --tracker-surface-1: #f0f2fa;
+  --tracker-surface-2: #e8eaf6;
+  --tracker-surface-chip: #eef0fb;
+
+  /* Ink */
+  --tracker-ink: #1a1d2e;
+  --tracker-ink-muted: #4b5068;
+  --tracker-ink-subtle: #8890a8;
+  --tracker-ink-tertiary: #b4bacc;
+  --tracker-on-brand: #ffffff;
+
+  /* Borders */
+  --tracker-border: #e2e5f0;
+  --tracker-border-soft: #eceef7;
+  --tracker-border-focus: #8b5cf6;
+  --tracker-hairline: var(--tracker-border);
+  --tracker-hairline-soft: var(--tracker-border-soft);
+
+  /* Module accents */
+  --module-hr: #7c3aed;
+  --module-hr-light: #ede9fe;
+  --module-project: #0ea5e9;
+  --module-project-light: #e0f2fe;
+  --module-ticket: #e11d48;
+  --module-ticket-light: #ffe4ec;
+  --module-payroll: #059669;
+  --module-payroll-light: #d1fae5;
+
+  /* ── Payroll / Currency tokens ────────────────────────────────────────────
+   * Use these exclusively inside data-module="payroll" pages.
+   * Never use raw hex for salary figures — always reference these tokens.
+   * ─────────────────────────────────────────────────────────────────────── */
+
+  /* Currency surfaces */
+  --pay-surface: var(--tracker-surface);
+  --pay-surface-tint: var(--module-payroll-light);
+  /* section bg tint */
+  --pay-border: var(--tracker-border);
+  --pay-border-accent: var(--module-payroll);
+  /* left-bar accent */
+
+  /* Currency ink */
+  --pay-ink-earn: #059669;
+  /* earnings — payroll green */
+  --pay-ink-deduct: #ef4444;
+  /* deductions — danger red */
+  --pay-ink-net: #059669;
+  /* net salary — same as earn */
+  --pay-ink-gross: var(--tracker-ink);
+  /* gross — neutral ink */
+  --pay-ink-label: var(--tracker-ink-subtle);
+  /* field labels */
+  --pay-ink-muted: var(--tracker-ink-muted);
+  /* secondary values */
+
+  /* Currency status chips */
+  --pay-status-draft-bg: var(--tracker-warning-light);
+  --pay-status-draft-text: var(--tracker-warning);
+  --pay-status-processing-bg: var(--tracker-info-light);
+  --pay-status-processing-text: var(--tracker-info);
+  --pay-status-processed-bg: #dbeafe;
+  --pay-status-processed-text: #1e40af;
+  --pay-status-approved-bg: #ede9fe;
+  --pay-status-approved-text: #7c3aed;
+  --pay-status-paid-bg: var(--tracker-success-light);
+  --pay-status-paid-text: var(--tracker-success);
+
+  /* Currency gradient — payroll hero / modal headers */
+  --pay-gradient: linear-gradient(135deg, #064E3B 0%, #059669 100%);
+  --pay-gradient-deep: linear-gradient(135deg, #022c22 0%, #064E3B 50%, #059669 100%);
+
+  /* Salary figure sizing */
+  --pay-figure-xl: 32px;
+  /* hero net salary */
+  --pay-figure-lg: 24px;
+  /* card net salary */
+  --pay-figure-md: 18px;
+  /* table net salary */
+  --pay-figure-sm: 14px;
+  /* breakdown rows */
+
+  /* Summary bar */
+  --pay-summary-bg: var(--module-payroll-light);
+  --pay-summary-border: color-mix(in srgb, var(--module-payroll) 25%, transparent);
+
+  /* Run progress bar */
+  --pay-progress-track: var(--tracker-border);
+  --pay-progress-fill: var(--module-payroll);
+
+  /* Active module (override per page via data-module) */
+  --module-accent: var(--module-hr);
+  --module-accent-light: var(--module-hr-light);
+
+  /* Semantic */
+  --tracker-success: #10b981;
+  --tracker-success-light: #d1fae5;
+  --tracker-warning: #f59e0b;
+  --tracker-warning-light: #fef3c7;
+  --tracker-danger: #ef4444;
+  --tracker-danger-light: #fee2e2;
+  --tracker-info: #3b82f6;
+  --tracker-info-light: #dbeafe;
+
+  /* Legacy aliases */
+  --tracker-accent: var(--brand-solid);
+  --tracker-accent-hover: #5b2fd4;
+  --tracker-accent-muted: var(--module-hr-light);
+  --tracker-accent-foreground: var(--brand-solid);
+  --tracker-cyan: var(--brand-teal);
+  --tracker-on-primary: var(--tracker-on-brand);
+
+  /* Gradients & elevation */
+  --tracker-gradient-brand: linear-gradient(135deg, var(--brand-from) 0%, var(--brand-mid) 50%, var(--brand-to) 100%);
+  --tracker-gradient-progress: linear-gradient(90deg, var(--brand-teal) 0%, var(--brand-mid) 100%);
+  --tracker-gradient-ring: linear-gradient(135deg, var(--brand-from) 0%, var(--brand-teal) 100%);
+  --tracker-shadow-card: 0 1px 3px rgb(108 61 232 / 0.06), 0 1px 2px rgb(0 0 0 / 0.04);
+  --tracker-shadow-raised: 0 4px 12px rgb(108 61 232 / 0.1), 0 2px 4px rgb(0 0 0 / 0.04);
+  --tracker-shadow-overlay: 0 16px 40px rgb(108 61 232 / 0.16), 0 4px 12px rgb(0 0 0 / 0.08);
+  --tracker-overlay: rgb(26 29 46 / 0.45);
+
+  /* Buttons */
+  --tracker-btn-primary-bg: var(--brand-solid);
+  --tracker-btn-primary-hover: #5b2fd4;
+  --tracker-btn-secondary-bg: var(--tracker-surface);
+  --tracker-btn-accent-bg: var(--module-accent);
+  --tracker-btn-accent-hover: color-mix(in srgb, var(--module-accent) 85%, black);
+
+  /* Radius */
+  --tracker-radius-sm: 6px;
+  --tracker-radius-md: 8px;
+  --tracker-radius-lg: 12px;
+  --tracker-radius-xl: 16px;
+  --tracker-radius-card: 14px;
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --sidebar-collapsed: 64px;
+  --topbar-height: 60px;
+  --content-offset: var(--sidebar-width);
+}
+
+.dark {
+  /* Payroll dark overrides */
+  --pay-ink-earn: #34d399;
+  --pay-ink-deduct: #f87171;
+  --pay-ink-net: #34d399;
+  --pay-status-processed-bg: rgb(30 64 175 / 0.2);
+  --pay-status-approved-bg: rgb(124 58 237 / 0.2);
+  --pay-summary-bg: rgb(5 150 105 / 0.12);
+  --pay-summary-border: rgb(5 150 105 / 0.25);
+
+  --tracker-canvas: #0f111a;
+  --tracker-canvas-muted: #0f111a;
+  --tracker-surface: #1a1d2e;
+  --tracker-surface-1: #22263a;
+  --tracker-surface-2: #2a2f45;
+  --tracker-surface-chip: #252a3d;
+
+  --tracker-ink: #f0f1f5;
+  --tracker-ink-muted: #b4bacc;
+  --tracker-ink-subtle: #8890a8;
+  --tracker-ink-tertiary: #5c6378;
+
+  --tracker-border: rgb(255 255 255 / 0.1);
+  --tracker-border-soft: rgb(255 255 255 / 0.06);
+  --tracker-border-focus: #a78bfa;
+
+  --module-hr-light: rgb(124 58 237 / 0.18);
+  --module-project-light: rgb(14 165 233 / 0.18);
+  --module-ticket-light: rgb(225 29 72 / 0.18);
+  --module-payroll-light: rgb(5 150 105 / 0.18);
+
+  --tracker-success-light: rgb(16 185 129 / 0.15);
+  --tracker-warning-light: rgb(245 158 11 / 0.15);
+  --tracker-danger-light: rgb(239 68 68 / 0.15);
+  --tracker-info-light: rgb(59 130 246 / 0.15);
+
+  --tracker-gradient-brand: linear-gradient(135deg, #4c1d95 0%, #6d28d9 50%, #9d174d 100%);
+  --tracker-shadow-card: 0 1px 3px rgb(0 0 0 / 0.35);
+  --tracker-shadow-raised: 0 4px 16px rgb(0 0 0 / 0.4);
+  --tracker-overlay: rgb(0 0 0 / 0.6);
+
+  --tracker-btn-secondary-bg: var(--tracker-surface-1);
+}
+
+[data-module="hr"] {
+  --module-accent: var(--module-hr);
+  --module-accent-light: var(--module-hr-light);
+}
+
+[data-module="project"] {
+  --module-accent: var(--module-project);
+  --module-accent-light: var(--module-project-light);
+}
+
+[data-module="ticket"] {
+  --module-accent: var(--module-ticket);
+  --module-accent-light: var(--module-ticket-light);
+}
+
+[data-module="payroll"] {
+  --module-accent: var(--module-payroll);
+  --module-accent-light: var(--module-payroll-light);
+}
+
+@theme inline {
+  --color-canvas: var(--tracker-canvas);
+  --color-canvas-muted: var(--tracker-canvas-muted);
+  --color-surface: var(--tracker-surface);
+  --color-surface-1: var(--tracker-surface-1);
+  --color-surface-2: var(--tracker-surface-2);
+  --color-ink: var(--tracker-ink);
+  --color-ink-muted: var(--tracker-ink-muted);
+  --color-ink-subtle: var(--tracker-ink-subtle);
+  --color-ink-tertiary: var(--tracker-ink-tertiary);
+  --color-hairline: var(--tracker-border);
+  --color-hairline-soft: var(--tracker-border-soft);
+  --color-accent: var(--module-accent);
+  --color-accent-muted: var(--module-accent-light);
+  --color-brand: var(--brand-solid);
+  --color-brand-teal: var(--brand-teal);
+  --color-tracker-success: var(--tracker-success);
+  --color-tracker-warning: var(--tracker-warning);
+  --color-tracker-danger: var(--tracker-danger);
+  --radius-tracker-sm: var(--tracker-radius-sm);
+  --radius-tracker-md: var(--tracker-radius-md);
+  --radius-tracker-lg: var(--tracker-radius-lg);
+  --radius-tracker-xl: var(--tracker-radius-xl);
+  --radius-tracker-card: var(--tracker-radius-card);
+}
+
+@layer components {
+  .lmx-app-shell {
+    @apply flex h-screen overflow-hidden bg-canvas text-ink;
+  }
+
+  .lmx-content {
+    @apply flex-1 overflow-y-auto bg-canvas w-full;
+    padding: clamp(8px, 1.5vw, 14px) clamp(10px, 2vw, 16px);
+  }
+
+  /* Full-bleed pages (e.g. Feeds) inside lmx-content */
+  .lmx-page-bleed {
+    margin-inline: calc(-1 * clamp(12px, 2.5vw, 20px));
+    width: calc(100% + 2 * clamp(12px, 2.5vw, 20px));
+    max-width: none;
+    margin-block: calc(-1 * clamp(10px, 2vw, 16px));
+    min-height: calc(100dvh - var(--topbar-height));
+  }
+
+  .lmx-topbar {
+    @apply sticky top-0 z-20 flex items-center flex-shrink-0 border-b border-hairline-soft bg-surface;
+    height: var(--topbar-height);
+    padding-inline: clamp(12px, 3vw, 24px);
+    box-shadow: var(--tracker-shadow-card);
+  }
+
+  .lmx-sidebar {
+    @apply flex flex-col flex-shrink-0 h-screen bg-surface border-r border-hairline-soft;
+    width: var(--sidebar-width);
+  }
+
+  .lmx-sidebar-collapsed {
+    width: var(--sidebar-collapsed);
+  }
+
+  .tracker-page {
+    @apply min-h-full bg-canvas text-ink;
+  }
+
+  .tracker-card,
+  .lmx-section-card {
+    @apply bg-surface border border-hairline rounded-[12px] overflow-hidden;
+    box-shadow: var(--tracker-shadow-card);
+  }
+
+  .tracker-card-plain {
+    @apply bg-surface border border-hairline rounded-[14px];
+    box-shadow: var(--tracker-shadow-card);
+  }
+
+  .tracker-btn-brand {
+    background: var(--tracker-gradient-brand);
+    color: var(--tracker-on-brand);
+    box-shadow: 0 2px 8px rgb(108 61 232 / 0.3);
+    @apply rounded-tracker-md text-sm font-medium px-5 py-2.5 transition-all duration-200;
+  }
+
+  .tracker-btn-brand:hover {
+    filter: brightness(1.05);
+  }
+
+  .tracker-btn-brand:disabled {
+    @apply opacity-70 cursor-not-allowed;
+  }
+
+  .tracker-btn-primary {
+    background-color: var(--tracker-btn-primary-bg);
+    color: var(--tracker-on-brand);
+    @apply rounded-tracker-md text-sm font-medium px-4 py-2 transition-colors duration-200;
+  }
+
+  .tracker-btn-primary:hover {
+    background-color: var(--tracker-btn-primary-hover);
+  }
+
+  .tracker-btn-accent {
+    background-color: var(--tracker-btn-accent-bg);
+    color: var(--tracker-on-brand);
+    @apply rounded-tracker-md text-sm font-medium px-4 py-2 transition-colors duration-200;
+  }
+
+  .tracker-btn-accent:hover {
+    background-color: var(--tracker-btn-accent-hover);
+  }
+
+  .tracker-btn-secondary {
+    background-color: var(--tracker-btn-secondary-bg);
+    color: var(--tracker-ink);
+    border: 1px solid var(--tracker-border);
+    @apply rounded-tracker-md text-sm font-medium px-4 py-2 transition-colors duration-200;
+  }
+
+  .tracker-btn-secondary:hover {
+    background-color: var(--tracker-surface-1);
+  }
+
+  .tracker-btn-ghost {
+    @apply rounded-tracker-md text-sm font-medium px-4 py-2 text-ink-muted transition-colors;
+  }
+
+  .tracker-btn-ghost:hover {
+    background-color: var(--tracker-surface-1);
+    color: var(--tracker-ink);
+  }
+
+  .tracker-overlay {
+    background-color: var(--tracker-overlay);
+  }
+
+  .lmx-input {
+    @apply w-full rounded-tracker-md border border-hairline bg-surface text-ink text-sm px-3.5 py-2.5;
+    @apply placeholder:text-ink-subtle focus:outline-none focus:border-[var(--tracker-border-focus)];
+    box-shadow: 0 0 0 0 transparent;
+  }
+
+  .lmx-input:focus {
+    box-shadow: 0 0 0 3px rgb(139 92 246 / 0.15);
+  }
+
+  /* Fix browser autofill override in dark mode */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: var(--tracker-ink) !important;
+    caret-color: var(--tracker-ink) !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+    box-shadow: inset 0 0 0 30px transparent !important;
+  }
+
+  input {
+    caret-color: var(--tracker-ink);
+  }
+
+  /* Feed post composer — matches create-post reference layout */
+  .lmx-feed-composer__dest-pill {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all;
+    border-color: var(--tracker-border);
+    color: var(--tracker-ink-muted);
+    background-color: var(--tracker-surface);
+  }
+
+  .lmx-feed-composer__dest-pill:hover {
+    border-color: var(--module-accent);
+    color: var(--module-accent);
+  }
+
+  .lmx-feed-composer__dest-pill--active {
+    border-color: var(--module-accent);
+    color: var(--module-accent);
+    background-color: var(--module-accent-light);
+  }
+
+  .lmx-feed-composer__target-select {
+    @apply text-sm font-medium text-ink bg-transparent border-none outline-none cursor-pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238890a8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0 center;
+    padding-right: 1.25rem;
+  }
+
+  .lmx-feed-composer__picker-trigger {
+    @apply inline-flex items-center gap-2 text-sm font-medium text-ink bg-transparent border-none outline-none cursor-pointer py-0.5;
+  }
+
+  .lmx-feed-composer__picker-menu {
+    @apply absolute left-0 top-full mt-1 z-50 min-w-[220px] w-max max-w-[280px];
+    background-color: var(--tracker-surface);
+    border: 1px solid var(--tracker-border);
+    border-radius: var(--tracker-radius-md);
+    box-shadow: var(--tracker-shadow-card);
+  }
+
+  .lmx-feed-composer__picker-option {
+    @apply flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-left transition-colors;
+    color: var(--tracker-ink);
+  }
+
+  .lmx-feed-composer__picker-option:hover {
+    background-color: var(--tracker-surface-1);
+  }
+
+  .lmx-feed-composer__picker-option--active {
+    background-color: var(--module-accent-light);
+    color: var(--module-accent);
+    font-weight: 600;
+  }
+
+  .lmx-feed-composer__type-tabs {
+    @apply inline-flex items-center gap-0.5;
+  }
+
+  .lmx-feed-composer__type-tab {
+    @apply px-3 py-1.5 text-xs font-semibold rounded-tracker-md transition-all whitespace-nowrap;
+    color: var(--tracker-ink-muted);
+  }
+
+  .lmx-feed-composer__type-tab:hover {
+    color: var(--tracker-ink);
+  }
+
+  .lmx-feed-composer__type-tab--active {
+    background-color: var(--module-accent);
+    color: var(--tracker-on-brand);
+  }
+
+  .lmx-feed-composer__subject {
+    @apply w-full bg-transparent text-sm font-medium text-ink placeholder:text-ink-subtle outline-none pb-2;
+    border: none;
+    border-bottom: 1px solid #fca5a5;
+  }
+
+  .lmx-feed-composer__subject:focus,
+  .lmx-feed-composer__subject--filled {
+    border-bottom-color: var(--module-accent);
+    border-bottom-width: 2px;
+  }
+
+  .lmx-feed-composer__footer-link {
+    @apply px-3 py-2 text-sm font-medium transition-colors;
+    color: var(--tracker-ink-muted);
+  }
+
+  .lmx-feed-composer__footer-link:hover {
+    color: var(--tracker-ink);
+  }
+
+  .lmx-feed-composer__draft-btn {
+    @apply px-4 py-2 text-sm font-medium rounded-tracker-md border transition-colors;
+    border-color: var(--tracker-border);
+    color: var(--tracker-ink);
+    background-color: var(--tracker-surface);
+  }
+
+  .lmx-feed-composer__draft-btn:hover {
+    background-color: var(--tracker-surface-1);
+  }
+
+  .lmx-feed-composer__post-btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-tracker-md transition-all;
+    background-color: var(--module-accent);
+    color: var(--tracker-on-brand);
+  }
+
+  .lmx-feed-composer__post-btn:hover:not(:disabled) {
+    filter: brightness(1.05);
+  }
+
+  .lmx-feed-composer__editor {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--tracker-border);
+    border-radius: var(--tracker-radius-md);
+    overflow: hidden;
+    background-color: var(--tracker-surface);
+  }
+
+  .lmx-feed-composer__editor .ql-toolbar.ql-snow {
+    order: 2;
+    border: none;
+    border-top: 1px solid var(--tracker-border-soft);
+    background-color: var(--tracker-surface-1);
+    padding: 6px 10px;
+    font-family: inherit;
+  }
+
+  .lmx-feed-composer__editor .ql-container.ql-snow {
+    order: 1;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+  }
+
+  .lmx-feed-composer .ql-editor {
+    min-height: 140px;
+    max-height: 320px;
+    overflow-y: auto;
+    color: var(--tracker-ink);
+    line-height: 1.65;
+    padding: 14px 16px 10px;
+  }
+
+  .lmx-feed-composer .ql-editor.ql-blank::before {
+    color: var(--tracker-ink-subtle);
+    font-style: normal;
+    left: 16px;
+  }
+
+  .lmx-feed-composer .ql-snow .ql-stroke {
+    stroke: var(--tracker-ink-muted);
+  }
+
+  .lmx-feed-composer .ql-snow .ql-fill {
+    fill: var(--tracker-ink-muted);
+  }
+
+  .lmx-feed-composer .ql-snow .ql-picker-label {
+    color: var(--tracker-ink-muted);
+  }
+
+  .lmx-feed-composer .ql-snow .ql-picker-options {
+    background-color: var(--tracker-surface);
+    border-color: var(--tracker-border);
+  }
+
+  .lmx-feed-composer .ql-snow.ql-toolbar button:hover .ql-stroke,
+  .lmx-feed-composer .ql-snow.ql-toolbar button.ql-active .ql-stroke,
+  .lmx-feed-composer .ql-snow.ql-toolbar .ql-picker-label:hover .ql-stroke {
+    stroke: var(--module-accent);
+  }
+
+  .lmx-feed-composer .ql-snow.ql-toolbar button:hover .ql-fill,
+  .lmx-feed-composer .ql-snow.ql-toolbar button.ql-active .ql-fill {
+    fill: var(--module-accent);
+  }
+
+  .lmx-tab-bar {
+    @apply flex items-center gap-1 p-1 rounded-[14px] border border-hairline bg-surface overflow-x-auto;
+    scrollbar-width: none;
+  }
+
+  .lmx-tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lmx-tab {
+    @apply flex items-center gap-1.5 px-4 py-2 rounded-tracker-md text-xs font-semibold whitespace-nowrap transition-all text-ink-muted;
+  }
+
+  .lmx-tab:hover {
+    @apply text-ink;
+    background-color: var(--tracker-surface-1);
+  }
+
+  .lmx-tab-active {
+    background-color: var(--module-accent-light);
+    color: var(--module-accent);
+    box-shadow: inset 0 -2px 0 var(--module-accent);
+  }
+
+  .lmx-page-eyebrow {
+    @apply text-[11px] font-bold uppercase tracking-widest;
+    color: var(--module-accent);
+  }
+
+  .lmx-gradient-hero {
+    background: var(--tracker-gradient-brand);
+  }
+
+  .tracker-gradient-progress {
+    background: var(--tracker-gradient-progress);
+  }
+
+  .tracker-gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--tracker-gradient-ring);
+  }
+
+  .lmx-icon-tile {
+    @apply flex items-center justify-center rounded-tracker-md p-2.5;
+    background-color: var(--module-accent-light);
+    color: var(--module-accent);
+  }
+
+  /* ── Payroll / Currency utilities ─────────────────────────────────────── */
+
+  /* Currency amount display — raw CSS only, no @apply of sibling classes */
+  .pay-amount {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .pay-amount-xl {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    font-size: var(--pay-figure-xl);
+    color: var(--pay-ink-net);
+  }
+
+  .pay-amount-lg {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    font-size: var(--pay-figure-lg);
+    color: var(--pay-ink-net);
+  }
+
+  .pay-amount-md {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    font-size: var(--pay-figure-md);
+    color: var(--pay-ink-net);
+  }
+
+  .pay-amount-sm {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    font-size: var(--pay-figure-sm);
+    color: var(--pay-ink-gross);
+  }
+
+  .pay-amount-earn {
+    color: var(--pay-ink-earn) !important;
+  }
+
+  .pay-amount-deduct {
+    color: var(--pay-ink-deduct) !important;
+  }
+
+  .pay-amount-gross {
+    color: var(--pay-ink-gross) !important;
+  }
+
+  /* Section card — payroll left accent */
+  .pay-card {
+    background-color: var(--tracker-surface);
+    border: 1px solid var(--tracker-border);
+    border-left: 4px solid var(--module-payroll);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--tracker-shadow-card);
+  }
+
+  /* Summary tint band (gross/net summary bar) */
+  .pay-summary-band {
+    background-color: var(--pay-summary-bg);
+    border: 1px solid var(--pay-summary-border);
+    border-radius: var(--tracker-radius-md);
+    padding: 1rem;
+  }
+
+  /* Payroll status chip */
+  .pay-status-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .pay-status-chip--draft {
+    background: var(--pay-status-draft-bg);
+    color: var(--pay-status-draft-text);
+  }
+
+  .pay-status-chip--processing {
+    background: var(--pay-status-processing-bg);
+    color: var(--pay-status-processing-text);
+  }
+
+  .pay-status-chip--processed {
+    background: var(--pay-status-processed-bg);
+    color: var(--pay-status-processed-text);
+  }
+
+  .pay-status-chip--approved {
+    background: var(--pay-status-approved-bg);
+    color: var(--pay-status-approved-text);
+  }
+
+  .pay-status-chip--paid {
+    background: var(--pay-status-paid-bg);
+    color: var(--pay-status-paid-text);
+  }
+
+  /* Breakdown row (payslip earnings/deductions line) */
+  .pay-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+    border-bottom: 1px solid var(--pay-border);
+  }
+
+  .pay-row:last-child {
+    border-bottom: none;
+  }
+
+  .pay-row__label {
+    font-size: 13px;
+    color: var(--pay-ink-label);
+  }
+
+  .pay-row__value {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    color: var(--pay-ink-gross);
+  }
+
+  .pay-row--earn .pay-row__value {
+    color: var(--pay-ink-earn);
+  }
+
+  .pay-row--deduct .pay-row__value {
+    color: var(--pay-ink-deduct);
+  }
+
+  .pay-row--total .pay-row__label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--tracker-ink);
+  }
+
+  .pay-row--total .pay-row__value {
+    font-size: 15px;
+  }
+
+  .pay-row--net .pay-row__value {
+    color: var(--pay-ink-net);
+    font-size: 16px;
+  }
+
+  /* Run progress bar */
+  .pay-progress {
+    width: 100%;
+    border-radius: 9999px;
+    overflow: hidden;
+    height: 6px;
+    background-color: var(--pay-progress-track);
+  }
+
+  .pay-progress__fill {
+    height: 100%;
+    background-color: var(--pay-progress-fill);
+    border-radius: 9999px;
+    transition: width 0.4s ease;
+  }
+
+  /* Payroll hero gradient header */
+  .pay-gradient-hero {
+    background: var(--pay-gradient);
+  }
+
+  /* Stat card within payroll */
+  .pay-stat-card {
+    background-color: var(--tracker-surface);
+    border: 1px solid var(--tracker-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--tracker-shadow-card);
+    padding: 0.875rem 1rem;
+  }
+
+  .pay-stat-card__label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 0.2rem;
+    color: var(--pay-ink-label);
+  }
+
+  .pay-stat-card__value {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--pay-ink-net);
+  }
+
+  .pay-stat-card__sub {
+    font-size: 11px;
+    margin-top: 0.125rem;
+    color: var(--pay-ink-muted);
+  }
+}
+
+/* ── Login page — floating cards ──────────────────────────────────────────
+ * Two independent cards on a shared gradient background.
+ * Feature card (left, hidden on mobile) + Login card (right / centered).
+ * ─────────────────────────────────────────────────────────────────────── */
+
+.lmx-glass-bubble {
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.45) 0%, rgba(240, 245, 255, 0.2) 30%, rgba(160, 170, 240, 0.08) 65%, transparent 100%);
+  box-shadow:
+    inset -15px -15px 40px rgba(120, 110, 220, 0.15),
+    inset 15px 15px 30px rgba(255, 255, 255, 0.5),
+    0 20px 45px rgba(108, 61, 232, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.dark .lmx-glass-bubble {
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15) 0%, rgba(120, 110, 220, 0.05) 50%, transparent 100%);
+  box-shadow:
+    inset -15px -15px 40px rgba(0, 0, 0, 0.4),
+    inset 15px 15px 30px rgba(255, 255, 255, 0.1),
+    0 20px 45px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lmx-login-bg {
+  background: linear-gradient(135deg, #eef0fb 0%, #dde3f8 55%, #e4d5f8 100%);
+  min-height: 100vh;
+}
+
+.dark .lmx-login-bg {
+  background: linear-gradient(135deg, #0f111a 0%, #141728 55%, #1a1030 100%);
+}
+
+.lmx-login-card {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 4px 6px rgb(0 0 0 / 0.04),
+    0 16px 48px rgb(108 61 232 / 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.lmx-login-feature-card {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  box-shadow: none;
+}
+
+.dark .lmx-login-card {
+  background: rgba(26, 29, 46, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 4px 6px rgb(0 0 0 / 0.3),
+    0 16px 48px rgb(0 0 0 / 0.35);
+}
+
+.dark .lmx-login-feature-card {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  box-shadow: none;
+}
+
+.lmx-login-inner-row {
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.lmx-login-inner-row:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow:
+    0 6px 20px rgb(0 0 0 / 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dark .lmx-login-inner-row {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.dark .lmx-login-inner-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 6px 20px rgb(0 0 0 / 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.lmx-login-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1.5px solid var(--tracker-border);
+  border-radius: 12px;
+  padding: 10px 16px;
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--tracker-ink);
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
+}
+
+.lmx-login-social-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.08);
+  border-color: var(--tracker-ink-subtle);
+}
+
+.lmx-login-social-btn:active {
+  transform: translateY(0);
+}
+
+.dark .lmx-login-social-btn {
+  background: var(--tracker-surface-1);
+  border-color: var(--tracker-border);
+}
+
+.lmx-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--tracker-ink-subtle);
+  text-transform: uppercase;
+}
+
+.lmx-login-divider::before,
+.lmx-login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--tracker-border);
+}
+
+.lmx-login-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #3b5bdb;
+}
+
+.dark .lmx-login-eyebrow {
+  color: #a5b4fc;
+}
+
+@media (max-width: 1023px) {
+  .lmx-sidebar {
+    width: min(var(--sidebar-width), 85vw);
+  }
+}
+
+@media (max-width: 767px) {
+  .lmx-content {
+    padding: 10px 12px;
+  }
+}
+
+/* Theme switch — smooth crossfade (ThemeProvider.toggleTheme) */
+html.theme-transition {
+  --theme-transition-duration: 450ms;
+}
+
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color var(--theme-transition-duration) ease,
+    color calc(var(--theme-transition-duration) * 0.9) ease,
+    border-color var(--theme-transition-duration) ease,
+    box-shadow var(--theme-transition-duration) ease,
+    fill var(--theme-transition-duration) ease,
+    stroke var(--theme-transition-duration) ease,
+    outline-color var(--theme-transition-duration) ease !important;
+}
+
+html.theme-transition::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  pointer-events: none;
+  background: var(--tracker-canvas);
+  animation: lmx-theme-crossfade var(--theme-transition-duration) ease forwards;
+}
+
+html.theme-transition .lmx-login-shell {
+  animation: lmx-login-theme-fade var(--theme-transition-duration) ease;
+}
+
+@keyframes lmx-theme-crossfade {
+  0% {
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 0.28;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes lmx-login-theme-fade {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  45% {
+    opacity: 0.92;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  html.theme-transition::before,
+  html.theme-transition .lmx-login-shell {
+    animation: none;
+  }
+
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: none !important;
+  }
+}
