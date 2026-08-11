@@ -48,9 +48,11 @@ const server = http.createServer(app);
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
-const allowedOrigins = [
+// ─── Scalable Production CORS Setup ──────────────────────────────────────────
+const defaultAllowedOrigins = [
   "https://workhub-teal-gamma.vercel.app",
   "https://tracker-v1-chi.vercel.app",
+  "https://tracker-v1-rose.vercel.app",
   "http://localhost:3000",
   "http://localhost:3001",
   "http://localhost:5173",
@@ -60,12 +62,24 @@ const allowedOrigins = [
   "http://127.0.0.1:5050",
 ];
 
+// Combine origins from ALLOWED_ORIGINS & CLIENT_URL env vars + defaults
+const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_URL || "")
+  .split(",")
+  .map(o => o.trim())
+  .filter(Boolean);
+
+const allowedOriginsSet = new Set(
+  [...defaultAllowedOrigins, ...envOrigins].map(o => o.replace(/\/+$/, ""))
+);
+
 const lanRegex = /^http:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+):\d+$/;
 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || lanRegex.test(origin)) {
+    const cleanOrigin = origin.replace(/\/+$/, "");
+
+    if (allowedOriginsSet.has(cleanOrigin) || lanRegex.test(cleanOrigin)) {
       return callback(null, true);
     }
     return callback(new Error("Not allowed by CORS: " + origin));
