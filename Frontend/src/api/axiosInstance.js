@@ -29,6 +29,7 @@ export const setMaintenanceHandler = (fn) => {
   maintenanceHandler = fn;
 };
 
+const isDev = import.meta.env.DEV;
 const baseUrl = import.meta.env.VITE_APP_URL;
 
 export const setAuthLogout = (logoutFn) => {
