@@ -49,7 +49,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
 const allowedOrigins = [
-  "https://workhub-teal-gamma.vercel.app/login",
+  "https://workhub-teal-gamma.vercel.app",
   "https://tracker-v1-chi.vercel.app",
   "http://localhost:3000",
   "http://localhost:3001",
