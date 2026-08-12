@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axiosInstance from '@api/axiosInstance';
+import axiosInstance, { getDeviceUUID } from '@api/axiosInstance';
+import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
 
 // ── 9-Stage provisioning pipeline ───────────────────────────────────────────
@@ -192,10 +193,15 @@ export default function TenantProvisioningPage() {
     };
 
     try {
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('auth_token') || localStorage.getItem('auth_token') || localStorage.getItem('token');
+      const deviceUuid = getDeviceUUID();
       const response = await fetch('/api/admin/tenants/provision-stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+          'x-device-uuid': deviceUuid || '',
+        },
         body: JSON.stringify(payload),
       });
 
