@@ -6,36 +6,36 @@ import toast from 'react-hot-toast';
 
 // ── 9-Stage provisioning pipeline ───────────────────────────────────────────
 const DEFAULT_STAGES = [
-  { step: 1, label: 'Validate Inputs',           desc: 'Org name, slug, email, password' },
-  { step: 2, label: 'Resolve Modules',           desc: 'Module ObjectIds & entitlement keys' },
-  { step: 3, label: 'Create Tenant Record',      desc: 'Insert Tenant doc — Provisioning status' },
-  { step: 4, label: 'Provision Database',        desc: 'DB pool established, models compiled' },
-  { step: 5, label: 'Seed Roles & Master Data',  desc: 'Super Admin role, dept, designation' },
-  { step: 6, label: 'Seed Policies',            desc: 'Access policies for compiled models' },
-  { step: 7, label: 'Seed Sidebars',            desc: 'Filter sidebars by enabled modules' },
-  { step: 8, label: 'Create User',               desc: 'Super Admin employee + Global UserLogin' },
-  { step: 9, label: 'Verify Provisioning',       desc: 'Scoped verification — set status Active' },
+  { step: 1, label: 'Validate Inputs', desc: 'Org name, slug, email, password' },
+  { step: 2, label: 'Resolve Modules', desc: 'Module ObjectIds & entitlement keys' },
+  { step: 3, label: 'Create Tenant Record', desc: 'Insert Tenant doc — Provisioning status' },
+  { step: 4, label: 'Provision Database', desc: 'DB pool established, models compiled' },
+  { step: 5, label: 'Seed Roles & Master Data', desc: 'Super Admin role, dept, designation' },
+  { step: 6, label: 'Seed Policies', desc: 'Access policies for compiled models' },
+  { step: 7, label: 'Seed Sidebars', desc: 'Filter sidebars by enabled modules' },
+  { step: 8, label: 'Create User', desc: 'Super Admin employee + Global UserLogin' },
+  { step: 9, label: 'Verify Provisioning', desc: 'Scoped verification — set status Active' },
 ];
 
 const STEP_STATUS_STYLE = {
   completed: {
-    row:   'border-[var(--tracker-success)] bg-[var(--tracker-success-light)]/30',
-    dot:   'bg-[var(--tracker-success)] text-white',
+    row: 'border-[var(--tracker-success)] bg-[var(--tracker-success-light)]/30',
+    dot: 'bg-[var(--tracker-success)] text-white',
     badge: 'bg-[var(--tracker-success-light)] text-[var(--tracker-success)]',
   },
   running: {
-    row:   'border-[var(--brand-solid)] bg-[var(--tracker-surface-1)] ring-1 ring-[var(--brand-solid)]/30',
-    dot:   'bg-[var(--brand-solid)] text-white animate-pulse',
+    row: 'border-[var(--brand-solid)] bg-[var(--tracker-surface-1)] ring-1 ring-[var(--brand-solid)]/30',
+    dot: 'bg-[var(--brand-solid)] text-white animate-pulse',
     badge: 'bg-[var(--tracker-info-light)] text-[var(--tracker-info)]',
   },
   failed: {
-    row:   'border-[var(--tracker-danger)] bg-[var(--tracker-danger-light)]/20',
-    dot:   'bg-[var(--tracker-danger)] text-white',
+    row: 'border-[var(--tracker-danger)] bg-[var(--tracker-danger-light)]/20',
+    dot: 'bg-[var(--tracker-danger)] text-white',
     badge: 'bg-[var(--tracker-danger-light)] text-[var(--tracker-danger)]',
   },
   pending: {
-    row:   'border-[var(--tracker-border)] opacity-50',
-    dot:   'bg-[var(--tracker-surface-2)] text-[var(--tracker-ink-subtle)]',
+    row: 'border-[var(--tracker-border)] opacity-50',
+    dot: 'bg-[var(--tracker-surface-2)] text-[var(--tracker-ink-subtle)]',
     badge: 'bg-[var(--tracker-surface-2)] text-[var(--tracker-ink-subtle)]',
   },
 };
@@ -195,7 +195,7 @@ export default function TenantProvisioningPage() {
     try {
       const token = Cookies.get('auth_token') || localStorage.getItem('auth_token') || localStorage.getItem('token');
       const deviceUuid = getDeviceUUID();
-      const response = await fetch('/api/admin/tenants/provision-stream', {
+      const response = await axiosInstance('/api/admin/tenants/provision-stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -208,7 +208,7 @@ export default function TenantProvisioningPage() {
       if (!response.ok) {
         const errText = await response.text();
         let errMsg = 'Provisioning request failed';
-        try { errMsg = JSON.parse(errText).error || errMsg; } catch (_) {}
+        try { errMsg = JSON.parse(errText).error || errMsg; } catch (_) { }
         throw new Error(errMsg);
       }
 
@@ -226,11 +226,11 @@ export default function TenantProvisioningPage() {
         for (const block of lines) {
           if (!block.trim()) continue;
           const eventMatch = block.match(/^event:\s*(.+)$/m);
-          const dataMatch  = block.match(/^data:\s*(.+)$/m);
+          const dataMatch = block.match(/^data:\s*(.+)$/m);
           if (!eventMatch || !dataMatch) continue;
           const eventType = eventMatch[1].trim();
           let data = {};
-          try { data = JSON.parse(dataMatch[1].trim()); } catch (_) {}
+          try { data = JSON.parse(dataMatch[1].trim()); } catch (_) { }
 
           if (eventType === 'progress') {
             if (data.runId) setProvisioningRunId(data.runId);
@@ -425,28 +425,28 @@ export default function TenantProvisioningPage() {
             </Field>
             <Field label="Industry">
               <Select name="industry" value={formData.industry} onChange={handleChange}>
-                {['Technology','Finance','Healthcare','Education','Manufacturing','Retail','Construction','Legal','Consulting','Other'].map(i => (
+                {['Technology', 'Finance', 'Healthcare', 'Education', 'Manufacturing', 'Retail', 'Construction', 'Legal', 'Consulting', 'Other'].map(i => (
                   <option key={i} value={i}>{i}</option>
                 ))}
               </Select>
             </Field>
             <Field label="Country">
               <Select name="country" value={formData.country} onChange={handleChange}>
-                {['India','United States','United Kingdom','Canada','Australia','Singapore','UAE','Other'].map(c => (
+                {['India', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Singapore', 'UAE', 'Other'].map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </Select>
             </Field>
             <Field label="Currency">
               <Select name="currency" value={formData.currency} onChange={handleChange}>
-                {['INR','USD','GBP','CAD','AUD','SGD','AED','EUR'].map(c => (
+                {['INR', 'USD', 'GBP', 'CAD', 'AUD', 'SGD', 'AED', 'EUR'].map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </Select>
             </Field>
             <Field label="Fiscal Year Start">
               <Select name="fiscalYearStart" value={formData.fiscalYearStart} onChange={handleChange}>
-                {['January','February','March','April','July','October'].map(m => (
+                {['January', 'February', 'March', 'April', 'July', 'October'].map(m => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </Select>
@@ -504,11 +504,10 @@ export default function TenantProvisioningPage() {
                 return (
                   <label
                     key={key}
-                    className={`flex items-start justify-between px-3 py-2 rounded-[var(--tracker-radius-sm)] border cursor-pointer transition-all ${
-                      isChecked
+                    className={`flex items-start justify-between px-3 py-2 rounded-[var(--tracker-radius-sm)] border cursor-pointer transition-all ${isChecked
                         ? 'border-[var(--brand-solid)] bg-[var(--tracker-surface-1)]'
                         : 'border-[var(--tracker-border)] hover:bg-[var(--tracker-surface-1)]'
-                    }`}
+                      }`}
                   >
                     <div className="min-w-0">
                       <p className="text-[12px] font-semibold text-[var(--tracker-ink)] truncate">{mod.name}</p>

@@ -9,8 +9,8 @@ $response = Invoke-WebRequest `
   -Method GET `
   -UseBasicParsing
 
-if ($response.StatusCode -eq 200) {
-  Write-Host "✅ Deploy triggered successfully." -ForegroundColor Green
+if ($response.StatusCode -eq 200 -or $response.StatusCode -eq 201) {
+  Write-Host "✅ Deploy triggered successfully (HTTP $($response.StatusCode))." -ForegroundColor Green
   Write-Host "   Check: https://workhub-teal-gamma.vercel.app/" -ForegroundColor Gray
 } else {
   Write-Host "❌ Deploy trigger failed. Status: $($response.StatusCode)" -ForegroundColor Red
