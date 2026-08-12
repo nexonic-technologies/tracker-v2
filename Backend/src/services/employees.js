@@ -322,7 +322,81 @@ export default function employeesService() {
       } catch (err) {
         console.warn('[EmployeeService.afterUpdate] Lifecycle history logging failed:', err.message);
       }
+
+      // Sync updated employee credentials & status to Global UserLogin DB
+      try {
+        const store = getTenantStore();
+        const doc = ctx.data || ctx.updatedDoc || (existingDoc ? { ...existingDoc, ...body, _id: docId } : null);
+        await syncEmployeeUserLogin(doc, store);
+      } catch (err) {
+        console.warn('[EmployeeService.afterUpdate] UserLogin sync failed:', err.message);
+      }
+    },
+
+    /**
+     * afterCreate: Sync newly created employee credentials & status to Global UserLogin DB.
+     */
+    async afterCreate(ctx) {
+      try {
+        const store = getTenantStore();
+        const doc = ctx.result || ctx.createdDocument || ctx.data || ctx.body;
+        await syncEmployeeUserLogin(doc, store);
+      } catch (err) {
+        console.warn('[EmployeeService.afterCreate] UserLogin sync failed:', err.message);
+      }
     }
   };
+}
+
+/**
+ * Sync employee record to Global UserLogin central auth DB.
+ */
+async function syncEmployeeUserLogin(employeeDoc, tenantStore) {
+  if (!employeeDoc) return;
+  const workEmail = employeeDoc.authInfo?.workEmail || employeeDoc.email;
+  if (!workEmail) return;
+
+  try {
+    const { getGlobalModels } = await import('../models/global/index.js');
+    const globalModels = getGlobalModels();
+    if (!globalModels || !globalModels.UserLogin) return;
+
+    const { UserLogin } = globalModels;
+    const cleanEmail = workEmail.toLowerCase().trim();
+    const tenantId = tenantStore?.tenantId || tenantStore?.tenant?.tenantId || 'admin';
+    const dbName = tenantStore?.dbName || tenantStore?.tenant?.dbName || process.env.DEFAULT_TENANT_DB || 'tracker_tenant_admin';
+
+    const empName = [employeeDoc.basicInfo?.firstName, employeeDoc.basicInfo?.lastName].filter(Boolean).join(' ') || cleanEmail.split('@')[0];
+
+    const updateFields = {
+      email: cleanEmail,
+      tenantId,
+      dbName,
+      employeeId: employeeDoc._id,
+      userType: 'employee',
+      name: empName,
+      status: (employeeDoc.status === 'Inactive' || employeeDoc.status === 'Terminated' || employeeDoc.isActive === false) ? 'Inactive' : 'Active',
+      isSuperAdmin: !!(employeeDoc.isSuperAdmin || (typeof employeeDoc.role === 'object' && employeeDoc.role?.isSuperAdmin)),
+    };
+
+    if (employeeDoc.authInfo?.password) {
+      updateFields.password = employeeDoc.authInfo.password;
+    }
+
+    if (employeeDoc.authInfo?.googleEmail) {
+      updateFields.googleEmail = employeeDoc.authInfo.googleEmail.toLowerCase();
+    }
+    if (employeeDoc.authInfo?.googleLoginEnabled !== undefined) {
+      updateFields.googleLoginEnabled = employeeDoc.authInfo.googleLoginEnabled;
+    }
+
+    await UserLogin.findOneAndUpdate(
+      { email: cleanEmail },
+      { $set: updateFields },
+      { upsert: true, new: true }
+    );
+  } catch (err) {
+    console.error('[EmployeeService] Failed to sync UserLogin in Global DB:', err.message);
+  }
 }
 
