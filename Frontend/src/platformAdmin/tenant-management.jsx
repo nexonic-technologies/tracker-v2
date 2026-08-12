@@ -4,11 +4,67 @@ import axiosInstance from '@api/axiosInstance';
 import { useAuth } from '@context/authProvider';
 import toast from 'react-hot-toast';
 
+// ── Semantic status helpers (no raw color strings) ──────────────────────────
+const STATUS_META = {
+  ACTIVE:    { label: 'Active',    dot: 'bg-[var(--tracker-success)]',  chip: 'bg-[var(--tracker-success-light)] text-[var(--tracker-success)]',  pulse: true },
+  SUSPENDED: { label: 'Suspended', dot: 'bg-[var(--tracker-danger)]',   chip: 'bg-[var(--tracker-danger-light)]  text-[var(--tracker-danger)]',   pulse: false },
+  PAST_DUE:  { label: 'Past Due',  dot: 'bg-[var(--tracker-warning)]',  chip: 'bg-[var(--tracker-warning-light)] text-[var(--tracker-warning)]',  pulse: false },
+  CANCELED:  { label: 'Canceled',  dot: 'bg-[var(--tracker-ink-tertiary)]', chip: 'bg-[var(--tracker-surface-1)] text-[var(--tracker-ink-muted)]', pulse: false },
+};
+
+const PAYMENT_META = {
+  Paid:    { chip: 'bg-[var(--tracker-success-light)] text-[var(--tracker-success)]' },
+  PastDue: { chip: 'bg-[var(--tracker-warning-light)] text-[var(--tracker-warning)]' },
+  Unpaid:  { chip: 'bg-[var(--tracker-danger-light)]  text-[var(--tracker-danger)]'  },
+  Trial:   { chip: 'bg-[var(--tracker-info-light)]    text-[var(--tracker-info)]'    },
+};
+
+function StatusChip({ status }) {
+  const s = STATUS_META[status?.toUpperCase()] || STATUS_META.ACTIVE;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold tracking-wide ${s.chip}`}>
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot} ${s.pulse ? 'animate-pulse' : ''}`} />
+      {s.label}
+    </span>
+  );
+}
+
+function PaymentChip({ status }) {
+  const p = PAYMENT_META[status] || PAYMENT_META.Paid;
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${p.chip}`}>
+      {status}
+    </span>
+  );
+}
+
+// ── Stat card: number + label + optional delta ───────────────────────────────
+function StatCard({ label, value, color, delta, deltaLabel }) {
+  return (
+    <div
+      className="relative overflow-hidden rounded-[var(--tracker-radius-card)] border border-[var(--tracker-border)] bg-[var(--tracker-surface)]"
+      style={{ boxShadow: 'var(--tracker-shadow-card)' }}
+    >
+      {/* accent gradient top-bar */}
+      <div className="h-[3px] w-full" style={{ background: color }} />
+      <div className="px-3 py-2.5">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--tracker-ink-subtle)]">{label}</p>
+        <div className="mt-1 flex items-end justify-between gap-2">
+          <span className="text-2xl font-extrabold tabular-nums leading-none" style={{ color }}>{value}</span>
+          {delta !== undefined && (
+            <span className={`text-[10px] font-semibold flex items-center gap-0.5 mb-0.5 ${delta >= 0 ? 'text-[var(--tracker-success)]' : 'text-[var(--tracker-danger)]'}`}>
+              {delta >= 0 ? '↑' : '↓'} {Math.abs(delta)} {deltaLabel}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TenantManagementPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const tenantSlug = (user?.tenantSlug || user?.tenantId || '').toLowerCase();
-  const isGlobalAdmin = tenantSlug === 'admin' || tenantSlug === 'default';
 
   const [tenants, setTenants] = useState([]);
   const [availableModules, setAvailableModules] = useState([]);
@@ -24,7 +80,6 @@ export default function TenantManagementPage() {
   const [targetStatus, setTargetStatus] = useState('Active');
   const [selectedModules, setSelectedModules] = useState([]);
 
-  // Subscription parameters state
   const [subBillingCycle, setSubBillingCycle] = useState('Annual');
   const [subExpiry, setSubExpiry] = useState('');
   const [subPaymentStatus, setSubPaymentStatus] = useState('Paid');
@@ -44,16 +99,16 @@ export default function TenantManagementPage() {
       let fetchedModules = tenantRes.data?.availableModules || moduleRes.data?.modules || [];
       if (!fetchedModules || fetchedModules.length === 0) {
         fetchedModules = [
-          { moduleId: 'core', name: 'Core Platform & System Engine', description: 'Settings, roles, security, sessions' },
-          { moduleId: 'hrms', name: 'HRMS Core Personnel Suite', description: 'Employee lifecycle, onboardings, HR policies' },
-          { moduleId: 'attendance', name: 'Attendance & Leave Management', description: 'Shifts, punches, leaves, SLA tracking, WFH' },
-          { moduleId: 'payroll', name: 'Payroll Engine & Compensation', description: 'Salary structures, pay slips, expenses' },
-          { moduleId: 'tasks', name: 'Tasks & Project Management', description: 'Sprints, tasks, todos, queues' },
-          { moduleId: 'tickets', name: 'Helpdesk & Ticket System', description: 'Support tickets, activity logs' },
-          { moduleId: 'crm', name: 'CRM & Client Management', description: 'Leads, meetings, quotations, ledgers' },
-          { moduleId: 'assets', name: 'Asset Management', description: 'Hardware allocation, incidents, repairs' },
-          { moduleId: 'recruitment', name: 'Recruitment & Job Openings', description: 'Openings, candidate pipeline' },
-          { moduleId: 'feed', name: 'Team Feed & Social Work', description: 'Feeds, posts, comments, notifications' }
+          { moduleId: 'core',        name: 'Core Platform',       description: 'Settings, roles, security, sessions' },
+          { moduleId: 'hrms',        name: 'HRMS Suite',          description: 'Employee lifecycle, onboardings, HR policies' },
+          { moduleId: 'attendance',  name: 'Attendance & Leave',  description: 'Shifts, punches, leaves, WFH' },
+          { moduleId: 'payroll',     name: 'Payroll Engine',      description: 'Salary structures, pay slips, expenses' },
+          { moduleId: 'tasks',       name: 'Tasks & Projects',    description: 'Sprints, tasks, todos, queues' },
+          { moduleId: 'tickets',     name: 'Helpdesk',            description: 'Support tickets, activity logs' },
+          { moduleId: 'crm',         name: 'CRM',                 description: 'Leads, meetings, quotations' },
+          { moduleId: 'assets',      name: 'Asset Management',    description: 'Hardware allocation, incidents' },
+          { moduleId: 'recruitment', name: 'Recruitment',         description: 'Openings, candidate pipeline' },
+          { moduleId: 'feed',        name: 'Team Feed',           description: 'Feeds, posts, comments, notifications' }
         ];
       }
       setAvailableModules(fetchedModules);
@@ -64,55 +119,46 @@ export default function TenantManagementPage() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const filteredTenants = useMemo(() => {
     return tenants.filter(t => {
-      const matchesSearch =
-        (t.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (t.slug || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (t.dbName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (t.ownerEmail || '').toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesStatus =
-        statusFilter === 'ALL' || (t.status || '').toUpperCase() === statusFilter.toUpperCase();
-
+      const q = searchTerm.toLowerCase();
+      const matchesSearch = !q ||
+        (t.name || '').toLowerCase().includes(q) ||
+        (t.slug || '').toLowerCase().includes(q) ||
+        (t.dbName || '').toLowerCase().includes(q) ||
+        (t.ownerEmail || '').toLowerCase().includes(q);
+      const matchesStatus = statusFilter === 'ALL' || (t.status || '').toUpperCase() === statusFilter.toUpperCase();
       return matchesSearch && matchesStatus;
     });
   }, [tenants, searchTerm, statusFilter]);
 
-  const stats = useMemo(() => {
-    const total = tenants.length;
-    const active = tenants.filter(t => t.status === 'Active').length;
-    const pastDue = tenants.filter(t => t.paymentStatus === 'PastDue' || t.paymentStatus === 'Unpaid').length;
-    const suspended = tenants.filter(t => t.status === 'Suspended').length;
-    return { total, active, pastDue, suspended };
-  }, [tenants]);
+  const stats = useMemo(() => ({
+    total:     tenants.length,
+    active:    tenants.filter(t => t.status === 'Active').length,
+    pastDue:   tenants.filter(t => t.paymentStatus === 'PastDue' || t.paymentStatus === 'Unpaid').length,
+    suspended: tenants.filter(t => t.status === 'Suspended').length,
+  }), [tenants]);
 
   const handleUpdateStatus = async () => {
     if (!selectedTenant) return;
     try {
       await axiosInstance.put(`/admin/tenants/${selectedTenant._id}/status`, { status: targetStatus });
-      toast.success(`Tenant ${selectedTenant.name} status updated to ${targetStatus}`);
+      toast.success(`${selectedTenant.name} → ${targetStatus}`);
       setStatusModalOpen(false);
       fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to update status');
-    }
+    } catch (err) { toast.error(err.response?.data?.error || 'Failed to update status'); }
   };
 
   const handleUpdateModules = async () => {
     if (!selectedTenant) return;
     try {
       await axiosInstance.put(`/admin/tenants/${selectedTenant._id}/modules`, { enabledModules: selectedModules });
-      toast.success(`Tenant ${selectedTenant.name} module licensing updated`);
+      toast.success(`Module licensing updated for ${selectedTenant.name}`);
       setModuleModalOpen(false);
       fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to update modules');
-    }
+    } catch (err) { toast.error(err.response?.data?.error || 'Failed to update modules'); }
   };
 
   const handleUpdateSubscription = async () => {
@@ -124,12 +170,10 @@ export default function TenantManagementPage() {
         paymentStatus: subPaymentStatus,
         maxUsers: Number(subMaxUsers) || 50,
       });
-      toast.success(`Updated subscription for ${selectedTenant.name}`);
+      toast.success(`Subscription updated for ${selectedTenant.name}`);
       setSubModalOpen(false);
       fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to update subscription');
-    }
+    } catch (err) { toast.error(err.response?.data?.error || 'Failed to update subscription'); }
   };
 
   const openSubModal = (tenant) => {
@@ -137,138 +181,115 @@ export default function TenantManagementPage() {
     setSubBillingCycle(tenant.billingCycle || 'Annual');
     setSubPaymentStatus(tenant.paymentStatus || 'Paid');
     setSubMaxUsers(tenant.settings?.maxUsers || 50);
-    if (tenant.licenseExpiredAt) {
-      const d = new Date(tenant.licenseExpiredAt);
-      setSubExpiry(d.toISOString().split('T')[0]);
-    } else {
-      setSubExpiry('');
-    }
+    setSubExpiry(tenant.licenseExpiredAt ? new Date(tenant.licenseExpiredAt).toISOString().split('T')[0] : '');
     setSubModalOpen(true);
   };
 
   const openModuleModal = (tenant) => {
     setSelectedTenant(tenant);
-    const existing = (tenant.enabledModules || []).map(m =>
-      typeof m === 'string' ? m : m.moduleId || m._id
-    );
-    setSelectedModules(existing);
+    setSelectedModules((tenant.enabledModules || []).map(m => typeof m === 'string' ? m : m.moduleId || m._id));
     setModuleModalOpen(true);
   };
 
-  const toggleModule = (modKey) => {
-    setSelectedModules(prev =>
-      prev.includes(modKey) ? prev.filter(m => m !== modKey) : [...prev, modKey]
-    );
-  };
+  const toggleModule = (key) =>
+    setSelectedModules(prev => prev.includes(key) ? prev.filter(m => m !== key) : [...prev, key]);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-5 dark:border-neutral-800">
+    <div className="tracker-page space-y-3 p-0">
+
+      {/* ── Page Header ─────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-3 px-1 pt-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Super Admin — Control Plane</h1>
-          <p className="text-sm text-neutral-500 mt-1">Tenant accounts, multi-tenant database provisioning, subscription lifecycles, and module entitlements.</p>
+          <p className="lmx-page-eyebrow mb-0.5">Control Plane</p>
+          <h1 className="text-[15px] font-bold text-[var(--tracker-ink)] leading-tight">Tenant Management</h1>
+          <p className="text-[11px] text-[var(--tracker-ink-subtle)] mt-0.5">
+            Subscriptions · databases · module entitlements
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/platform-admin/tenant-provisioning')}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm transition shadow-xs"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Provision Tenant
-          </button>
+        <div className="flex items-center gap-2">
           <button
             onClick={fetchData}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-[var(--tracker-radius-md)] border border-[var(--tracker-border)] text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-1)] transition-all"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Refresh Control Plane
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            Refresh
+          </button>
+          <button
+            onClick={() => navigate('/platform-admin/tenant-provisioning')}
+            className="tracker-btn-brand inline-flex items-center gap-1.5 !px-3 !py-1.5 !text-[11px]"
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            Provision Tenant
           </button>
         </div>
       </div>
 
-      {/* Overview Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xs">
-          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Total Tenants</p>
-          <p className="mt-2 text-3xl font-extrabold text-neutral-900 dark:text-white">{stats.total}</p>
-        </div>
-        <div className="p-5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xs">
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Active Subscriptions</p>
-          <p className="mt-2 text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{stats.active}</p>
-        </div>
-        <div className="p-5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xs">
-          <p className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Past Due Accounts</p>
-          <p className="mt-2 text-3xl font-extrabold text-amber-600 dark:text-amber-400">{stats.pastDue}</p>
-        </div>
-        <div className="p-5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xs">
-          <p className="text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">Suspended / Locked</p>
-          <p className="mt-2 text-3xl font-extrabold text-rose-600 dark:text-rose-400">{stats.suspended}</p>
-        </div>
+      {/* ── Stat Cards Row ───────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-4 gap-2">
+        <StatCard label="Total Tenants"        value={stats.total}     color="var(--brand-solid)" />
+        <StatCard label="Active Subscriptions" value={stats.active}    color="var(--tracker-success)" delta={stats.active > 0 ? stats.active : undefined} deltaLabel="active" />
+        <StatCard label="Past Due"             value={stats.pastDue}   color="var(--tracker-warning)" />
+        <StatCard label="Suspended / Locked"   value={stats.suspended} color="var(--tracker-danger)" />
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-neutral-900 p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xs">
-        <div className="relative w-full sm:w-80">
-          <svg className="w-4 h-4 absolute left-3 top-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      {/* ── Command Search + Filter ──────────────────────────────────────────── */}
+      <div className="flex items-center gap-2">
+        {/* Command-grade search */}
+        <div className="relative flex-1">
+          <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--tracker-ink-subtle)] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
-            placeholder="Search tenant name, slug, email..."
+            placeholder="Search tenant, slug, email…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-neutral-900 dark:text-white"
+            className="lmx-input !pl-8 !pr-14 !py-1.5 !text-[12px] !rounded-[var(--tracker-radius-md)]"
           />
+          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] font-mono px-1 py-0.5 rounded bg-[var(--tracker-surface-1)] text-[var(--tracker-ink-subtle)] border border-[var(--tracker-border)] pointer-events-none">⌘K</kbd>
         </div>
 
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
-          <span className="text-xs font-medium text-neutral-500 whitespace-nowrap">Filter Status:</span>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm text-neutral-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="PAST_DUE">Past Due</option>
-            <option value="SUSPENDED">Suspended</option>
-            <option value="CANCELED">Canceled</option>
-          </select>
-        </div>
+        {/* Status filter */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="lmx-input !w-auto !py-1.5 !text-[12px] !rounded-[var(--tracker-radius-md)] cursor-pointer"
+        >
+          <option value="ALL">All Statuses</option>
+          <option value="ACTIVE">Active</option>
+          <option value="PAST_DUE">Past Due</option>
+          <option value="SUSPENDED">Suspended</option>
+          <option value="CANCELED">Canceled</option>
+        </select>
       </div>
 
-      {/* Main Tenant Table */}
+      {/* ── Tenant Table ─────────────────────────────────────────────────────── */}
       {loading ? (
-        <div className="py-16 text-center text-neutral-500">Loading Control Plane Data...</div>
+        <div className="tracker-card px-4 py-10 text-center text-[12px] text-[var(--tracker-ink-subtle)]">
+          Loading control plane data…
+        </div>
       ) : (
-        <div className="overflow-x-auto bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xs">
-          <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-neutral-50 dark:bg-neutral-800/50 text-neutral-600 dark:text-neutral-300 font-semibold border-b dark:border-neutral-800">
-              <tr>
-                <th className="p-4">Tenant Name</th>
-                <th className="p-4">Slug / Database</th>
-                <th className="p-4">Billing & Expiry</th>
-                <th className="p-4">Payment & Capacity</th>
-                <th className="p-4">Lifecycle Status</th>
-                <th className="p-4">Module Entitlements</th>
-                <th className="p-4 text-right">Actions</th>
+        <div className="tracker-card overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[var(--tracker-border)]">
+                {['Tenant', 'Slug / DB', 'Billing & Expiry', 'Payment & Capacity', 'Status', 'Modules', ''].map(h => (
+                  <th key={h} className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--tracker-ink-subtle)] whitespace-nowrap first:pl-4 last:pr-4">
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+            <tbody>
               {filteredTenants.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-neutral-500">
-                    <div>No matching tenants found.</div>
+                  <td colSpan={7} className="px-4 py-10 text-center text-[12px] text-[var(--tracker-ink-subtle)]">
+                    No tenants match your search.{' '}
                     <button
                       onClick={() => navigate('/platform-admin/tenant-provisioning')}
-                      className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold"
+                      className="text-[var(--brand-solid)] font-semibold hover:underline"
                     >
-                      + Provision First Tenant
+                      Provision one →
                     </button>
                   </td>
                 </tr>
@@ -276,74 +297,78 @@ export default function TenantManagementPage() {
                 filteredTenants.map(tenant => {
                   const status = (tenant.status || 'Active').toUpperCase();
                   const paymentStatus = tenant.paymentStatus || 'Paid';
-                  const expiryStr = tenant.licenseExpiredAt ? new Date(tenant.licenseExpiredAt).toLocaleDateString() : 'No Limit';
+                  const expiryStr = tenant.licenseExpiredAt
+                    ? new Date(tenant.licenseExpiredAt).toLocaleDateString()
+                    : 'No limit';
                   const maxUsers = tenant.settings?.maxUsers || 50;
+                  const moduleCount = Array.isArray(tenant.enabledModules) ? tenant.enabledModules.length : '—';
 
                   return (
-                    <tr key={tenant._id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition">
-                      <td className="p-4">
-                        <div className="font-semibold text-neutral-900 dark:text-white">{tenant.name}</div>
-                        <div className="text-xs text-neutral-400 font-mono">ID: {tenant.tenantId}</div>
+                    <tr
+                      key={tenant._id}
+                      className="border-b border-[var(--tracker-border-soft)] hover:bg-[var(--tracker-surface-1)] transition-colors group"
+                    >
+                      {/* Tenant name */}
+                      <td className="pl-4 pr-3 py-2">
+                        <div className="text-[12px] font-semibold text-[var(--tracker-ink)]">{tenant.name}</div>
+                        <div className="text-[10px] font-mono text-[var(--tracker-ink-subtle)]">{tenant.tenantId}</div>
                       </td>
-                      <td className="p-4 font-mono text-xs text-neutral-600 dark:text-neutral-400">
-                        <div className="font-semibold text-indigo-600 dark:text-indigo-400">{tenant.slug}</div>
-                        <div className="text-neutral-400">{tenant.dbName}</div>
+
+                      {/* Slug / DB */}
+                      <td className="px-3 py-2">
+                        <div className="text-[11px] font-semibold text-[var(--brand-solid)] font-mono">{tenant.slug}</div>
+                        <div className="text-[10px] font-mono text-[var(--tracker-ink-subtle)]">{tenant.dbName}</div>
                       </td>
-                      <td className="p-4 text-xs text-neutral-600 dark:text-neutral-300">
-                        <div className="font-semibold">{tenant.billingCycle || 'Annual'} Cycle</div>
-                        <div className="text-neutral-400">Expires: {expiryStr}</div>
+
+                      {/* Billing */}
+                      <td className="px-3 py-2">
+                        <div className="text-[11px] font-medium text-[var(--tracker-ink)]">{tenant.billingCycle || 'Annual'}</div>
+                        <div className="text-[10px] text-[var(--tracker-ink-subtle)]">Expires {expiryStr}</div>
                       </td>
-                      <td className="p-4">
-                        <div className="flex flex-col gap-1">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold w-fit ${
-                            paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' :
-                            paymentStatus === 'Unpaid' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' :
-                            'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                          }`}>
-                            {paymentStatus}
-                          </span>
-                          <span className="text-xs text-neutral-500 font-mono">Max Users: {maxUsers}</span>
-                        </div>
+
+                      {/* Payment & capacity */}
+                      <td className="px-3 py-2">
+                        <PaymentChip status={paymentStatus} />
+                        <div className="text-[10px] font-mono text-[var(--tracker-ink-subtle)] mt-1">{maxUsers} users max</div>
                       </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' :
-                          status === 'SUSPENDED' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' :
-                          status === 'PAST_DUE' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' :
-                          'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-300'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            status === 'ACTIVE' ? 'bg-emerald-500' :
-                            status === 'SUSPENDED' ? 'bg-rose-500' :
-                            status === 'PAST_DUE' ? 'bg-amber-500' : 'bg-neutral-400'
-                          }`} />
-                          {tenant.status || 'Active'}
-                        </span>
+
+                      {/* Lifecycle status */}
+                      <td className="px-3 py-2">
+                        <StatusChip status={status} />
                       </td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                          {Array.isArray(tenant.enabledModules) ? `${tenant.enabledModules.length} Modules Active` : 'All Modules'}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right space-x-2">
-                        <button
-                          onClick={() => openSubModal(tenant)}
-                          className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition shadow-xs"
-                        >
-                          Subscription
-                        </button>
-                        <button
-                          onClick={() => { setSelectedTenant(tenant); setTargetStatus(tenant.status || 'Active'); setStatusModalOpen(true); }}
-                          className="px-2.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white text-xs font-medium rounded-lg transition"
-                        >
-                          Status
-                        </button>
-                        <button
+
+                      {/* Module count */}
+                      <td className="px-3 py-2">
+                        <span
+                          className="text-[11px] font-semibold tabular-nums text-[var(--brand-solid)] cursor-pointer hover:underline"
                           onClick={() => openModuleModal(tenant)}
-                          className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition shadow-xs"
                         >
-                          Modules
-                        </button>
+                          {moduleCount} modules
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="pr-4 pl-2 py-2 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => openSubModal(tenant)}
+                            className="px-2 py-1 text-[10px] font-semibold rounded-[var(--tracker-radius-sm)] bg-[var(--tracker-success-light)] text-[var(--tracker-success)] hover:brightness-95 transition"
+                          >
+                            Subscription
+                          </button>
+                          <button
+                            onClick={() => { setSelectedTenant(tenant); setTargetStatus(tenant.status || 'Active'); setStatusModalOpen(true); }}
+                            className="px-2 py-1 text-[10px] font-semibold rounded-[var(--tracker-radius-sm)] bg-[var(--tracker-surface-1)] text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] border border-[var(--tracker-border)] transition"
+                          >
+                            Status
+                          </button>
+                          <button
+                            onClick={() => openModuleModal(tenant)}
+                            className="px-2 py-1 text-[10px] font-semibold rounded-[var(--tracker-radius-sm)] bg-[var(--tracker-info-light)] text-[var(--tracker-info)] hover:brightness-95 transition"
+                          >
+                            Modules
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -354,149 +379,151 @@ export default function TenantManagementPage() {
         </div>
       )}
 
-      {/* Subscription & License Parameters Modal */}
+      {/* ── Subscription Modal ───────────────────────────────────────────────── */}
       {subModalOpen && selectedTenant && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-md w-full space-y-4 shadow-xl">
-            <h3 className="text-lg font-bold text-neutral-900 dark:text-white">Subscription & License Parameters</h3>
-            <p className="text-sm text-neutral-500">Tenant: <span className="font-semibold text-neutral-900 dark:text-white">{selectedTenant.name}</span> ({selectedTenant.slug})</p>
-
-            <div className="space-y-4 text-sm">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="tracker-card-plain p-0 max-w-md w-full overflow-hidden" style={{ boxShadow: 'var(--tracker-shadow-overlay)' }}>
+            <div className="px-4 py-3 border-b border-[var(--tracker-border)] flex items-center justify-between">
               <div>
-                <label className="block font-medium text-neutral-700 dark:text-neutral-300 mb-1">Billing Cycle</label>
-                <select
-                  value={subBillingCycle}
-                  onChange={(e) => setSubBillingCycle(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white"
-                >
-                  <option value="Annual">Annual (1 Year Default Expiry)</option>
-                  <option value="Monthly">Monthly (1 Month Default Expiry)</option>
-                  <option value="Lifetime">Lifetime (No Expiry)</option>
-                </select>
+                <h3 className="text-[13px] font-bold text-[var(--tracker-ink)]">Subscription & License</h3>
+                <p className="text-[11px] text-[var(--tracker-ink-subtle)]">{selectedTenant.name} · {selectedTenant.slug}</p>
               </div>
-
-              <div>
-                <label className="block font-medium text-neutral-700 dark:text-neutral-300 mb-1">License Expiration Date</label>
-                <input
-                  type="date"
-                  value={subExpiry}
-                  onChange={(e) => setSubExpiry(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white"
-                />
-                <p className="text-xs text-neutral-400 mt-1">7-day grace period is automatically enforced after this date.</p>
-              </div>
-
-              <div>
-                <label className="block font-medium text-neutral-700 dark:text-neutral-300 mb-1">Payment Status</label>
-                <select
-                  value={subPaymentStatus}
-                  onChange={(e) => setSubPaymentStatus(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white"
-                >
-                  <option value="Paid">Paid (Active Access)</option>
-                  <option value="PastDue">Past Due (Grace Period Warning)</option>
-                  <option value="Unpaid">Unpaid (Auto-Suspend Tenant)</option>
-                  <option value="Trial">Trial Period</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-medium text-neutral-700 dark:text-neutral-300 mb-1">Max Active Users Limit</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="10000"
-                  value={subMaxUsers}
-                  onChange={(e) => setSubMaxUsers(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white"
-                />
-                <p className="text-xs text-neutral-400 mt-1">Enforced at employee service layer before creating/activating users.</p>
-              </div>
+              <button onClick={() => setSubModalOpen(false)} className="text-[var(--tracker-ink-subtle)] hover:text-[var(--tracker-ink)] p-1 rounded transition">✕</button>
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4 border-t dark:border-neutral-800">
-              <button onClick={() => setSubModalOpen(false)} className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400">Cancel</button>
-              <button onClick={handleUpdateSubscription} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg">Save Subscription</button>
+            <div className="p-4 space-y-3">
+              <ModalField label="Billing Cycle">
+                <select value={subBillingCycle} onChange={e => setSubBillingCycle(e.target.value)} className="lmx-input !text-[12px] !py-1.5">
+                  <option value="Annual">Annual — 1 year default expiry</option>
+                  <option value="Monthly">Monthly — 1 month default expiry</option>
+                  <option value="Lifetime">Lifetime — no expiry</option>
+                </select>
+              </ModalField>
+
+              <ModalField label="License Expiration" hint="7-day grace period auto-enforced after expiry">
+                <input type="date" value={subExpiry} onChange={e => setSubExpiry(e.target.value)} className="lmx-input !text-[12px] !py-1.5" />
+              </ModalField>
+
+              <ModalField label="Payment Status">
+                <select value={subPaymentStatus} onChange={e => setSubPaymentStatus(e.target.value)} className="lmx-input !text-[12px] !py-1.5">
+                  <option value="Paid">Paid — active access</option>
+                  <option value="PastDue">Past Due — grace period warning</option>
+                  <option value="Unpaid">Unpaid — auto-suspend</option>
+                  <option value="Trial">Trial period</option>
+                </select>
+              </ModalField>
+
+              <ModalField label="Max Active Users" hint="Enforced at employee service layer">
+                <input type="number" min="1" max="10000" value={subMaxUsers} onChange={e => setSubMaxUsers(e.target.value)} className="lmx-input !text-[12px] !py-1.5" />
+              </ModalField>
+            </div>
+
+            <div className="px-4 py-3 border-t border-[var(--tracker-border)] flex justify-end gap-2">
+              <button onClick={() => setSubModalOpen(false)} className="tracker-btn-ghost !px-3 !py-1.5 !text-[12px]">Cancel</button>
+              <button onClick={handleUpdateSubscription} className="tracker-btn-primary !px-4 !py-1.5 !text-[12px]">Save Subscription</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Subscription Lifecycle Modal */}
+      {/* ── Status Modal ─────────────────────────────────────────────────────── */}
       {statusModalOpen && selectedTenant && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-md w-full space-y-4 shadow-xl">
-            <h3 className="text-lg font-bold text-neutral-900 dark:text-white">Update Subscription Lifecycle</h3>
-            <p className="text-sm text-neutral-500">Tenant: <span className="font-semibold text-neutral-900 dark:text-white">{selectedTenant.name}</span> ({selectedTenant.tenantId})</p>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="tracker-card-plain p-0 max-w-sm w-full overflow-hidden" style={{ boxShadow: 'var(--tracker-shadow-overlay)' }}>
+            <div className="px-4 py-3 border-b border-[var(--tracker-border)] flex items-center justify-between">
+              <div>
+                <h3 className="text-[13px] font-bold text-[var(--tracker-ink)]">Lifecycle Status</h3>
+                <p className="text-[11px] text-[var(--tracker-ink-subtle)]">{selectedTenant.name} · {selectedTenant.tenantId}</p>
+              </div>
+              <button onClick={() => setStatusModalOpen(false)} className="text-[var(--tracker-ink-subtle)] hover:text-[var(--tracker-ink)] p-1 rounded transition">✕</button>
+            </div>
 
-            <div className="space-y-2">
+            <div className="p-4 space-y-1.5">
               {[
-                { s: 'Active', desc: 'Full Data Plane API Access' },
-                { s: 'PAST_DUE', desc: 'API Access with Warning Banner' },
-                { s: 'Suspended', desc: 'Data Plane Locked (HTTP 402)' },
-                { s: 'CANCELED', desc: 'Read-Only Mode (Mutations Blocked)' }
+                { s: 'Active',    desc: 'Full Data Plane API access' },
+                { s: 'PAST_DUE', desc: 'API access with warning banner' },
+                { s: 'Suspended', desc: 'Data plane locked — HTTP 402' },
+                { s: 'CANCELED',  desc: 'Read-only mode, mutations blocked' },
               ].map(({ s, desc }) => (
-                <label key={s} className="flex items-center space-x-3 p-3 rounded-lg border dark:border-neutral-800 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition">
-                  <input
-                    type="radio"
-                    name="status"
-                    value={s}
-                    checked={targetStatus === s}
-                    onChange={(e) => setTargetStatus(e.target.value)}
-                    className="text-indigo-600 focus:ring-indigo-500"
-                  />
+                <label
+                  key={s}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-[var(--tracker-radius-sm)] border cursor-pointer transition-all ${
+                    targetStatus === s
+                      ? 'border-[var(--brand-solid)] bg-[var(--tracker-surface-1)]'
+                      : 'border-[var(--tracker-border)] hover:bg-[var(--tracker-surface-1)]'
+                  }`}
+                >
+                  <input type="radio" name="status" value={s} checked={targetStatus === s} onChange={e => setTargetStatus(e.target.value)} className="accent-[var(--brand-solid)] w-3.5 h-3.5" />
                   <div>
-                    <span className="font-semibold text-sm text-neutral-900 dark:text-white">{s}</span>
-                    <p className="text-xs text-neutral-500">{desc}</p>
+                    <div className="text-[12px] font-semibold text-[var(--tracker-ink)]">{s}</div>
+                    <div className="text-[10px] text-[var(--tracker-ink-subtle)]">{desc}</div>
                   </div>
                 </label>
               ))}
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4 border-t dark:border-neutral-800">
-              <button onClick={() => setStatusModalOpen(false)} className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400">Cancel</button>
-              <button onClick={handleUpdateStatus} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Save Status</button>
+            <div className="px-4 py-3 border-t border-[var(--tracker-border)] flex justify-end gap-2">
+              <button onClick={() => setStatusModalOpen(false)} className="tracker-btn-ghost !px-3 !py-1.5 !text-[12px]">Cancel</button>
+              <button onClick={handleUpdateStatus} className="tracker-btn-primary !px-4 !py-1.5 !text-[12px]">Save Status</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Dynamic Module Licensing Modal */}
+      {/* ── Module Licensing Modal ───────────────────────────────────────────── */}
       {moduleModalOpen && selectedTenant && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-lg w-full space-y-4 shadow-xl">
-            <h3 className="text-lg font-bold text-neutral-900 dark:text-white">Dynamic Module Licensing</h3>
-            <p className="text-sm text-neutral-500">Enable or disable module licenses for <span className="font-semibold text-neutral-900 dark:text-white">{selectedTenant.name}</span>:</p>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="tracker-card-plain p-0 max-w-md w-full overflow-hidden" style={{ boxShadow: 'var(--tracker-shadow-overlay)' }}>
+            <div className="px-4 py-3 border-b border-[var(--tracker-border)] flex items-center justify-between">
+              <div>
+                <h3 className="text-[13px] font-bold text-[var(--tracker-ink)]">Module Licensing</h3>
+                <p className="text-[11px] text-[var(--tracker-ink-subtle)]">{selectedTenant.name} — {selectedModules.length} active</p>
+              </div>
+              <button onClick={() => setModuleModalOpen(false)} className="text-[var(--tracker-ink-subtle)] hover:text-[var(--tracker-ink)] p-1 rounded transition">✕</button>
+            </div>
 
-            <div className="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto pr-1">
+            <div className="p-3 max-h-72 overflow-y-auto space-y-1">
               {availableModules.map(mod => {
-                const modKey = mod.moduleId || mod.id || mod._id;
-                const modName = mod.name || mod.label || modKey;
-                const checked = selectedModules.includes(modKey) || selectedModules.includes(mod._id);
+                const key = mod.moduleId || mod.id || mod._id;
+                const checked = selectedModules.includes(key) || selectedModules.includes(mod._id);
                 return (
-                  <label key={modKey} className="flex items-center justify-between p-3 rounded-lg border dark:border-neutral-800 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition">
+                  <label
+                    key={key}
+                    className="flex items-center justify-between px-3 py-2 rounded-[var(--tracker-radius-sm)] border border-[var(--tracker-border)] cursor-pointer hover:bg-[var(--tracker-surface-1)] transition-colors group"
+                  >
                     <div>
-                      <span className="text-sm font-semibold text-neutral-900 dark:text-white">{modName}</span>
-                      {mod.description && <p className="text-xs text-neutral-500">{mod.description}</p>}
+                      <div className="text-[12px] font-semibold text-[var(--tracker-ink)]">{mod.name}</div>
+                      {mod.description && <div className="text-[10px] text-[var(--tracker-ink-subtle)]">{mod.description}</div>}
                     </div>
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={() => toggleModule(modKey)}
-                      className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                      onChange={() => toggleModule(key)}
+                      className="w-3.5 h-3.5 accent-[var(--brand-solid)] rounded flex-shrink-0"
                     />
                   </label>
                 );
               })}
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4 border-t dark:border-neutral-800">
-              <button onClick={() => setModuleModalOpen(false)} className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400">Cancel</button>
-              <button onClick={handleUpdateModules} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Apply Licensing</button>
+            <div className="px-4 py-3 border-t border-[var(--tracker-border)] flex justify-end gap-2">
+              <button onClick={() => setModuleModalOpen(false)} className="tracker-btn-ghost !px-3 !py-1.5 !text-[12px]">Cancel</button>
+              <button onClick={handleUpdateModules} className="tracker-btn-primary !px-4 !py-1.5 !text-[12px]">Apply Licensing</button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Shared modal form field ────────────────────────────────────────────────
+function ModalField({ label, hint, children }) {
+  return (
+    <div>
+      <label className="block text-[11px] font-semibold text-[var(--tracker-ink-muted)] mb-1">{label}</label>
+      {children}
+      {hint && <p className="text-[10px] text-[var(--tracker-ink-subtle)] mt-0.5">{hint}</p>}
     </div>
   );
 }

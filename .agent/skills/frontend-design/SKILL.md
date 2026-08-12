@@ -1,7 +1,7 @@
 ---
 name: frontend-design
 description: |
-  Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don't read as templated defaults.
+  Mandatory design system for all UI work in the Workhub ERP Tracker. Governs information-first density, 2026-grade visual standards, semantic color tokens, and anti-spacious-container laws. MUST be applied without exception on every new page, component, or UI modification.
 ---
 
 # Frontend Design
@@ -53,3 +53,50 @@ Use active voice as default. A control should say exactly what happens when it's
 Treat failure and emptiness as moments for direction, not mood. Explain what went wrong and how to fix it, in the interface's voice rather than a person's. Errors don't apologize, and they are never vague about what happened. An empty screen is an invitation to act.
 
 Keep the register conversational and tuned: plain verbs, sentence case, no filler, with tone matched to the brand and the audience. Let each element do exactly one job. A label labels, an example demonstrates, and nothing quietly does double duty.
+
+---
+
+# SACRED UI DESIGN LAWS (MANDATORY — CANNOT BE OMITTED)
+
+These laws apply WITHOUT EXCEPTION to every UI page, component, dashboard, or form created or modified in this project.
+
+## LAW 1: Information-First Density (Zero Decorative Space)
+
+**The content defines the space. The container does not.**
+
+- Components wrap exactly what they contain. They do NOT add padding or margins to "look clean" or "breathe."
+- Whitespace only exists where it **separates two distinct pieces of information**. If removing a gap doesn't merge two pieces of content visually — the gap is waste and must be removed.
+- No large hero areas, oversized cards, or empty surfaces that exist to frame a single number or label.
+- `p-6`, `p-8`, `py-10` as default card or section padding is FORBIDDEN unless every pixel of that space is occupied by information context.
+- A row shows three fields — that row's height equals exactly what three fields need. Not more.
+- A metric card shows one number — the card shrinks to that number's natural size.
+
+**Correct mental model:** "What information is in this component? Only that information's natural size + minimum readable gap to adjacent information."
+
+**Wrong mental model:** "This card needs breathing room so let's add p-6."
+
+## LAW 2: 2026-Grade Visual Standards (Not 2021 Enterprise)
+
+Every UI page MUST meet all of the following:
+
+- **Layered surfaces**: Sidebar and modals use `backdrop-filter: blur()` glass effect. Cards have subtle `box-shadow` with color tint, not flat white boxes.
+- **Semantic HSL color palette**: Never use raw color names (`green`, `red`, `orange`). All status/semantic colors use curated HSL tokens from `tokens.css` or `uiTokens.js` (e.g. `--color-success`, `--color-danger`, `--color-warning`).
+- **Micro-interactions**: Table rows lift subtly on hover. Status badges pulse for active states. Buttons have press-state feedback.
+- **Stat cards carry context**: Metric cards show trend direction (delta arrows or sparklines) alongside the raw number, never just the number alone.
+- **Command-grade search**: Search inputs feel powerful — keyboard shortcut hint (`⌘K`), subtle glow on focus, instant typeahead feel.
+- **Typography hierarchy**: Display font, body font, and data/utility font are deliberately chosen and sized. Every text element has a clear role in the hierarchy.
+
+## LAW 3: Anti-Pattern Checklist (REJECT before shipping)
+
+Before committing any UI, verify none of these anti-patterns exist:
+
+| Anti-Pattern | Rejection Reason |
+|---|---|
+| Flat white cards with no depth or shadow | 2021-grade, no surface hierarchy |
+| Raw `green`/`red`/`orange` color values | No semantic token system |
+| `p-6` or larger as default card padding | Decorative space, not information space |
+| Metric card showing a number only | Missing trend/context |
+| Plain `<input>` search bar | Not command-grade |
+| Large empty hero section holding one label | Container defining space, not content |
+| Generic status chips with no micro-interaction | Static 2021 feel |
+| Sidebar with no glass/blur surface treatment | Flat and dated |
