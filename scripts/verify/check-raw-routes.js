@@ -22,7 +22,6 @@ const ALLOWED_RAW_ROUTES = [
   'fileRoutes.js',
   'ganttRoutes.js',
   'locationRoutes.js',
-  'periodClosureRoutes.js',
   'populateRoutes.js',
   'reportRoutes.js',
   'searchRoutes.js'

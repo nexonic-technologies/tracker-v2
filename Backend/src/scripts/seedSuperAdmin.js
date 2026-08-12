@@ -855,6 +855,7 @@ async function seed() {
         dbName: 'tracker_global',
         role: 'Platform Admin',
         userType: 'global_admin',
+        isSuperAdmin: true,
         status: 'Active'
       });
       console.log(`    ✓ Created Platform Control Plane Admin (${platformEmail})`);

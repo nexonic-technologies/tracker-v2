@@ -88,7 +88,8 @@ export async function buildQuery(ctx) {
       permissions: { read: true, create: true, update: true, delete: true },
       forbiddenAccess: { read: [], create: [], update: [], delete: [] },
       allowAccess: { read: ["*"], create: ["*"], update: ["*"], delete: ["*"] },
-      conditions: {}
+      conditions: {},
+      isSuperAdmin: true
     };
   } else if (!policy && ['notifications', 'notification_preferences', 'notificationreceptionist', 'notificationrules', 'notification_deliveries', 'session', 'auditlog'].includes(modelName.toLowerCase())) {
     policy = {

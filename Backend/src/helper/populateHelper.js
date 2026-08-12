@@ -432,7 +432,13 @@ export async function populateHelper(req, res, next) {
       filter: queryFilter,
       populateFields: finalPopulate, // Pass the merged object
       body: requestBody,
-      user: { id: user.id, role: user.role, userType: user.userType, client: user.client },
+      user: {
+        id: user.id,
+        role: user.role,
+        userType: user.userType,
+        client: user.client,
+        isSuperAdmin: !!user.isSuperAdmin
+      },
       tenantContext: req.tenantContext
     }));
 
@@ -625,7 +631,7 @@ async function handleAgentClientProducts(req, res, agentId) {
       modelName: 'agents',
       docId: agentId,
       populateFields: [{ path: 'client', select: 'name proposedProducts' }],
-      user: { id: req.user.id, role: 'Super Admin' }
+      user: { id: req.user?.id, isSuperAdmin: true }
     }));
 
     if (!agent || !agent.client) {

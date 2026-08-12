@@ -138,6 +138,10 @@ class TenantConnectionManager {
   clearCache() {
     this.connectionCache.clear();
   }
+
+  getActiveConnectionCount() {
+    return this.connectionCache.size;
+  }
 }
 
 const instance = new TenantConnectionManager();

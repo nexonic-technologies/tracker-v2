@@ -37,6 +37,11 @@ const UserLoginSchema = new mongoose.Schema(
       enum: ['employee', 'agent', 'superadmin', 'global_admin'],
       default: 'employee',
     },
+    isSuperAdmin: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     status: {
       type: String,
       enum: ['Active', 'Inactive', 'Suspended'],

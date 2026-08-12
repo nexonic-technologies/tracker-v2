@@ -67,6 +67,7 @@ export const login = async (req, res, next) => {
           name: resolvedName || emailToUse.split('@')[0],
           role: globalUser.role,
           userType: globalUser.userType,
+          isSuperAdmin: !!globalUser.isSuperAdmin,
           tenantSlug,
         };
         userType = globalUser.userType || "employee";
@@ -116,7 +117,7 @@ export const login = async (req, res, next) => {
       tenantId,
       tenantSlug: user.tenantSlug || (tenantId === 'default' || tenantId === 'admin' ? 'admin' : tenantId),
       dbName,
-      isGlobalAdmin: userType === 'global_admin' || (tenantId === 'admin' && (!!user.isSuperAdmin || !!user.role?.isSuperAdmin)),
+      isSuperAdmin: !!(user.isSuperAdmin || (typeof user.role === 'object' && user.role?.isSuperAdmin)),
     };
 
     if (userType === "employee") {
