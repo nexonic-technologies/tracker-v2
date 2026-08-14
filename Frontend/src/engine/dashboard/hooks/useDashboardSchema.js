@@ -40,16 +40,17 @@ export function useDashboardSchema() {
     if (!userRole) return null;
 
     try {
-      // Phase 5: Fetch dynamic backend dashboard schema
-      const res = await axiosInstance.get(`/dashboard/schema/${encodeURIComponent(userRole)}`);
-      if (res.data?.success && res.data?.data) {
-        return res.data.data;
+      const normalized = (userRole || '').toLowerCase().trim();
+      const res = await axiosInstance.post('/populate/read/dashboard_schemas', {
+        filter: { role: normalized },
+        limit: 1,
+      });
+      const doc = res.data?.data?.[0];
+      if (doc && doc.widgets && doc.widgets.length > 0) {
+        return { ...doc, isCustom: true };
       }
     } catch (err) {
-      // If 404 (no custom schema saved yet) or offline, fall back to default role fixture
-      if (err.response?.status !== 404) {
-        console.warn('[DashboardEngine] Backend schema fetch warning:', err.message);
-      }
+      // If no custom schema saved yet or offline, fall back to default role fixture
     }
 
     // Default static fixture fallback

@@ -7,6 +7,8 @@ import { useUserRole } from '../../hooks/useUserRole';
 import { getRoleConfig } from './config/dashboardConfig';
 import { useWidgetPermissions } from './hooks/useWidgetPermissions';
 import { useDashboardData } from './hooks/useDashboardData';
+import DashboardRenderer from '../../engine/dashboard/DashboardRenderer';
+import { useDashboardSchema } from '../../engine/dashboard/hooks/useDashboardSchema';
 
 // V1 components
 import DashboardLoader from './components/DashboardLoader';
@@ -45,9 +47,21 @@ export default function Dashboard() {
     userId,
   });
 
+  // 4. Fetch dynamic custom dashboard schema from dashboard_schemas (if customized in Dashboard Builder)
+  const { schema: customSchema } = useDashboardSchema();
+
   const loading = roleLoading || widgetsLoading || dataLoading;
 
   if (loading) return <DashboardLoader />;
+
+  // If a custom schema was designed and saved in Dashboard Builder, render it dynamically
+  if (customSchema?.isCustom && customSchema?.widgets?.length > 0) {
+    return (
+      <div className="space-y-4 animate-fade-in" data-module={MODULES.project.id}>
+        <DashboardRenderer schema={customSchema} />
+      </div>
+    );
+  }
 
   // Empty state if role has no configuration saved yet
   if (!hasConfig && !roleLoading && !widgetsLoading) {

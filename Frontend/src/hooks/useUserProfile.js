@@ -2,21 +2,44 @@ import { useState, useEffect } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import { useAuth } from '../context/authProvider';
 
+const profileCache = new Map();
+
 export const useUserProfile = () => {
   const { user } = useAuth();
-  const [profileImage, setProfileImage] = useState(null);
-  const [roleName, setRoleName] = useState(null);
-  const [userName, setUserName] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const targetId = user?.id || user?._id || user?.userId || user?.employeeId;
+
+  // Derive initial values immediately from user session token
+  const initialRole = typeof user?.role === 'string' ? user.role : user?.role?.name || null;
+  const initialName = user?.name || null;
+
+  // Check memory or sessionStorage cache
+  const cached = targetId ? profileCache.get(targetId) : null;
+
+  const [profileImage, setProfileImage] = useState(cached?.profileImage || null);
+  const [roleName, setRoleName] = useState(cached?.roleName || initialRole);
+  const [userName, setUserName] = useState(cached?.userName || initialName);
+  const [loading, setLoading] = useState(!cached && !initialName);
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      const targetId = user?.id || user?._id || user?.userId || user?.employeeId;
-      if (!targetId) {
-        setLoading(false);
-        return;
-      }
+    if (!targetId) {
+      setLoading(false);
+      return;
+    }
 
+    // Hydrate from sessionStorage if available
+    try {
+      const stored = sessionStorage.getItem(`user_profile_${targetId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.profileImage) setProfileImage(parsed.profileImage);
+        if (parsed.roleName) setRoleName(parsed.roleName);
+        if (parsed.userName) setUserName(parsed.userName);
+        profileCache.set(targetId, parsed);
+        setLoading(false);
+      }
+    } catch (_) {}
+
+    const fetchUserProfile = async () => {
       try {
         const populateFields = {
           'professionalInfo.role': 'name'
@@ -25,34 +48,35 @@ export const useUserProfile = () => {
         const response = await axiosInstance.post(`/populate/read/employees/${targetId}`, {
           populateFields
         });
-        const employee = response.data.data;
+        const employee = response.data?.data;
 
-        // Set profile image
-        if (employee?.basicInfo?.profileImage) {
-          setProfileImage(employee.basicInfo.profileImage);
-        }
+        if (employee) {
+          const newImg = employee?.basicInfo?.profileImage || null;
+          const newRole = employee?.professionalInfo?.role?.name || initialRole;
+          const fullName = [employee?.basicInfo?.firstName, employee?.basicInfo?.lastName].filter(Boolean).join(' ');
+          const newName = fullName || initialName;
 
-        // Set role name
-        if (employee?.professionalInfo?.role?.name) {
-          setRoleName(employee.professionalInfo.role.name);
-        }
+          if (newImg) setProfileImage(newImg);
+          if (newRole) setRoleName(newRole);
+          if (newName) setUserName(newName);
 
-        // Set full user name
-        if (employee?.basicInfo) {
-          const fullName = [employee.basicInfo.firstName, employee.basicInfo.lastName].filter(Boolean).join(' ');
-          if (fullName) {
-            setUserName(fullName);
-          }
+          const toCache = { profileImage: newImg, roleName: newRole, userName: newName };
+          profileCache.set(targetId, toCache);
+          try {
+            sessionStorage.setItem(`user_profile_${targetId}`, JSON.stringify(toCache));
+          } catch (_) {}
         }
       } catch (error) {
-        console.error('Failed to fetch user profile:', error);
+        // Non-blocking fallback to session token data
+        if (initialName && !userName) setUserName(initialName);
+        if (initialRole && !roleName) setRoleName(initialRole);
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserProfile();
-  }, [user?.id, user?._id, user?.userId, user?.employeeId]);
+  }, [targetId, initialName, initialRole]);
 
-  return { profileImage, roleName, userName, loading };
+  return { profileImage, roleName: roleName || initialRole, userName: userName || initialName, loading };
 };

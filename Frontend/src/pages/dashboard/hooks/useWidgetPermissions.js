@@ -8,11 +8,18 @@ import { useAuth } from '../../../context/authProvider';
  */
 export function useWidgetPermissions(roleId) {
   const { user } = useAuth();
-  const isSuperAdmin = !!user?.isSuperAdmin || !!user?.role?.isSuperAdmin;
-  const resolvedRoleId = roleId || user?.role?._id || user?.role?.id || user?.roleId;
+  const isSuperAdmin = !!(
+    user?.isSuperAdmin ||
+    user?.role?.isSuperAdmin ||
+    (typeof user?.role === 'string' && user.role.toLowerCase() === 'super admin')
+  );
+
+  const rawRoleId = roleId || user?.role?._id || user?.role?.id || user?.roleId || (typeof user?.role === 'string' && /^[0-9a-fA-F]{24}$/.test(user.role) ? user.role : null);
+  const isValidMongoId = typeof rawRoleId === 'string' && /^[0-9a-fA-F]{24}$/.test(rawRoleId);
+  const resolvedRoleId = isValidMongoId ? rawRoleId : null;
 
   const [widgets, setWidgets] = useState(new Set());
-  const [loading, setLoading] = useState(!isSuperAdmin);
+  const [loading, setLoading] = useState(!isSuperAdmin && !!resolvedRoleId);
   const [hasConfig, setHasConfig] = useState(isSuperAdmin);
 
   useEffect(() => {
@@ -24,6 +31,7 @@ export function useWidgetPermissions(roleId) {
 
     if (!resolvedRoleId) {
       setLoading(false);
+      setHasConfig(true);
       return;
     }
 

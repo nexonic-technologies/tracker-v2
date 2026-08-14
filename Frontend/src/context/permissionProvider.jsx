@@ -39,17 +39,32 @@ const PermissionContext = createContext({
 
 export const PermissionProvider = ({ children }) => {
   const { user, seededContext, setSeededContext } = useAuth();
-  const [state, setState] = useState({
-    permissions: {},
-    navigation: [],
-    capabilities: [],
-    uiCapabilities: [],
-    role: null,
-    userProfile: null,
-    isSuperAdmin: false,
-    loading: true,
-    error: null
+  
+  const [state, setState] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem("cached_user_context");
+      if (cached) {
+        const parsedCtx = JSON.parse(cached);
+        const parsed = parseContext(parsedCtx);
+        if (parsed) {
+          return { ...parsed, loading: false };
+        }
+      }
+    } catch (_) {}
+
+    return {
+      permissions: {},
+      navigation: [],
+      capabilities: [],
+      uiCapabilities: [],
+      role: null,
+      userProfile: null,
+      isSuperAdmin: false,
+      loading: true,
+      error: null
+    };
   });
+
   const versionRef = useRef(0);
   const fetchingRef = useRef(false);
 
@@ -63,7 +78,7 @@ export const PermissionProvider = ({ children }) => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
 
-    // Show loading state during refresh so sidebar renders a transition
+    // Show loading state only on explicit manual refresh
     if (isRefresh) {
       setState((s) => ({ ...s, loading: true }));
     }
@@ -76,6 +91,9 @@ export const PermissionProvider = ({ children }) => {
       if (parsed) {
         versionRef.current = ctx._v || 0;
         setState(parsed);
+        try {
+          sessionStorage.setItem("cached_user_context", JSON.stringify(ctx));
+        } catch (_) {}
       }
     } catch (err) {
       console.error("[PermissionProvider] Failed to fetch context:", err?.message);
@@ -96,6 +114,9 @@ export const PermissionProvider = ({ children }) => {
   useEffect(() => {
     if (!user) {
       // User logged out — clear everything
+      try {
+        sessionStorage.removeItem("cached_user_context");
+      } catch (_) {}
       setState({
         permissions: {},
         navigation: [],

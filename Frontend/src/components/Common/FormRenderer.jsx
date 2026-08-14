@@ -30,28 +30,33 @@ const getStateCode = (countryCode, stateName) => {
 
 
 /* ════════════════════════════════════════════
-   FLOATING LABEL INPUT WRAPPER
-   — Material-style label that floats on focus
+   UNIFIED FORM LABEL
+   — Clean, modern top-aligned label without floating cutouts
 ════════════════════════════════════════════ */
-const FloatingField = ({ label, required, filled, focused, children, className = "" }) => (
-  <div className={`relative ${className}`}>
-    {children}
-    {label && (
-      <span className={`
-        absolute left-3 pointer-events-none select-none
-        transition-all duration-200 ease-out
-        ${filled || focused
-          ? '-top-2 text-[10px] font-semibold px-1.5 bg-white'
-          : 'top-1/2 -translate-y-1/2 text-[13px] font-normal'}
-        ${focused
-          ? 'text-[#111111]'
-          : filled
-            ? 'text-[#626260]'
-            : 'text-[#7b7b78]'}
-      `}>
-        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
-      </span>
-    )}
+export const FormLabel = ({ label, required, focused, htmlFor, className = "" }) => {
+  if (!label) return null;
+  return (
+    <label
+      htmlFor={htmlFor}
+      className={`block text-[12.5px] font-semibold transition-colors duration-150 select-none mb-1.5 ${
+        focused
+          ? "text-[var(--brand-solid)]"
+          : "text-[var(--tracker-ink)]"
+      } ${className}`}
+    >
+      {label}
+      {required && <span className="text-red-500 ml-1 font-bold">*</span>}
+    </label>
+  );
+};
+
+/* ════════════════════════════════════════════
+   UNIFIED FORM FIELD WRAPPER
+════════════════════════════════════════════ */
+export const FormField = ({ label, required, focused, children, className = "" }) => (
+  <div className={`flex flex-col w-full ${className}`}>
+    <FormLabel label={label} required={required} focused={focused} />
+    <div className="relative w-full">{children}</div>
   </div>
 );
 
@@ -62,11 +67,15 @@ const SearchableSelect = ({ options = [], value, onChange, multiple, labelField,
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
   const ref = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setIsFocused(false); }
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+        setIsFocused(false);
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -76,99 +85,193 @@ const SearchableSelect = ({ options = [], value, onChange, multiple, labelField,
     if (!open && onOpen) onOpen();
     setOpen(!open);
     setIsFocused(true);
+    setHighlightIndex(-1);
   };
 
   const getLabel = (opt) => {
-    if (!opt) return "";
+    if (opt === undefined || opt === null) return "";
     if (typeof opt === 'object') {
-      return opt?.[labelField] || opt?.[fieldName] || opt?.name || opt?.title || opt?.label || opt?._id || "";
+      return opt?.[labelField] || opt?.[fieldName] || opt?.name || opt?.title || opt?.label || opt?._id || opt?.value || "";
     }
-    const match = options.find(o => (o?._id || o?.id || o?.value) === opt);
-    if (match) {
+    const match = options.find(o => {
+      if (typeof o === 'object' && o !== null) {
+        return (o?._id || o?.id || o?.value || o?.name || o?.label) === opt || (o?._id || o?.id || o?.value || o?.name || o?.label)?.toString() === opt?.toString();
+      }
+      return o === opt || o?.toString() === opt?.toString();
+    });
+    if (match && typeof match === 'object') {
       return match[labelField] || match[fieldName] || match.name || match.title || match.label || opt;
     }
-    return opt;
+    return String(opt);
   };
 
   const filtered = options.filter((opt) =>
     getLabel(opt).toLowerCase().includes(search.toLowerCase())
   );
 
-  const isFilled = multiple ? (value || []).length > 0 : !!value;
+  const isFilled = multiple ? (value || []).length > 0 : (value !== undefined && value !== null && value !== "");
 
   const isSelected = (opt) => {
-    if (multiple) return (value || []).some(v => (v?._id || v) === (opt?._id || opt));
-    return (value?._id || value) === (opt?._id || opt);
+    if (multiple) {
+      return (value || []).some(v => {
+        const vId = typeof v === 'object' ? (v?._id || v?.value || v?.name || v?.label) : v;
+        const optId = typeof opt === 'object' ? (opt?._id || opt?.value || opt?.name || opt?.label) : opt;
+        return vId === optId || vId?.toString() === optId?.toString();
+      });
+    }
+    const valId = typeof value === 'object' ? (value?._id || value?.value || value?.name || value?.label) : value;
+    const optId = typeof opt === 'object' ? (opt?._id || opt?.value || opt?.name || opt?.label) : opt;
+    return valId === optId || valId?.toString() === optId?.toString();
   };
 
   const handleSelect = (opt) => {
     if (multiple) {
       const current = value || [];
-      const exists = current.some(v => (v?._id || v) === (opt?._id || opt));
-      onChange(exists ? current.filter(v => (v?._id || v) !== (opt?._id || opt)) : [...current, opt]);
+      const exists = current.some(v => {
+        const vId = typeof v === 'object' ? (v?._id || v?.value || v?.name || v?.label) : v;
+        const optId = typeof opt === 'object' ? (opt?._id || opt?.value || opt?.name || opt?.label) : opt;
+        return vId === optId || vId?.toString() === optId?.toString();
+      });
+      onChange(exists ? current.filter(v => {
+        const vId = typeof v === 'object' ? (v?._id || v?.value || v?.name || v?.label) : v;
+        const optId = typeof opt === 'object' ? (opt?._id || opt?.value || opt?.name || opt?.label) : opt;
+        return vId !== optId && vId?.toString() !== optId?.toString();
+      }) : [...current, opt]);
     } else {
       onChange(opt);
       setOpen(false);
       setSearch("");
+      setIsFocused(false);
     }
   };
 
   const removeTag = (opt, e) => {
     e.stopPropagation();
-    onChange((value || []).filter(v => (v?._id || v) !== (opt?._id || opt)));
+    onChange((value || []).filter(v => {
+      const vId = typeof v === 'object' ? (v?._id || v?.value || v?.name || v?.label) : v;
+      const optId = typeof opt === 'object' ? (opt?._id || opt?.value || opt?.name || opt?.label) : opt;
+      return vId !== optId && vId?.toString() !== optId?.toString();
+    }));
+  };
+
+  const handleKeyDown = (e) => {
+    if (!open) {
+      if (e.key === "Enter" || e.key === "ArrowDown" || e.key === " ") {
+        e.preventDefault();
+        handleOpen();
+      }
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIndex((prev) => (prev + 1 < filtered.length ? prev + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIndex((prev) => (prev - 1 >= 0 ? prev - 1 : filtered.length - 1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (highlightIndex >= 0 && highlightIndex < filtered.length) {
+        handleSelect(filtered[highlightIndex]);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setOpen(false);
+      setIsFocused(false);
+    }
   };
 
   return (
-    <div ref={ref} className="relative">
-      <FloatingField label={label} required={required} filled={isFilled} focused={open}>
-        <button type="button" onClick={handleOpen}
+    <div ref={ref} className="relative w-full" onKeyDown={handleKeyDown}>
+      <FormField label={label} required={required} focused={open || isFocused}>
+        <button
+          type="button"
+          onClick={handleOpen}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => !open && setIsFocused(false)}
           className={`
-            w-full min-h-[48px] pl-3.5 pr-9 py-2 rounded-tracker-md text-left flex items-center gap-1.5 flex-wrap
-            bg-surface cursor-pointer
+            w-full min-h-[42px] pl-3.5 pr-10 py-2 rounded-[var(--tracker-radius-md)] text-left flex items-center gap-1.5 flex-wrap
+            bg-[var(--tracker-surface)] cursor-pointer text-[13px]
             border transition-all duration-200 outline-none
-            ${open
-              ? 'border-[var(--tracker-border-focus)] ring-2 ring-violet-500/15'
-              : 'border-hairline hover:border-ink-subtle'}
+            ${open || isFocused
+              ? 'border-[var(--brand-solid)] ring-3 ring-[var(--brand-solid)]/15 shadow-xs bg-[var(--tracker-surface)]'
+              : 'border-[var(--tracker-border)] hover:border-[var(--tracker-ink-subtle)] hover:bg-[var(--tracker-surface-1)]/30'}
           `}
         >
           {multiple && (value || []).map((v, i) => (
-            <span key={i} className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-tracker-sm bg-surface-1 text-ink text-[12px] font-medium border border-hairline-soft">
+            <span key={i} className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-[var(--tracker-radius-sm)] bg-[var(--brand-solid)]/10 text-[var(--brand-solid)] text-[12px] font-medium border border-[var(--brand-solid)]/20 shadow-xs">
               {getLabel(v)}
-              <span onClick={(e) => removeTag(v, e)} className="p-0.5 rounded-[4px] hover:bg-surface-2 transition-colors cursor-pointer text-ink-subtle hover:text-ink">
+              <span onClick={(e) => removeTag(v, e)} className="p-0.5 rounded-[3px] hover:bg-[var(--brand-solid)]/20 transition-colors cursor-pointer text-[var(--brand-solid)]">
                 <X className="h-3 w-3" />
               </span>
             </span>
           ))}
-          {!multiple && value && <span className="text-[13px] text-ink">{getLabel(value)}</span>}
+          {!multiple && isFilled && (
+            <span className="text-[13px] font-medium text-[var(--tracker-ink)]">{getLabel(value)}</span>
+          )}
+          {!multiple && !isFilled && (
+            <span className="text-[13px] text-[var(--tracker-ink-subtle)]">
+              {placeholder || `Select ${label || 'an option'}...`}
+            </span>
+          )}
         </button>
-        <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none transition-transform duration-200 ${open ? 'rotate-180 text-ink' : 'text-ink-subtle'}`} />
-      </FloatingField>
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+          <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? 'rotate-180 text-[var(--brand-solid)]' : 'text-[var(--tracker-ink-subtle)]'}`} />
+        </div>
+      </FormField>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-surface border border-hairline rounded-tracker-md shadow-tracker-overlay overflow-hidden animate-fade-in animate-fade-in-up">
+        <div className="absolute z-50 mt-1.5 w-full bg-[var(--tracker-surface)] border border-[var(--tracker-border)] rounded-[var(--tracker-radius-md)] shadow-2xl overflow-hidden animate-fade-in backdrop-blur-md">
           {options.length > 4 && (
-            <div className="p-2 border-b border-hairline-soft bg-surface">
-              <div className="flex items-center gap-2 px-2.5 h-9 bg-surface-1 border border-hairline rounded-tracker-sm">
-                <Search className="h-3.5 w-3.5 text-ink-subtle flex-shrink-0" />
-                <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            <div className="p-2 border-b border-[var(--tracker-border-soft)] bg-[var(--tracker-surface-1)]/50">
+              <div className="flex items-center gap-2 px-2.5 h-9 bg-[var(--tracker-surface)] border border-[var(--tracker-border)] rounded-[var(--tracker-radius-sm)] focus-within:border-[var(--brand-solid)] focus-within:ring-2 focus-within:ring-[var(--brand-solid)]/15">
+                <Search className="h-3.5 w-3.5 text-[var(--tracker-ink-subtle)] flex-shrink-0" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setHighlightIndex(-1);
+                  }}
                   onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                  placeholder="Search..." autoFocus
-                  className="flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-subtle focus:outline-none" />
-                {search && <X className="h-3 w-3 text-ink-subtle cursor-pointer hover:text-ink" onClick={() => setSearch("")} />}
+                  placeholder="Search options..."
+                  autoFocus
+                  className="flex-1 bg-transparent text-[13px] text-[var(--tracker-ink)] placeholder:text-[var(--tracker-ink-subtle)] focus:outline-none"
+                />
+                {search && (
+                  <X className="h-3.5 w-3.5 text-[var(--tracker-ink-subtle)] cursor-pointer hover:text-[var(--tracker-ink)]" onClick={() => setSearch("")} />
+                )}
               </div>
             </div>
           )}
-          <div className="max-h-52 overflow-y-auto py-1">
+          <div className="max-h-56 overflow-y-auto p-1 space-y-0.5">
             {filtered.length === 0 ? (
-              <div className="px-4 py-6 text-[13px] text-ink-subtle text-center">No results</div>
+              <div className="px-4 py-6 text-[13px] text-[var(--tracker-ink-subtle)] text-center">No options found</div>
             ) : filtered.map((opt, idx) => {
               const sel = isSelected(opt);
+              const isHighlighted = idx === highlightIndex;
               return (
-                <div key={opt?._id || opt?.value || idx} onClick={() => handleSelect(opt)}
-                  className={`flex items-center justify-between px-3.5 py-2.5 cursor-pointer transition-colors text-[13px] ${sel ? 'bg-[var(--module-accent-light)] text-[var(--module-accent)] font-semibold' : 'text-ink hover:bg-surface-1 hover:text-ink'}`}
+                <div
+                  key={opt?._id || opt?.value || idx}
+                  onClick={() => handleSelect(opt)}
+                  onMouseEnter={() => setHighlightIndex(idx)}
+                  className={`
+                    group flex items-center justify-between px-3 py-2.5 rounded-[var(--tracker-radius-sm)] cursor-pointer transition-all text-[13px]
+                    ${sel
+                      ? 'bg-[var(--brand-solid)] text-white font-semibold shadow-xs'
+                      : isHighlighted
+                        ? 'bg-[var(--brand-solid)]/10 text-[var(--brand-solid)] font-medium'
+                        : 'text-[var(--tracker-ink)] hover:bg-[var(--brand-solid)]/10 hover:text-[var(--brand-solid)]'}
+                  `}
                 >
-                  <span>{getLabel(opt)}</span>
-                  {sel && <Check className="h-3.5 w-3.5 text-[var(--module-accent)] flex-shrink-0" />}
+                  <span className="truncate">{getLabel(opt)}</span>
+                  {sel ? (
+                    <Check className="h-4 w-4 text-white flex-shrink-0 ml-2" />
+                  ) : (
+                    <span className="h-4 w-4 rounded-full border border-transparent group-hover:border-[var(--brand-solid)]/30 flex items-center justify-center transition-colors">
+                      <Check className="h-3 w-3 text-[var(--brand-solid)] opacity-0 group-hover:opacity-40" />
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -306,8 +409,8 @@ const CustomDatePicker = ({ value, onChange, label, required }) => {
   const isFilled = !!value;
 
   return (
-    <div ref={ref} className="relative">
-      <FloatingField label={label} required={required} filled={isFilled} focused={open}>
+    <div ref={ref} className="relative w-full">
+      <FormField label={label} required={required} focused={open}>
         <button
           type="button"
           onClick={() => {
@@ -317,23 +420,23 @@ const CustomDatePicker = ({ value, onChange, label, required }) => {
             }
           }}
           className={`
-            w-full min-h-[48px] pl-3.5 pr-9 py-2 rounded-tracker-md text-left flex items-center
-            bg-surface cursor-pointer text-[13px] text-ink
+            w-full min-h-[42px] pl-3.5 pr-10 py-2 rounded-[var(--tracker-radius-md)] text-left flex items-center
+            bg-[var(--tracker-surface)] cursor-pointer text-[13px] text-[var(--tracker-ink)]
             border transition-all duration-200 outline-none
             ${open
-              ? 'border-[var(--tracker-border-focus)] ring-2 ring-violet-500/15'
-              : 'border-hairline hover:border-ink-subtle'}
+              ? 'border-[var(--brand-solid)] ring-3 ring-[var(--brand-solid)]/15 shadow-xs'
+              : 'border-[var(--tracker-border)] hover:border-[var(--tracker-ink-subtle)]'}
           `}
         >
-          {getDisplayValue() || ((open || isFilled) ? <span className="text-ink-subtle text-[13px]">Select date...</span> : "\u00A0")}
+          {getDisplayValue() || <span className="text-[var(--tracker-ink-subtle)] text-[13px]">Select date...</span>}
         </button>
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle pointer-events-none">
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--tracker-ink-subtle)] pointer-events-none">
           <Calendar size={15} />
         </span>
-      </FloatingField>
+      </FormField>
 
       {open && (
-        <div className="absolute z-50 mt-1 p-3 w-[280px] bg-surface border border-hairline rounded-tracker-md shadow-tracker-overlay animate-fade-in animate-fade-in-up">
+        <div className="absolute z-50 mt-1 p-3 w-[280px] bg-[var(--tracker-surface)] border border-[var(--tracker-border)] rounded-[var(--tracker-radius-md)] shadow-2xl animate-fade-in backdrop-blur-md">
           <div className="flex justify-between items-center mb-3">
             <button
               type="button"
@@ -676,13 +779,13 @@ const FormRenderer = ({
     const filled = value !== undefined && value !== null && value !== "";
 
     const inputCls = `
-      w-full h-12 px-3.5 pt-4 pb-1 rounded-[8px] text-[13px]
-      bg-white
+      w-full h-[42px] px-3.5 py-2 rounded-[var(--tracker-radius-md)] text-[13px]
+      bg-[var(--tracker-surface)]
       border transition-all duration-200 outline-none
-      text-[#111111]
+      text-[var(--tracker-ink)] placeholder:text-[var(--tracker-ink-subtle)]
       ${isFocused
-        ? 'border-[#111111] ring-1 ring-[#111111]'
-        : 'border-[#d3cec6] hover:border-[#a8a39d]'}
+        ? 'border-[var(--brand-solid)] ring-3 ring-[var(--brand-solid)]/15 shadow-xs'
+        : 'border-[var(--tracker-border)] hover:border-[var(--tracker-ink-subtle)] hover:bg-[var(--tracker-surface-1)]/20'}
     `;
 
     // ── Country Dropdown override ──
@@ -764,25 +867,41 @@ const FormRenderer = ({
     /* ── Label (read-only display) ── */
     if (field.type === "label") {
       return (
-        <FloatingField label={field.label} required={field.required} filled={true} focused={false}>
-          <div className="w-full h-12 px-3.5 pt-5 pb-1 rounded-[8px] text-[13px] font-medium bg-[#f5f1ec] border border-[#d3cec6] text-[#111111]">
+        <FormField label={field.label} required={field.required} focused={false}>
+          <div className="w-full min-h-[42px] px-3.5 py-2 rounded-[var(--tracker-radius-md)] text-[13px] font-medium bg-[var(--tracker-surface-1)] border border-[var(--tracker-border)] text-[var(--tracker-ink)] flex items-center">
             {field.external ? field.externalValue ?? "—" : value ?? "—"}
           </div>
-        </FloatingField>
+        </FormField>
       );
     }
 
     /* ── Select ── */
     if (field.type === "select") {
-      const selectedOpt = field.options?.find(o => (o._id ?? o.value) === value) || null;
+      let selectedOpt = null;
+      if (typeof value === 'object' && value !== null) {
+        selectedOpt = value;
+      } else if (value !== undefined && value !== null && value !== '') {
+        selectedOpt = (field.options || []).find(o => {
+          if (typeof o === 'object' && o !== null) {
+            return (o._id ?? o.value ?? o.name ?? o.label) === value || (o._id ?? o.value ?? o.name ?? o.label)?.toString() === value?.toString();
+          }
+          return o === value || o?.toString() === value?.toString();
+        }) || value;
+      }
+
       return (
         <SearchableSelect
           options={field.options || []}
           value={selectedOpt}
-          onChange={(opt) => onFieldChange(opt?._id ?? opt?.value ?? opt)}
+          onChange={(opt) => {
+            const rawVal = typeof opt === 'object' && opt !== null
+              ? (opt._id ?? opt.value ?? opt.name ?? opt.label)
+              : opt;
+            onFieldChange(rawVal);
+          }}
           multiple={false}
-          labelField="name"
-          fieldName="label"
+          labelField="label"
+          fieldName="name"
           label={field.label}
           required={field.required}
         />
@@ -798,13 +917,11 @@ const FormRenderer = ({
       if (isMulti) {
         return (
           <div className="space-y-3 col-span-1 sm:col-span-2">
-            <label className="block text-xs font-semibold text-ink-subtle uppercase tracking-wider mb-1">
-              {field.label}
-            </label>
+            <FormLabel label={field.label} required={field.required} />
             {subFormValue.map((item, index) => (
-              <div key={index} className="rounded-[12px] border border-[#ebe7e1] p-4 bg-white relative group hover:border-[#d3cec6] transition-colors">
+              <div key={index} className="rounded-[var(--tracker-radius-md)] border border-[var(--tracker-border)] p-4 bg-[var(--tracker-surface)] relative group hover:border-[var(--tracker-ink-subtle)] transition-colors shadow-xs">
                 <button type="button" onClick={() => onFieldChange(subFormValue.filter((_, i) => i !== index))}
-                  className="absolute top-3 right-3 p-1.5 rounded-[6px] text-[#7b7b78] hover:text-[#c41c1c] hover:bg-[#c41c1c]/10 transition-all opacity-0 group-hover:opacity-100 cursor-pointer">
+                  className="absolute top-3 right-3 p-1.5 rounded-[var(--tracker-radius-sm)] text-[var(--tracker-ink-subtle)] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100 cursor-pointer">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-8">
@@ -835,14 +952,15 @@ const FormRenderer = ({
               subFields.forEach(sf => { newItem[sf.name] = ""; });
               onFieldChange([...subFormValue, newItem]);
             }}
-              className="w-full py-3 rounded-[8px] border border-dashed border-[#d3cec6] text-[13px] font-medium text-[#626260] hover:border-[#111111] hover:text-[#111111] hover:bg-[#f5f1ec] transition-all cursor-pointer flex items-center justify-center gap-1.5">
+              className="w-full py-3 rounded-[var(--tracker-radius-md)] border border-dashed border-[var(--tracker-border)] text-[13px] font-medium text-[var(--tracker-ink-muted)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-solid)] hover:bg-[var(--brand-solid)]/5 transition-all cursor-pointer flex items-center justify-center gap-1.5">
               <Plus className="h-3.5 w-3.5" /> Add {field.label || "Item"}
             </button>
           </div>
         );
       } else {
         return (
-          <div className="rounded-[12px] border border-[#ebe7e1] p-4 bg-white col-span-1 sm:col-span-2">
+          <div className="rounded-[var(--tracker-radius-md)] border border-[var(--tracker-border)] p-4 bg-[var(--tracker-surface)] col-span-1 sm:col-span-2 shadow-xs">
+            <FormLabel label={field.label} required={field.required} />
             <div className="grid grid-cols-1 gap-4">
               {subFields.map((subField) => (
                 <div key={subField.name}>
@@ -858,26 +976,25 @@ const FormRenderer = ({
     /* ── Textarea ── */
     if (field.type === "textarea") {
       return (
-        <FloatingField label={field.label} required={field.required} filled={filled} focused={isFocused}
-          className="[&>span]:top-3 [&>span]:translate-y-0"
-        >
+        <FormField label={field.label} required={field.required} focused={isFocused}>
           <textarea
             rows={field.rows || 3}
             value={value || ""}
+            placeholder={field.placeholder || `Enter ${field.label || ""}...`}
             onChange={(e) => onFieldChange(e.target.value)}
             onFocus={() => setFocusedField(field.name)}
             onBlur={() => setFocusedField(null)}
             className={`
-              w-full px-3.5 pt-5 pb-2 rounded-[8px] text-[13px] resize-none
-              bg-white
+              w-full px-3.5 py-2.5 rounded-[var(--tracker-radius-md)] text-[13px] resize-none
+              bg-[var(--tracker-surface)]
               border transition-all duration-200 outline-none
-              text-[#111111]
+              text-[var(--tracker-ink)] placeholder:text-[var(--tracker-ink-subtle)]
               ${isFocused
-                ? 'border-[#111111] ring-1 ring-[#111111]'
-                : 'border-[#d3cec6] hover:border-[#a8a39d]'}
+                ? 'border-[var(--brand-solid)] ring-3 ring-[var(--brand-solid)]/15 shadow-xs'
+                : 'border-[var(--tracker-border)] hover:border-[var(--tracker-ink-subtle)] hover:bg-[var(--tracker-surface-1)]/20'}
             `}
           />
-        </FloatingField>
+        </FormField>
       );
     }
 
@@ -885,28 +1002,30 @@ const FormRenderer = ({
     if (field.type === "file") {
       const hasFile = !!value;
       return (
-        <label htmlFor={`file-${field.name.replace(/\./g, '-')}`}
-          className={`flex items-center gap-3 px-3.5 py-3 rounded-[8px] cursor-pointer group transition-all duration-200
-            border border-dashed bg-white
-            ${hasFile ? 'border-[#111111] bg-[#f5f1ec]' : 'border-[#d3cec6] hover:border-[#111111] hover:bg-[#f5f1ec]'}
-          `}
-        >
-          <input type="file" accept={field.accept} onChange={(e) => onFieldChange(e.target.files[0])} className="hidden" id={`file-${field.name.replace(/\./g, '-')}`} />
-          {hasFile && (field.accept?.includes('image')) ? (
-            <img src={typeof value === 'string' ? (value.startsWith('http') ? value : (value.includes('serve/') ? `${axiosInstance.defaults.baseURL.replace('/api', '')}/api/files/${value}` : `${axiosInstance.defaults.baseURL.replace('/api', '')}/api/files/render/profile/${value.split('/').pop()}`)) : (value instanceof Blob || value instanceof File) ? URL.createObjectURL(value) : ''}
-              alt="" className="w-10 h-10 object-cover rounded-[6px] border border-[#d3cec6]" />
-          ) : (
-            <div className={`h-10 w-10 rounded-[6px] flex items-center justify-center flex-shrink-0 transition-colors ${hasFile ? 'bg-white border border-[#d3cec6]' : 'bg-[#f5f1ec] group-hover:bg-white border border-transparent group-hover:border-[#d3cec6]'}`}>
-              {hasFile ? <FileText className="h-4 w-4 text-[#111111]" /> : <Upload className="h-4 w-4 text-[#7b7b78] group-hover:text-[#111111] transition-colors" />}
+        <FormField label={field.label} required={field.required} focused={false}>
+          <label htmlFor={`file-${field.name.replace(/\./g, '-')}`}
+            className={`flex items-center gap-3 px-3.5 py-3 rounded-[var(--tracker-radius-md)] cursor-pointer group transition-all duration-200
+              border border-dashed bg-[var(--tracker-surface)]
+              ${hasFile ? 'border-[var(--brand-solid)] bg-[var(--brand-solid)]/5' : 'border-[var(--tracker-border)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)]/5'}
+            `}
+          >
+            <input type="file" accept={field.accept} onChange={(e) => onFieldChange(e.target.files[0])} className="hidden" id={`file-${field.name.replace(/\./g, '-')}`} />
+            {hasFile && (field.accept?.includes('image')) ? (
+              <img src={typeof value === 'string' ? (value.startsWith('http') ? value : (value.includes('serve/') ? `${axiosInstance.defaults.baseURL.replace('/api', '')}/api/files/${value}` : `${axiosInstance.defaults.baseURL.replace('/api', '')}/api/files/render/profile/${value.split('/').pop()}`)) : (value instanceof Blob || value instanceof File) ? URL.createObjectURL(value) : ''}
+                alt="" className="w-10 h-10 object-cover rounded-[var(--tracker-radius-sm)] border border-[var(--tracker-border)]" />
+            ) : (
+              <div className={`h-10 w-10 rounded-[var(--tracker-radius-sm)] flex items-center justify-center flex-shrink-0 transition-colors ${hasFile ? 'bg-[var(--tracker-surface)] border border-[var(--tracker-border)]' : 'bg-[var(--tracker-surface-1)] group-hover:bg-[var(--tracker-surface)] border border-transparent group-hover:border-[var(--tracker-border)]'}`}>
+                {hasFile ? <FileText className="h-4 w-4 text-[var(--tracker-ink)]" /> : <Upload className="h-4 w-4 text-[var(--tracker-ink-subtle)] group-hover:text-[var(--brand-solid)] transition-colors" />}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className={`text-[13px] font-medium truncate transition-colors ${hasFile ? 'text-[var(--tracker-ink)]' : 'text-[var(--tracker-ink-muted)] group-hover:text-[var(--brand-solid)]'}`}>
+                {hasFile ? (typeof value === 'string' ? 'Change file' : value.name) : 'Click to upload'}
+              </p>
+              <p className="text-[11px] text-[var(--tracker-ink-subtle)] mt-0.5">{field.accept?.replace('/*', '') || 'Any file'}</p>
             </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className={`text-[13px] font-medium truncate transition-colors ${hasFile ? 'text-[#111111]' : 'text-[#626260] group-hover:text-[#111111]'}`}>
-              {hasFile ? (typeof value === 'string' ? 'Change file' : value.name) : 'Click to upload'}
-            </p>
-            <p className="text-[11px] text-[#7b7b78] mt-0.5">{field.accept?.replace('/*', '') || 'Any file'}</p>
-          </div>
-        </label>
+          </label>
+        </FormField>
       );
     }
 
@@ -951,11 +1070,12 @@ const FormRenderer = ({
       };
 
       return (
-        <FloatingField label={field.label} required={field.required} filled={filled} focused={isFocused}>
+        <FormField label={field.label} required={field.required} focused={isFocused}>
           <div className="relative w-full">
             <input
               type={showPassword ? "text" : "password"}
               value={typeof value === 'object' && value !== null ? JSON.stringify(value) : (value || "")}
+              placeholder={field.placeholder || `Enter ${field.label || ""}...`}
               onChange={(e) => {
                 onFieldChange(e.target.value);
               }}
@@ -966,21 +1086,22 @@ const FormRenderer = ({
             <button
               type="button"
               onClick={toggleShow}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink transition-colors cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--tracker-ink-subtle)] hover:text-[var(--tracker-ink)] transition-colors cursor-pointer"
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-        </FloatingField>
+        </FormField>
       );
     }
 
     /* ── Default Text/Number/Email/etc ── */
     return (
-      <FloatingField label={field.label} required={field.required} filled={filled} focused={isFocused}>
+      <FormField label={field.label} required={field.required} focused={isFocused}>
         <input
           type={field.type || "text"}
           value={typeof value === 'object' && value !== null ? JSON.stringify(value) : (value || "")}
+          placeholder={field.placeholder || `Enter ${field.label || ""}...`}
           onChange={(e) => {
             onFieldChange(e.target.value);
             if (field.autoFetch && e.target.value.length === 11) handleAutoFetch(field, e.target.value);
@@ -989,7 +1110,7 @@ const FormRenderer = ({
           onBlur={() => setFocusedField(null)}
           className={inputCls}
         />
-      </FloatingField>
+      </FormField>
     );
   };
 

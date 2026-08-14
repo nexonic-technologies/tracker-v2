@@ -13,14 +13,31 @@ import axiosInstance from '../../../api/axiosInstance';
  *   refresh       — function to trigger a manual reload of stats
  */
 export function useDashboardData({ enabledWidgets, userId }) {
-  const [stats, setStats] = useState(null);
-  const [pendingLeaves, setPendingLeaves] = useState([]);
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('cached_dashboard_stats');
+      return cached ? JSON.parse(cached).stats : null;
+    } catch (_) { return null; }
+  });
+  const [pendingLeaves, setPendingLeaves] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('cached_dashboard_stats');
+      return cached ? JSON.parse(cached).pendingLeaves || [] : [];
+    } catch (_) { return []; }
+  });
+  const [dashboardData, setDashboardData] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('cached_dashboard_stats');
+      return cached ? JSON.parse(cached).dashboardData : null;
+    } catch (_) { return null; }
+  });
+  const [loading, setLoading] = useState(!stats && !dashboardData);
   const [error, setError] = useState(null);
 
   const fetchStats = useCallback(async () => {
-    setLoading(true);
+    if (!stats && !dashboardData) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const res = await axiosInstance.get('/dashboard/stats');
@@ -40,18 +57,20 @@ export function useDashboardData({ enabledWidgets, userId }) {
         const myTasks = data.employee?.tasks?.length || 0;
         const leaveBalance = data.employee?.leaveBalance?.[0]?.available || 0;
 
-        setStats({
+        const calculatedStats = {
           attendanceStatus,
           pendingLeaves: data.stats?.pendingApprovals?.value || 0,
           leaveBalance,
           myTasks,
           totalEmployees: data.pulse?.total || 0,
           presentToday: (data.pulse?.present || 0) + (data.pulse?.wfh || 0) + (data.pulse?.late || 0),
-        });
+        };
+        setStats(calculatedStats);
 
+        let mappedLeaves = [];
         // Map pending leaves from action center for V1 widget compatibility
         if (data.actionCenter) {
-          const mappedLeaves = data.actionCenter
+          mappedLeaves = data.actionCenter
             .filter((item) => item.sourceModel === 'leaves')
             .map((item) => {
               const parts = item.subtitle ? item.subtitle.split(' · ') : [];
@@ -73,6 +92,14 @@ export function useDashboardData({ enabledWidgets, userId }) {
             });
           setPendingLeaves(mappedLeaves);
         }
+
+        try {
+          sessionStorage.setItem('cached_dashboard_stats', JSON.stringify({
+            stats: calculatedStats,
+            pendingLeaves: mappedLeaves,
+            dashboardData: data,
+          }));
+        } catch (_) {}
       }
     } catch (err) {
       console.error('Dashboard V2 fetch error:', err);

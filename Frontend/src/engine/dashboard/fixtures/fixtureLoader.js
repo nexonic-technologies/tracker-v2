@@ -13,6 +13,7 @@ import employeeDashboard from './employee-dashboard.json';
 
 /** Role name → fixture mapping */
 const FIXTURE_MAP = {
+  'super admin': adminDashboard,
   superadmin: adminDashboard,
   admin: adminDashboard,
   manager: managerDashboard,
@@ -28,5 +29,6 @@ const FIXTURE_MAP = {
  */
 export function getFixtureForRole(roleName) {
   if (!roleName) return employeeDashboard;
-  return FIXTURE_MAP[roleName.toLowerCase()] || employeeDashboard;
+  const normalized = String(roleName).toLowerCase().trim();
+  return FIXTURE_MAP[normalized] || FIXTURE_MAP[normalized.replace(/\s+/g, '')] || employeeDashboard;
 }

@@ -1,9 +1,3 @@
-/**
- * Settings Page — Dashboard Builder
- *
- * Visual drag-and-drop dashboard builder for admins.
- * Configures role dashboards purely via JSON metadata (§2.11, §2.13).
- */
 import React, { useState } from 'react';
 import WidgetLibrary from '../../engine/dashboard/builder/WidgetLibrary';
 import CanvasRenderer from '../../engine/dashboard/builder/CanvasRenderer';
@@ -44,7 +38,7 @@ export default function DashboardBuilder() {
         const fetched = res.data?.data || [];
         if (fetched.length > 0) {
           const mapped = fetched.map((r) => ({
-            id: (r.name || '').toLowerCase().replace(/\s+/g, ''),
+            id: (r.name || '').toLowerCase().trim(),
             label: r.name,
           }));
           setAvailableRoles(mapped);
@@ -61,14 +55,19 @@ export default function DashboardBuilder() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Phase 5: POST schema JSON to backend API
-      const res = await axiosInstance.post('/dashboard/schema', {
-        role,
-        schema,
-      });
+      const normalizedRole = role.toLowerCase().trim();
+      const res = await axiosInstance.post('/populate/bulk-upsert/dashboard_schemas', [
+        {
+          role: normalizedRole,
+          name: `${role.toUpperCase()} Dashboard Layout`,
+          widgets: schema.widgets || [],
+          layout: schema.layout || { type: 'grid', columns: 12, gap: 16 },
+          version: (schema.version || 1) + 1,
+        }
+      ]);
 
       if (res.data?.success) {
-        toast.success(`Dashboard schema saved to backend for role: ${role.toUpperCase()}`);
+        toast.success(`Dashboard schema saved for role: ${role.toUpperCase()}`);
       } else {
         toast.error(res.data?.message || 'Failed to save layout');
       }
@@ -86,11 +85,15 @@ export default function DashboardBuilder() {
     }
     setResetting(true);
     try {
-      await axiosInstance.delete(`/dashboard/schema/${encodeURIComponent(role)}`);
+      const normalizedRole = role.toLowerCase().trim();
+      await axiosInstance.post('/populate/delete/dashboard_schemas', {
+        filter: { role: normalizedRole }
+      });
       toast.success(`Dashboard schema reset to defaults for role: ${role.toUpperCase()}`);
       // Re-trigger role state to load default fixture
       setRole(role);
     } catch (err) {
+      console.error('[DashboardBuilder] Reset error:', err);
       toast.error('Failed to reset dashboard layout');
     } finally {
       setResetting(false);
@@ -131,7 +134,7 @@ export default function DashboardBuilder() {
                 ))
               ) : (
                 <>
-                  <option value="superadmin">Superadmin</option>
+                  <option value="super admin">Super Admin</option>
                   <option value="admin">Admin</option>
                   <option value="manager">Manager</option>
                   <option value="employee">Employee</option>
@@ -144,11 +147,10 @@ export default function DashboardBuilder() {
           <button
             onClick={() => setIsPreview(!isPreview)}
             type="button"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--tracker-radius-sm)] text-xs font-medium border transition-colors ${
-              isPreview
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--tracker-radius-sm)] text-xs font-medium border transition-colors ${isPreview
                 ? 'bg-[var(--brand-solid)] text-white border-[var(--brand-solid)]'
                 : 'bg-[var(--tracker-surface)] text-[var(--tracker-ink)] border-[var(--tracker-border)] hover:bg-[var(--tracker-surface-1)]'
-            }`}
+              }`}
           >
             <Eye size={14} />
             <span>{isPreview ? 'Edit Layout' : 'Preview'}</span>

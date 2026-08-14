@@ -833,7 +833,7 @@ const RegistryTab = ({ selectedRole, models, onSave, saving, message }) => {
 
 // ─── Tab 4: Dashboard Widgets ──────────────────────────────────────────────────
 
-const dashboard_widgetsTab = ({ selectedRole }) => {
+const DashboardWidgetsTab = ({ selectedRole }) => {
     const [enabledWidgets, setEnabledWidgets] = useState(new Set());
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -1465,7 +1465,7 @@ const RoleAccessPolicy = () => {
                                     />
                                 )}
                                 {activeTab === 'widgets' && (
-                                    <dashboard_widgetsTab selectedRole={selectedRole} />
+                                    <DashboardWidgetsTab selectedRole={selectedRole} />
                                 )}
                             </div>
                         </div>

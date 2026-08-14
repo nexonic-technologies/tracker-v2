@@ -1,7 +1,8 @@
 // src/crud/buildReadQuery.js
 import { getModel } from "../utils/appRegistry.js";
 import { getAllServices } from "../utils/servicesCache.js";
-import { getPolicy, getRoleMeta } from "../utils/cache.js";
+import { resolvePolicy } from "../utils/policy/policyEngine.js";
+import { getRoleMeta } from "../utils/cache.js";
 import { pathToFileURL } from "url";
 import { buildMongoFilter } from "../utils/mongoFilterCompiler.js";
 import queryOptimizer from "../utils/queryOptimizer.js";
@@ -11,6 +12,7 @@ import runRegistry from "../utils/policy/registryExecutor.js";
 import sanitizeRead from "../utils/sanitizeRead.js";
 import sanitizePopulated from "../utils/sanitizePopulated.js";
 import safeAggregate from "../utils/safeAggregator.js";
+import { pipelineSanitize } from "../utils/pipelineSanitizer.js";
 import mongoose from "mongoose";
 
 export default async function buildReadQuery(ctx) {
@@ -30,47 +32,46 @@ export default async function buildReadQuery(ctx) {
   const Model = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel(modelName) : getModel(modelName);
   if (!Model) throw new Error(`Model "${modelName}" not found`);
 
-  const cacheKey = queryOptimizer.getCacheKey(modelName, { docId, filter, role, userId }, { fields, populateFields });
+  const tenantId = ctx.tenantContext?.databaseName || ctx.tenantContext?.clientId || 'global';
+  const cacheKey = queryOptimizer.getCacheKey(tenantId, modelName, { docId, filter, role, userId }, { fields, populateFields });
   const cachedData = queryOptimizer.getCache(cacheKey);
   if (cachedData !== null) {
     return cachedData;
   }
 
-  /** -----------------------------------------------
-   * 1) CRUD READ PERMISSION
-   * ----------------------------------------------- */
+  /** ============================================================
+   *  🔒 1) CRUD PERMISSION CHECK
+   * ============================================================ */
   if (!policy?.permissions?.read) {
     throw new Error(`Role "${role}" has no READ permission on model "${modelName}"`);
   }
 
-  /** -----------------------------------------------
-   * 2) Field sanitization (allowed + forbidden)
-   * ----------------------------------------------- */
-  if (fields) {
-    fields = sanitizeRead({ fields, policy }); // returns an array like ["basicInfo.firstName"]
-  }
+  /** ============================================================
+   *  🔒 2) ABAC SANITIZATION (FIELDS)
+   * ============================================================ */
+  fields = sanitizeRead({ fields, policy });
+  ctx.fields = fields;
 
-  /** -----------------------------------------------
-   * 3) Registry execution (populateRef, isSelf, custom)
-   * ----------------------------------------------- */
+  /** ============================================================
+   *  🛡️ 3) REGISTRY EXECUTION (SECURITY & ABAC FILTERS)
+   * ============================================================ */
   const registryOutput = await runRegistry({
     role,
     userId,
     modelName,
     action: "read",
     policy,
-    existingFilter: filter   // registry merges security + query filter internally
+    existingFilter: filter
   });
 
-  // registry may add field restrictions
-  fields = registryOutput?.fields ?? fields;
-  // registry returns already-merged filter — use it directly
-  if (registryOutput?.filter) filter = registryOutput.filter;
+  if (registryOutput?.filter) {
+    filter = registryOutput.filter;
+    ctx.filter = filter;
+  }
 
-
-  /** -----------------------------------------------
-   * 4) beforeRead hook (service)
-   * ----------------------------------------------- */
+  /** ============================================================
+   *  ⚙️ 4) LIFECYCLE SERVICE HOOK (BEFORE READ)
+   * ============================================================ */
   const serviceCache = getAllServices();
   const modelService = serviceCache?.[modelName];
   let serviceInstance = null;
@@ -97,20 +98,22 @@ export default async function buildReadQuery(ctx) {
    *  🔥 5) AGGREGATE READ — With `$lookup` policy enforcement
    * ============================================================ */
   if (filter?.aggregate === true && Array.isArray(filter.stages)) {
-    // Enforce permission for every $lookup
-    for (const stage of filter.stages) {
-      if (stage.$lookup?.from) {
-        const targetModel = Object.keys(mongoose.models).find(
-          m => mongoose.models[m].collection.collectionName === stage.$lookup.from
-        );
-
-        if (!targetModel) continue; // lookup alias, skip
-
-        const targetPolicy = getPolicy(role, targetModel);
-        if (!targetPolicy || !targetPolicy.permissions?.read) {
-          throw new Error(
-            `❌ Role "${role}" is NOT allowed to READ $lookup model "${targetModel}" inside aggregate`
+    // Enforce permission for every $lookup via Policy Engine (Clean bypass for SuperAdmin)
+    if (!policy?.isSuperAdmin) {
+      for (const stage of filter.stages) {
+        if (stage.$lookup?.from) {
+          const targetModel = Object.keys(mongoose.models).find(
+            m => mongoose.models[m].collection.collectionName === stage.$lookup.from
           );
+
+          if (!targetModel) continue; // lookup alias, skip
+
+          const targetPolicy = await resolvePolicy(ctx, targetModel);
+          if (!targetPolicy || !targetPolicy.permissions?.read) {
+            throw new Error(
+              `❌ Role "${role}" is NOT allowed to READ $lookup model "${targetModel}" inside aggregate`
+            );
+          }
         }
       }
     }
@@ -128,6 +131,7 @@ export default async function buildReadQuery(ctx) {
     ];
 
     let result = await safeAggregate(Model, pipeline);
+    result = pipelineSanitize({ data: result, modelName });
 
     if (serviceInstance?.afterRead) {
       ctx.data = result;
@@ -194,7 +198,10 @@ export default async function buildReadQuery(ctx) {
     : Model.find(mongoFilter);
 
   if (fields && fields.length > 0) {
-    query = query.select(fields.join(' '));
+    const validFields = fields.filter(f => f && f !== '*');
+    if (validFields.length > 0) {
+      query = query.select(validFields.join(' '));
+    }
   }
 
   // 🛡️ UNIVERSAL POPULATE: Flat populate approach
@@ -243,8 +250,8 @@ export default async function buildReadQuery(ctx) {
         let finalSelect = String(selectFields).replace(/,/g, ' ');
 
         // Sanitize populate selection if targetModelName is known
-        if (targetModelName && role) {
-          const targetPolicy = getPolicy(role, targetModelName);
+        if (targetModelName && role && !policy?.isSuperAdmin) {
+          const targetPolicy = await resolvePolicy(ctx, targetModelName);
           if (targetPolicy) {
             if (!targetPolicy.permissions?.read) {
               shouldPopulate = false;
@@ -279,7 +286,7 @@ export default async function buildReadQuery(ctx) {
   if (docId && result) result = [result]; // unify with list format for sanitization
 
   /** -----------------------------------------------
-   * 7) Populate sanitization (populateRef mode)
+   * 7) Populate sanitization (populateRef mode) & Pipeline Sanitization
    * ----------------------------------------------- */
   if (registryOutput?.isPopulationContext) {
     result = sanitizePopulated({
@@ -288,6 +295,9 @@ export default async function buildReadQuery(ctx) {
       modelName
     });
   }
+
+  // Universal Enterprise Response Normalization & Field Aliasing
+  result = pipelineSanitize({ data: result, modelName });
 
   /** -----------------------------------------------
    * 8) afterRead hook

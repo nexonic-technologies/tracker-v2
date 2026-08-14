@@ -42,49 +42,16 @@ export default function leaves() {
       const totalDays = Math.round((end - start) / (24 * 60 * 60 * 1000)) + 1;
       body.totalDays = totalDays;
 
-      // Resolve employee and check balance
-      const employee = await Employee.findById(empId);
-      if (!employee) throw new Error("Employee profile not found.");
+      // Validate balance using dynamic balance engine (Policy Quota - Approved Transactions)
+      const { getEmployeeLeaveBalance } = await import("./business/leaveBalanceService.js");
+      const balance = await getEmployeeLeaveBalance(empId, body.leaveTypeId, models, start);
 
-      let bucket = employee.leaveStatus.find(
-        (i) => i.leaveType.toString() === body.leaveTypeId.toString()
-      );
-
-      if (!bucket) {
-        // Auto-initialize bucket from Department's Leave Policy
-        const deptId = body.departmentId || employee.professionalInfo?.department;
-        if (deptId) {
-          const { default: models } = await import('../models/Collection.js');
-          const dept = await models.departments.findById(deptId)
-            .populate('leavePolicy')
-            .lean();
-          const policy = dept?.leavePolicy;
-          if (policy && Array.isArray(policy.leaves)) {
-            const policyLeaf = policy.leaves.find(l => l.leaveType.toString() === body.leaveTypeId.toString());
-            if (policyLeaf) {
-              const newBucket = {
-                leaveType: body.leaveTypeId,
-                usedThisMonth: 0,
-                usedThisYear: 0,
-                carriedForward: 0,
-                available: policyLeaf.maxDaysPerYear || 0
-              };
-              employee.leaveStatus.push(newBucket);
-              ctx.pendingLeaveBucket = { empId, newBucket };
-              
-              // Refetch bucket reference from in-memory array
-              bucket = newBucket;
-            }
-          }
-        }
-      }
-
-      if (!bucket) {
+      if (balance.quota === 0) {
         throw new Error("Insufficient Leave Balance. Leave type is not configured under your policy.");
       }
 
-      if (bucket.available < totalDays) {
-        throw new Error(`Insufficient Leave Balance. Required: ${totalDays} days, Available: ${bucket.available} days.`);
+      if (balance.available < totalDays) {
+        throw new Error(`Insufficient Leave Balance. Required: ${totalDays} days, Available: ${balance.available} days.`);
       }
 
       return body;
@@ -93,16 +60,12 @@ export default function leaves() {
     // AFTER CREATE ➝ Triggered once leave request is newly submitted
     afterCreate: async (ctx) => {
       const { docId } = ctx;
-      if (ctx.pendingLeaveBucket) {
-        const { empId, newBucket } = ctx.pendingLeaveBucket;
-        await Employee.updateOne(
-          { _id: empId, 'leaveStatus.leaveType': { $ne: newBucket.leaveType } },
-          { $push: { leaveStatus: newBucket } }
-        );
-      }
-
       const leaveDoc = await Leave.findById(docId);
       if (!leaveDoc) return;
+
+      // Sync employee snapshot
+      const { syncEmployeeLeaveStatus } = await import("./business/leaveBalanceService.js");
+      await syncEmployeeLeaveStatus(leaveDoc.employeeId, models);
 
       // Initialize dynamic approval workflow
       const approvalEngine = (await import('../utils/approval/approvalEngine.js')).default;
@@ -156,23 +119,15 @@ export default function leaves() {
 
         // Deduct balance and create attendance only when approved at final step
         if (result.finalized && result.status === 'Approved') {
-          const employee = await Employee.findById(leaveDoc.employeeId);
-          const bucket = employee.leaveStatus.find(
-            (i) => i.leaveType.toString() === leaveDoc.leaveTypeId.toString()
-          );
-
           // Calculate no. of leave days
           const start = new Date(leaveDoc.startDate);
           const end = new Date(leaveDoc.endDate);
           const oneDay = 24 * 60 * 60 * 1000;
           const totalDays = Math.round((end - start) / oneDay) + 1;
 
-          if (bucket) {
-            bucket.usedThisMonth += totalDays;
-            bucket.usedThisYear += totalDays;
-            bucket.available = Math.max(bucket.available - totalDays, 0); // never negative
-          }
-          await employee.save();
+          // Sync employee balance dynamically
+          const { syncEmployeeLeaveStatus } = await import("./business/leaveBalanceService.js");
+          await syncEmployeeLeaveStatus(leaveDoc.employeeId, models);
 
           // Write to LeaveTransaction Audit Ledger
           const { default: LeaveTransaction } = await import('../models/LeaveTransaction.js');
@@ -206,24 +161,15 @@ export default function leaves() {
       
       // CASE: Approved ➔ Rejected (ROLLBACK FLOW)
       else if (prevStatus === "Approved" && newStatus === "Rejected") {
-        const employee = await Employee.findById(leaveDoc.employeeId);
-        const bucket = employee.leaveStatus.find(
-          (i) => i.leaveType.toString() === leaveDoc.leaveTypeId.toString()
-        );
-
         // Calculate leave days for rollback
         const start = new Date(leaveDoc.startDate);
         const end = new Date(leaveDoc.endDate);
         const oneDay = 24 * 60 * 60 * 1000;
         const totalDays = Math.round((end - start) / oneDay) + 1;
 
-        if (bucket) {
-          // Reverse deductions
-          bucket.usedThisMonth = Math.max(bucket.usedThisMonth - totalDays, 0);
-          bucket.usedThisYear = Math.max(bucket.usedThisYear - totalDays, 0);
-          bucket.available += totalDays; // restore leave balance
-        }
-        await employee.save();
+        // Sync employee balance dynamically
+        const { syncEmployeeLeaveStatus } = await import("./business/leaveBalanceService.js");
+        await syncEmployeeLeaveStatus(leaveDoc.employeeId, models);
 
         // Write to LeaveTransaction Audit Ledger
         const { default: LeaveTransaction } = await import('../models/LeaveTransaction.js');

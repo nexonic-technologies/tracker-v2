@@ -3,6 +3,10 @@ import TenantConnectionManager from '../tenant/TenantConnectionManager.js';
 import { runWithTenantContext, createTenantContext } from '../tenant/tenantContext.js';
 import { getGlobalModels } from '../models/global/index.js';
 
+// Fast in-memory cache for Global DB Tenant lookup (TTL: 60s)
+const tenantRecordCache = new Map();
+const TENANT_CACHE_TTL_MS = 60 * 1000;
+
 export const tenantMiddleware = async (req, res, next) => {
   try {
     const token = req.cookies?.auth_token || req.headers.authorization?.split(' ')[1];
@@ -44,7 +48,7 @@ export const tenantMiddleware = async (req, res, next) => {
 
     let tenantSlug = req.params?.tenantSlug || tenantId;
     let dbName = req.user?.dbName || tokenDecoded?.dbName || req.headers['x-tenant-dbname'] || `tracker_tenant_${tenantId}`;
-    let enabledModules = ['*'];
+    let enabledModules = req.user?.enabledModules || tokenDecoded?.enabledModules || null;
     let tenantRecord = null;
     let subscription = null;
 
@@ -53,66 +57,63 @@ export const tenantMiddleware = async (req, res, next) => {
       dbName = process.env.DEFAULT_TENANT_DB || 'tracker_tenant_admin';
     }
 
-    // Load Tenant & Subscription from Global DB if available
-    try {
-      const { Tenant } = getGlobalModels();
-      if (Tenant && tenantId !== 'default') {
-        tenantRecord = await Tenant.findOne({ $or: [{ tenantId }, { slug: tenantSlug }] }).populate('enabledModules').lean();
+    // If dbName and tenantId are already validated in JWT session token, use cached connection directly
+    const hasTokenTenantInfo = Boolean(tokenDecoded?.dbName || req.user?.dbName);
 
-        if (tenantRecord) {
-          // Verify status
-          const statusUpper = (tenantRecord.status || '').toUpperCase();
-          if (statusUpper === 'SUSPENDED') {
-            return res.status(402).json({ error: 'Account suspended due to billing or policy constraints', code: 'TENANT_SUSPENDED' });
-          }
-          if (statusUpper === 'INACTIVE' || statusUpper === 'CANCELED' || statusUpper === 'CANCELLED') {
-            return res.status(403).json({ error: 'Tenant account is inactive or canceled', code: 'TENANT_INACTIVE' });
-          }
+    if (!hasTokenTenantInfo && tenantId !== 'default' && tenantId !== 'admin') {
+      // Load Tenant & Subscription from Global DB only when resolving unauthenticated or token-less requests
+      try {
+        const { Tenant } = getGlobalModels();
+        if (Tenant) {
+          const cacheKey = `${tenantId}:${tenantSlug}`;
+          const cached = tenantRecordCache.get(cacheKey);
+          const now = Date.now();
 
-          // Payment Status Check
-          if (tenantRecord.paymentStatus === 'Unpaid') {
-            return res.status(402).json({ error: 'Tenant account suspended due to unpaid subscription invoice', code: 'TENANT_UNPAID' });
-          }
-
-          // License Expiry & 7-Day Grace Period Check
-          if (tenantRecord.licenseExpiredAt) {
-            const expiry = new Date(tenantRecord.licenseExpiredAt);
-            const now = new Date();
-            const GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
-
-            if (now > expiry) {
-              const graceEnd = new Date(expiry.getTime() + GRACE_PERIOD_MS);
-              if (now > graceEnd) {
-                return res.status(403).json({
-                  error: `License expired on ${expiry.toISOString().split('T')[0]}. 7-day grace period ended on ${graceEnd.toISOString().split('T')[0]}. Please renew your license.`,
-                  code: 'LICENSE_EXPIRED'
-                });
-              } else {
-                res.setHeader('X-Tenant-License-Warning', `License expired on ${expiry.toISOString().split('T')[0]}. Grace period active until ${graceEnd.toISOString().split('T')[0]}.`);
-              }
+          if (cached && (now - cached.timestamp < TENANT_CACHE_TTL_MS)) {
+            tenantRecord = cached.tenantRecord;
+          } else {
+            tenantRecord = await Tenant.findOne({ $or: [{ tenantId }, { slug: tenantSlug }] }).populate('enabledModules').lean();
+            if (tenantRecord) {
+              tenantRecordCache.set(cacheKey, { tenantRecord, timestamp: now });
             }
           }
 
-          if (Array.isArray(tenantRecord.enabledModules) && tenantRecord.enabledModules.length > 0) {
-            enabledModules = [];
-            tenantRecord.enabledModules.forEach((mod) => {
-              if (typeof mod === 'string') {
-                enabledModules.push(mod);
-              } else if (mod && typeof mod === 'object') {
-                if (mod.moduleId) enabledModules.push(mod.moduleId);
-                if (mod._id) enabledModules.push(mod._id.toString());
-                if (mod.name) enabledModules.push(mod.name.toLowerCase());
-              }
-            });
+          if (tenantRecord) {
+            // Verify status
+            const statusUpper = (tenantRecord.status || '').toUpperCase();
+            if (statusUpper === 'SUSPENDED') {
+              return res.status(402).json({ error: 'Account suspended due to billing or policy constraints', code: 'TENANT_SUSPENDED' });
+            }
+            if (statusUpper === 'INACTIVE' || statusUpper === 'CANCELED' || statusUpper === 'CANCELLED') {
+              return res.status(403).json({ error: 'Tenant account is inactive or canceled', code: 'TENANT_INACTIVE' });
+            }
+
+            if (tenantRecord.dbName) {
+              dbName = tenantRecord.dbName;
+            }
+
+            if (Array.isArray(tenantRecord.enabledModules) && tenantRecord.enabledModules.length > 0) {
+              enabledModules = [];
+              tenantRecord.enabledModules.forEach((mod) => {
+                if (typeof mod === 'string') {
+                  enabledModules.push(mod);
+                } else if (mod && typeof mod === 'object') {
+                  if (mod.moduleId) enabledModules.push(mod.moduleId);
+                  if (mod._id) enabledModules.push(mod._id.toString());
+                  if (mod.name) enabledModules.push(mod.name.toLowerCase());
+                }
+              });
+            }
+            subscription = tenantRecord.subscription || null;
           }
-          subscription = tenantRecord.subscription || null;
         }
+      } catch (_) {
+        // Non-blocking fallback if Global DB is uninitialized in dev/testing
       }
-    } catch (_) {
-      // Non-blocking fallback if Global DB is uninitialized in dev/testing
     }
 
-    const { conn, models } = await TenantConnectionManager.getTenantConnection(dbName, enabledModules);
+    const safeEnabledModules = (Array.isArray(enabledModules) && enabledModules.length > 0) ? enabledModules : ['*'];
+    const { conn, models } = await TenantConnectionManager.getTenantConnection(dbName, safeEnabledModules);
 
     const userObj = req.user || tokenDecoded;
     // Build standardized tenantContext
@@ -121,7 +122,7 @@ export const tenantMiddleware = async (req, res, next) => {
       tenantSlug,
       tenant: tenantRecord,
       subscription,
-      enabledModules,
+      enabledModules: safeEnabledModules,
       actor: userObj ? { id: userObj.id || userObj._id, role: userObj.role } : null,
       effectiveUser: userObj ? { id: userObj.id || userObj._id, role: userObj.role } : null,
       isImpersonated: Boolean(userObj?.isImpersonated),

@@ -88,7 +88,8 @@ export async function populateHelper(req, res, next) {
 
     // Clear cache if requested
     if (useCache === 'false') {
-      queryOptimizer.clearCache(model);
+      const tenantId = req.tenantContext?.databaseName || req.tenantContext?.clientId;
+      queryOptimizer.clearCache(model, tenantId);
     }
 
     // ------------------------ SPECIAL AGENT ENDPOINTS ------------------------
@@ -135,13 +136,14 @@ export async function populateHelper(req, res, next) {
       // Process sequentially with race condition handling
       for (const item of req.body) {
         try {
-          // Item structure: { filter: {...}, body: {...} }
-          // 1. Try to find existing doc
-          // We use standard buildQuery with 'list' (read with filter) to check existence
-          // BUT easier pattern: Try Update. If throws "not found", Try Create.
+          // Item structure can be either:
+          // 1. Explicit: { filter: {...}, body: {...} }
+          // 2. Direct document: { role: 'admin', name: '...', widgets: [...] }
+          const itemFilter = item.filter || (item.role ? { role: item.role } : (item._id ? { _id: item._id } : (item.name ? { name: item.name } : null)));
+          const itemBody = item.body || item;
 
           // Note: We must ensure we don't accidentally update ALL records if filter is empty.
-          if (!item.filter || Object.keys(item.filter).length === 0) {
+          if (!itemFilter || Object.keys(itemFilter).length === 0) {
             throw new Error("Filter required for bulk item");
           }
 
@@ -149,9 +151,10 @@ export async function populateHelper(req, res, next) {
           const existing = await buildQuery(makeCtx({
             action: 'read',
             modelName: model,
-            filter: item.filter,
+            filter: itemFilter,
             fields: ['_id', '__v'], // fetch __v for correct version tracking
-            user: { id: user.id, role: user.role }
+            user: req.user,
+            tenantContext: req.tenantContext
           }));
 
           let opResult;
@@ -164,7 +167,7 @@ export async function populateHelper(req, res, next) {
             const lockResult = await raceConditionHandler.acquireLock(docId, fingerprint);
             if (!lockResult.success) {
               errors.push({
-                filter: item.filter,
+                filter: itemFilter,
                 error: 'Document locked by another process'
               });
               continue;
@@ -176,7 +179,7 @@ export async function populateHelper(req, res, next) {
 
               if (versionCheck.conflict) {
                 errors.push({
-                  filter: item.filter,
+                  filter: itemFilter,
                   error: 'Version conflict - document was modified',
                   expectedVersion: versionCheck.expectedVersion
                 });
@@ -187,8 +190,9 @@ export async function populateHelper(req, res, next) {
                 action: 'update',
                 modelName: model,
                 docId: docId,
-                body: item.body,
-                user: { id: user.id, role: user.role }
+                body: itemBody,
+                user: req.user,
+                tenantContext: req.tenantContext
               }));
 
               // Increment version on successful update
@@ -199,12 +203,13 @@ export async function populateHelper(req, res, next) {
           } else {
             // CREATE
             // Merge filter into body for creation if needed (e.g. role, modelName)
-            // usually item.body should have everything needed for creation
+            // usually itemBody should have everything needed for creation
             opResult = await buildQuery(makeCtx({
               action: 'create',
               modelName: model,
-              body: { ...item.filter, ...item.body }, // ensure keys from filter are in body
-              user: { id: user.id, role: user.role }
+              body: { ...itemFilter, ...itemBody }, // ensure keys from filter are in body
+              user: req.user,
+              tenantContext: req.tenantContext
             }));
 
             // Track new document version
@@ -215,7 +220,7 @@ export async function populateHelper(req, res, next) {
           results.push(opResult);
         } catch (err) {
           console.error(`Bulk item failed:`, err.message);
-          errors.push({ filter: item.filter, error: err.message });
+          errors.push({ filter: item.filter || item, error: err.message });
         }
       }
 
@@ -474,7 +479,8 @@ export async function populateHelper(req, res, next) {
     // Invalidate cache on successful mutations
     const isMutation = ['create', 'update', 'delete', 'bulk-upsert', 'bulk-create', 'bulk-update', 'bulk-delete'].includes(action);
     if (isMutation) {
-      queryOptimizer.clearCache(model);
+      const tenantId = req.tenantContext?.databaseName || req.tenantContext?.clientId;
+      queryOptimizer.clearCache(model, tenantId);
       try {
         const { processGenericVersionInvalidation } = await import('../utils/permissionInvalidator.js');
         await processGenericVersionInvalidation({

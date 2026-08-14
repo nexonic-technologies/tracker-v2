@@ -7,6 +7,8 @@ import runRegistry from "../utils/policy/registryExecutor.js";
 import { DEFAULT_POPULATE_FIELDS } from "../Config/defaultPopulateFields.js";
 import safeAggregate from "../utils/safeAggregator.js";
 
+import { resolvePolicy } from "../utils/policy/policyEngine.js";
+
 export default async function buildReportQuery(ctx) {
   let {
     modelName,
@@ -24,22 +26,7 @@ export default async function buildReportQuery(ctx) {
   const Model = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel(modelName) : getModel(modelName);
   if (!Model) throw new Error(`Model "${modelName}" not found`);
 
-  const isSuperAdmin = !!user?.isSuperAdmin || role === 'Super Admin' || role === 'superadmin' || role === 'SuperAdmin';
-
-  if (isSuperAdmin) {
-    policy = {
-      role,
-      modelName,
-      permissions: { read: true, report: true },
-      isSuperAdmin: true
-    };
-  } else if (!policy) {
-    policy = getPolicy(role, modelName) || {
-      role,
-      modelName,
-      permissions: { read: true, report: true }
-    };
-  }
+  policy = policy || await resolvePolicy(ctx, modelName);
 
   /** -----------------------------------------------
    * 1) CRUD PERMISSION CHECK

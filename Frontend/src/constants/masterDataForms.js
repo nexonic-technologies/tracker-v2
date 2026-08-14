@@ -164,9 +164,30 @@ export const attendancePolicyFormFields = [
 ];
 
 export const leaveTypeFormFields = [
-  { name: "name", label: "Leave Type Name", type: "text", required: true },
-  { name: "description", label: "Description", type: "textarea" },
-  { name: "maxDays", label: "Max Days", type: "number" },
+  { name: "name", label: "Leave Type Name", type: "text", placeholder: "e.g. Casual Leave, Sick Leave", required: true },
+  { name: "description", label: "Description", type: "textarea", placeholder: "Describe purpose, eligibility, and rules..." },
+  { name: "maxDaysPerMonth", label: "Max Days Per Month", type: "number", defaultValue: 2, min: 0 },
+  { name: "maxDaysPerYear", label: "Max Days Per Year", type: "number", defaultValue: 12, min: 0 },
+  {
+    name: "carryForward",
+    label: "Carry Forward to Next Year",
+    type: "select",
+    options: [
+      { value: true, label: "Yes (Allow Rollover)" },
+      { value: false, label: "No (Lapse at Year End)" }
+    ],
+    defaultValue: false
+  },
+  {
+    name: "requiresApproval",
+    label: "Requires Manager Approval",
+    type: "select",
+    options: [
+      { value: true, label: "Yes (Mandatory Approval)" },
+      { value: false, label: "No (Auto-Approve)" }
+    ],
+    defaultValue: true
+  },
   statusField,
 ];
 

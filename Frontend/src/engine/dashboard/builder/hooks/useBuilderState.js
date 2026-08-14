@@ -18,9 +18,14 @@ export function useBuilderState(initialRole = 'admin') {
   const loadRoleSchema = useCallback(async (targetRole) => {
     setLoading(true);
     try {
-      const res = await axiosInstance.get(`/dashboard/schema/${encodeURIComponent(targetRole)}`);
-      if (res.data?.success && res.data?.data) {
-        setSchema(res.data.data);
+      const normalized = (targetRole || '').toLowerCase().trim();
+      const res = await axiosInstance.post('/populate/read/dashboard_schemas', {
+        filter: { role: normalized },
+        limit: 1,
+      });
+      const doc = res.data?.data?.[0];
+      if (doc && doc.widgets && doc.widgets.length > 0) {
+        setSchema(doc);
         setLoading(false);
         return;
       }

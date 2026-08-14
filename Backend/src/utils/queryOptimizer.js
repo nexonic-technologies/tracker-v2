@@ -193,63 +193,25 @@ class QueryOptimizer {
     };
   }
 
-  // Helper to get collection name from field path
-  getCollectionName(fieldPath) {
-    // Simple mapping - extend as needed
-    const fieldToCollection = {
-      'assignedTo': 'employees',
-      'createdBy': 'employees',
-      'clientId': 'clients',
-      'projectTypeId': 'project_types',
-      'taskTypeId': 'task_types',
-      'employeeId': 'employees',
-      'employee': 'employees',
-      'managerId': 'employees',
-      'reportingManager': 'employees',
-      'designation': 'designations',
-      'department': 'departments',
-      'role': 'roles',
-      'sender': 'employees',
-      'recipient': 'employees',
-      'processedBy': 'employees',
-      'approvedBy': 'employees',
-      'linkedTaskId': 'tasks'
-    };
-
-    return fieldToCollection[fieldPath] || fieldPath + 's';
+  // Dynamic collection name resolver using Model schema instead of hardcoded maps
+  getCollectionName(Model, fieldPath) {
+    if (!Model?.schema) return fieldPath + 's';
+    const schemaPath = Model.schema.path(fieldPath)
+      || Model.schema.path(`${fieldPath}.$`)
+      || Model.schema.virtualpath?.(fieldPath);
+    if (schemaPath?.options?.ref) {
+      return schemaPath.options.ref;
+    }
+    if (schemaPath?.caster?.options?.ref) {
+      return schemaPath.caster.options.ref;
+    }
+    return fieldPath + 's';
   }
 
-  // Optimized field selection based on query type
-  getOptimizedFields(modelName, queryType = 'summary') {
-    const fieldMappings = {
-      tasks: {
-        summary: 'title status priorityLevel startDate endDate assignedTo clientId createdAt taskId',
-        detailed: '-attachments.data -comments.attachments',
-        statistics: 'status priorityLevel createdAt assignedTo'
-      },
-      employees: {
-        summary: 'basicInfo.firstName basicInfo.lastName basicInfo.profileImage professionalInfo.designation professionalInfo.department professionalInfo.employeeId',
-        detailed: '-documents -auditLog -sensitiveData',
-        statistics: 'professionalInfo.designation professionalInfo.department createdAt status'
-      },
-      leaves: {
-        summary: 'employeeName leaveName startDate endDate status totalDays createdAt',
-        detailed: '-documents -auditLog',
-        statistics: 'status leaveName startDate endDate totalDays'
-      },
-      attendances: {
-        summary: 'employee date status checkIn checkOut workHours',
-        detailed: 'employee date status checkIn checkOut workHours location notes',
-        statistics: 'status date workHours employee'
-      }
-    };
-
-    return fieldMappings[modelName]?.[queryType] || null;
-  }
-
-  // Cache management
-  getCacheKey(model, filter, options) {
-    return `${model}_${JSON.stringify(filter)}_${JSON.stringify(options)}`;
+  // Cache management strictly scoped by tenant
+  getCacheKey(tenantId, model, filter, options) {
+    const safeTenant = tenantId || 'global';
+    return `${safeTenant}:${model}_${JSON.stringify(filter)}_${JSON.stringify(options)}`;
   }
 
   setCache(key, data) {
@@ -271,10 +233,13 @@ class QueryOptimizer {
     return cached.data;
   }
 
-  clearCache(pattern = null) {
-    if (pattern) {
+  clearCache(pattern = null, tenantId = null) {
+    const prefix = tenantId ? `${tenantId}:` : '';
+    const fullPattern = pattern ? `${prefix}${pattern}` : prefix;
+
+    if (fullPattern) {
       for (const key of this.cache.keys()) {
-        if (key.includes(pattern)) {
+        if (key.includes(fullPattern)) {
           this.cache.delete(key);
         }
       }

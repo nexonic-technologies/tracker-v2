@@ -158,6 +158,95 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// ── In-Flight Request Deduplication ──────────────────────────────────
+// Merges identical concurrent read requests (e.g. React StrictMode / duplicate hooks)
+const inFlightRequests = new Map();
+const originalAxiosGet = axiosInstance.get.bind(axiosInstance);
+const originalAxiosPost = axiosInstance.post.bind(axiosInstance);
+const originalAxiosRequest = axiosInstance.request.bind(axiosInstance);
+
+axiosInstance.get = function (url, config = {}) {
+  const paramsStr = JSON.stringify(config?.params || {});
+  const dedupeKey = `get:${url}:${paramsStr}`;
+  if (inFlightRequests.has(dedupeKey)) {
+    return inFlightRequests.get(dedupeKey);
+  }
+  const promise = originalAxiosGet(url, config).finally(() => {
+    inFlightRequests.delete(dedupeKey);
+  });
+  inFlightRequests.set(dedupeKey, promise);
+  return promise;
+};
+
+axiosInstance.post = function (url, data = {}, config = {}) {
+  const isRead =
+    typeof url === 'string' && (
+      url.includes('/read/') ||
+      url.includes('/stats') ||
+      url.includes('/context') ||
+      url.includes('/notifications') ||
+      url.includes('/dashboard') ||
+      url.includes('/sidebars') ||
+      url.includes('/resources') ||
+      url.includes('/roles')
+    );
+
+  if (!isRead) {
+    return originalAxiosPost(url, data, config);
+  }
+
+  const dataStr = typeof data === 'string' ? data : JSON.stringify(data || {});
+  const paramsStr = JSON.stringify(config?.params || {});
+  const dedupeKey = `post:${url}:${paramsStr}:${dataStr}`;
+
+  if (inFlightRequests.has(dedupeKey)) {
+    return inFlightRequests.get(dedupeKey);
+  }
+
+  const promise = originalAxiosPost(url, data, config).finally(() => {
+    inFlightRequests.delete(dedupeKey);
+  });
+
+  inFlightRequests.set(dedupeKey, promise);
+  return promise;
+};
+
+axiosInstance.request = function (config) {
+  const method = (config?.method || 'get').toLowerCase();
+  const url = config?.url || '';
+  const isDeduplicable =
+    method === 'get' ||
+    (method === 'post' && (
+      url.includes('/read/') ||
+      url.includes('/stats') ||
+      url.includes('/context') ||
+      url.includes('/notifications') ||
+      url.includes('/dashboard') ||
+      url.includes('/sidebars') ||
+      url.includes('/resources') ||
+      url.includes('/roles')
+    ));
+
+  if (!isDeduplicable) {
+    return originalAxiosRequest(config);
+  }
+
+  const dataStr = typeof config?.data === 'string' ? config.data : JSON.stringify(config?.data || {});
+  const paramsStr = typeof config?.params === 'string' ? config.params : JSON.stringify(config?.params || {});
+  const dedupeKey = `${method}:${url}:${paramsStr}:${dataStr}`;
+
+  if (inFlightRequests.has(dedupeKey)) {
+    return inFlightRequests.get(dedupeKey);
+  }
+
+  const promise = originalAxiosRequest(config).finally(() => {
+    inFlightRequests.delete(dedupeKey);
+  });
+
+  inFlightRequests.set(dedupeKey, promise);
+  return promise;
+};
+
 axiosInstance.interceptors.response.use(
   (response) => {
     // Reset failed count on successful response

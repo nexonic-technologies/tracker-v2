@@ -60,14 +60,6 @@ export function buildEmployeeFormFields({ designations = [], departments = [], r
       options: roles.map((r) => ({ value: r._id, label: r.name })),
     },
     {
-      name: "professionalInfo.leavePolicyOverride",
-      label: "Leave Policy Override",
-      type: "AutoComplete",
-      source: "/populate/read/leave_policies",
-      labelField: "name",
-      fieldName: "_id"
-    },
-    {
       name: "professionalInfo.reportingManager",
       label: "Reporting Manager",
       type: "select",

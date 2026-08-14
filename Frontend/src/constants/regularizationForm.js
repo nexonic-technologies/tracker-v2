@@ -1,30 +1,26 @@
 export const regularizationFormFields = [
   {
-    label: "Request Date",
-    name: "requestDate",
-    type: "date",
-    required: true,
-  },
-  {
-    label: "Check-In Time",
+    label: "Corrected Check-In Time",
     name: "requestedCheckIn",
-    type: "datetime-local",
+    type: "time",
     required: true,
+    gridClass: "col-span-1",
   },
   {
-    label: "Check-Out Time",
+    label: "Corrected Check-Out Time",
     name: "requestedCheckOut",
-    type: "datetime-local",
+    type: "time",
     required: true,
+    gridClass: "col-span-1",
   },
   {
-    label: "Reason",
+    label: "Reason for Adjustment",
     name: "reason",
     type: "textarea",
-    placeholder: "Please provide reason for regularization...",
+    placeholder: "Explain the reason (e.g. client meeting, biometric glitch, forgot to punch)...",
     required: true,
-    rows: 4,
-    gridClass: "col-span-2"
+    rows: 3,
+    gridClass: "col-span-2",
   },
 ];
 

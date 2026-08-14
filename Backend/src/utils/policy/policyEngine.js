@@ -9,6 +9,104 @@ import path from "path";
 // Remove immediate cache initialization
 // setCache(); // This will be called from index.js after DB connection
 
+/**
+ * Resolve effective policy for a user/role on a target model.
+ * Single Source of Truth for policy and permission resolution.
+ */
+export async function resolvePolicy(ctx, targetModelName) {
+  const { user, tenantContext: customTenantContext } = ctx;
+  let tenantContext = customTenantContext || ctx.tenantContext || getTenantStore();
+  const role = user?.role || ctx.role;
+
+  if (!role || !targetModelName) return null;
+
+  const roleIdOrName = typeof role === 'object' ? (role._id || role.id || role.name || '') : role;
+  let roleMeta = getRoleMeta(roleIdOrName) || getRoleMeta(role);
+
+  if (!roleMeta && tenantContext && typeof tenantContext.getModel === 'function') {
+    try {
+      const RoleModel = tenantContext.getModel('roles');
+      if (RoleModel) {
+        const isObjId = mongoose.Types.ObjectId.isValid(roleIdOrName);
+        const roleDoc = await RoleModel.findOne({
+          $or: [
+            ...(isObjId ? [{ _id: roleIdOrName }] : []),
+            { name: roleIdOrName }
+          ]
+        }).lean();
+        if (roleDoc) {
+          roleMeta = {
+            id: roleDoc._id?.toString(),
+            name: roleDoc.name,
+            isSuperAdmin: !!roleDoc.isSuperAdmin,
+            level: roleDoc.level || 1
+          };
+        }
+      }
+    } catch (_) {}
+  }
+
+  const isSuperAdmin = !!user?.isSuperAdmin ||
+    !!roleMeta?.isSuperAdmin ||
+    !!ctx.policy?.isSuperAdmin ||
+    (typeof role === 'object' && !!role?.isSuperAdmin);
+
+  const isAdmin = isSuperAdmin ||
+    !!roleMeta?.isAdmin ||
+    roleMeta?.level === 1;
+
+  if (isAdmin) {
+    return {
+      role: roleMeta?.id || roleIdOrName || role,
+      modelName: targetModelName,
+      permissions: { read: true, create: true, update: true, delete: true, report: true },
+      forbiddenAccess: { read: [], create: [], update: [], delete: [] },
+      allowAccess: { read: ["*"], create: ["*"], update: ["*"], delete: ["*"] },
+      conditions: {},
+      isSuperAdmin: true
+    };
+  }
+
+  let policy = tenantContext?.policyOverrides?.[role]?.[targetModelName] ||
+    tenantContext?.policyOverrides?.[role]?.[targetModelName.toLowerCase()] ||
+    getPolicy(role, targetModelName);
+
+  if (!policy && ['notifications', 'notification_preferences', 'notificationreceptionist', 'notificationrules', 'notification_deliveries', 'session', 'auditlog', 'dashboard_schemas', 'dashboard_widgets'].includes(targetModelName.toLowerCase())) {
+    return {
+      role,
+      modelName: targetModelName,
+      permissions: { read: true, create: true, update: true, delete: false, report: true },
+      forbiddenAccess: { read: [], create: [], update: [], delete: [] },
+      allowAccess: { read: ["*"], create: ["*"], update: ["*"], delete: [] },
+      conditions: {}
+    };
+  }
+
+  if (role === 'guest' || role === 'GuestCandidate') {
+    if (targetModelName === 'job_openings') {
+      return {
+        role,
+        modelName: targetModelName,
+        permissions: { read: true, create: false, update: false, delete: false },
+        forbiddenAccess: { read: [], create: [], update: [], delete: [] },
+        allowAccess: { read: ["*"], create: [], update: [], delete: [] },
+        conditions: {}
+      };
+    } else if (targetModelName === 'candidates') {
+      return {
+        role,
+        modelName: targetModelName,
+        permissions: { read: true, create: true, update: true, delete: false },
+        forbiddenAccess: { read: [], create: [], update: [], delete: [] },
+        allowAccess: { read: ["*"], create: ["*"], update: ["*"], delete: [] },
+        conditions: {}
+      };
+    }
+  }
+
+  return policy || null;
+}
+
 export async function buildQuery(ctx) {
   const {
     action: rawAction,
@@ -40,86 +138,8 @@ export async function buildQuery(ctx) {
   const Model = typeof tenantContext.getModel === 'function' ? tenantContext.getModel(modelName) : getModel(modelName);
   if (!Model) throw new Error(`Model "${modelName}" not found in active tenant context`);
 
-  // Load role metadata from cache or dynamic tenant DB lookup
-  const roleIdOrName = typeof role === 'object' ? (role._id || role.id || role.name || '') : role;
-  let roleMeta = getRoleMeta(roleIdOrName) || getRoleMeta(role);
-
-  if (!roleMeta && tenantContext && typeof tenantContext.getModel === 'function') {
-    try {
-      const RoleModel = tenantContext.getModel('roles');
-      if (RoleModel) {
-        const isObjId = mongoose.Types.ObjectId.isValid(roleIdOrName);
-        const roleDoc = await RoleModel.findOne({
-          $or: [
-            ...(isObjId ? [{ _id: roleIdOrName }] : []),
-            { name: roleIdOrName }
-          ]
-        }).lean();
-        if (roleDoc) {
-          roleMeta = {
-            id: roleDoc._id?.toString(),
-            name: roleDoc.name,
-            isSuperAdmin: !!roleDoc.isSuperAdmin,
-            level: roleDoc.level || 1
-          };
-        }
-      }
-    } catch (_) {}
-  }
-
-  const isSuperAdmin = !!user?.isSuperAdmin ||
-    !!roleMeta?.isSuperAdmin ||
-    (typeof role === 'object' && !!role?.isSuperAdmin);
-
-  const isAdmin = isSuperAdmin ||
-    !!roleMeta?.isAdmin ||
-    roleMeta?.level === 1;
-
-  // Load model-specific policy (checking tenantContext overrides first) or construct virtual policy
-  let policy = tenantContext?.policyOverrides?.[role]?.[modelName] ||
-    tenantContext?.policyOverrides?.[role]?.[modelName.toLowerCase()] ||
-    getPolicy(role, modelName);
-
-  if (isAdmin) {
-    policy = policy || {
-      role: roleMeta?.id || roleIdOrName || role,
-      modelName,
-      permissions: { read: true, create: true, update: true, delete: true },
-      forbiddenAccess: { read: [], create: [], update: [], delete: [] },
-      allowAccess: { read: ["*"], create: ["*"], update: ["*"], delete: ["*"] },
-      conditions: {},
-      isSuperAdmin: true
-    };
-  } else if (!policy && ['notifications', 'notification_preferences', 'notificationreceptionist', 'notificationrules', 'notification_deliveries', 'session', 'auditlog'].includes(modelName.toLowerCase())) {
-    policy = {
-      role,
-      modelName,
-      permissions: { read: true, create: true, update: true, delete: false },
-      forbiddenAccess: { read: [], create: [], update: [], delete: [] },
-      allowAccess: { read: ["*"], create: ["*"], update: ["*"], delete: [] },
-      conditions: {}
-    };
-  } else if (role === 'guest' || role === 'GuestCandidate') {
-    if (modelName === 'job_openings' && action === 'read') {
-      policy = {
-        role,
-        modelName,
-        permissions: { read: true, create: false, update: false, delete: false },
-        forbiddenAccess: { read: [], create: [], update: [], delete: [] },
-        allowAccess: { read: ["*"], create: [], update: [], delete: [] },
-        conditions: {}
-      };
-    } else if (modelName === 'candidates') {
-      policy = {
-        role,
-        modelName,
-        permissions: { read: true, create: true, update: true, delete: false },
-        forbiddenAccess: { read: [], create: [], update: [], delete: [] },
-        allowAccess: { read: ["*"], create: ["*"], update: ["*"], delete: [] },
-        conditions: {}
-      };
-    }
-  }
+  // Load model-specific policy via Single Source of Truth
+  const policy = await resolvePolicy(ctx, modelName);
 
   // STRICT MODE: Fail Closed & Strict Rejection Setup
   if (!policy) {

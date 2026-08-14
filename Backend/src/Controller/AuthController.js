@@ -45,9 +45,18 @@ export const login = async (req, res, next) => {
         tenantId = globalUser.tenantId;
         dbName = globalUser.dbName;
         let tenantSlug = tenantId;
+        let tenantRec = null;
+        let tenantModules = ['*'];
         try {
-          const tenantRec = await Tenant.findOne({ tenantId: globalUser.tenantId }).lean();
+          tenantRec = await Tenant.findOne({ tenantId: globalUser.tenantId }).populate('enabledModules').lean();
           if (tenantRec?.slug) tenantSlug = tenantRec.slug;
+          if (Array.isArray(tenantRec?.enabledModules) && tenantRec.enabledModules.length > 0) {
+            tenantModules = tenantRec.enabledModules.map((mod) => {
+              if (typeof mod === 'string') return mod;
+              if (mod && typeof mod === 'object') return mod.moduleId || mod._id?.toString() || mod.name?.toLowerCase();
+              return null;
+            }).filter(Boolean);
+          }
         } catch (_) { }
 
         let resolvedName = globalUser.name;
@@ -69,6 +78,7 @@ export const login = async (req, res, next) => {
           userType: globalUser.userType,
           isSuperAdmin: !!globalUser.isSuperAdmin,
           tenantSlug,
+          enabledModules: tenantModules,
         };
         userType = globalUser.userType || "employee";
       }
@@ -117,6 +127,7 @@ export const login = async (req, res, next) => {
       tenantId,
       tenantSlug: user.tenantSlug || (tenantId === 'default' || tenantId === 'admin' ? 'admin' : tenantId),
       dbName,
+      enabledModules: user.enabledModules || ['*'],
       isSuperAdmin: !!(user.isSuperAdmin || (typeof user.role === 'object' && user.role?.isSuperAdmin)),
     };
 
@@ -891,12 +902,12 @@ export const getContext = async (req, res, next) => {
     }
 
     // Set ETag header
-    // res.setHeader("ETag", eTag);
+    res.setHeader("ETag", eTag);
 
-    // If client already has the latest context version, return 304 immediately
-    // if (req.headers["if-none-match"] === eTag) {
-    //   return res.status(304).end();
-    // }
+    // If client already has the latest context version, return 304 immediately (<5ms response)
+    if (req.headers["if-none-match"] === eTag) {
+      return res.status(304).end();
+    }
 
     // Agents get a minimal context (no sidebar, basic permissions)
     if (userType === "agent") {

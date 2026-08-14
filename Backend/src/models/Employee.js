@@ -34,7 +34,6 @@ const EmployeeSchema = new Schema({
     doj: { type: Date, index: true },
     probationPeriod: { type: String },
     confirmDate: { type: Date },
-    leavePolicyOverride: { type: Schema.Types.ObjectId, ref: 'leave_policies', index: true },
     policyAssignments: [{
       policy: { type: Schema.Types.ObjectId, ref: 'attendance_policies', required: true },
       shift: { type: Schema.Types.ObjectId, ref: 'Shift', required: true },

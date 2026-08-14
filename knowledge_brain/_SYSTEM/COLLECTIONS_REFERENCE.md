@@ -952,7 +952,7 @@ UNKNOWN
 
 ### Relationships
 - **[Verified]** **Parent**: `roles` (via `applicableRoles`), `leave_types` (via `leaves.leaveType`), `departments` (via `applicableDepartments`), `designations` (via `applicableDesignations`).
-- **[Verified]** **Child / References**: Referenced by `departments` (via `leavePolicy`), `designations` (via `leavePolicy`), and `employees` (via `professionalInfo.leavePolicyOverride`). Queried during employee registration/onboarding and dynamic policy resolution.
+- **[Verified]** **Child / References**: Referenced by `departments` (via `leavePolicy`) and `designations` (via `leavePolicy`). Resolved dynamically for employees based on organizational hierarchy.
 
 ### Architectural Category
 **[Verified]** **Historical**. It defines rules that govern time-tracking history and accruals.

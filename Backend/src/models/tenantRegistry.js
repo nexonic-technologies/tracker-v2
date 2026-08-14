@@ -50,6 +50,7 @@ import holidays from "./Holiday.js";
 import status_configs from "./StatusConfig.js";
 import status_mappings from "./StatusMapping.js";
 import dashboard_widgets from "./DashboardWidget.js";
+import dashboard_schemas from "./DashboardSchema.js";
 import activity_logs from "./ActivityLog.js";
 import time_tracker_sessions from "./TimeTrackerSession.js";
 import workflows from "./Workflow.js";
@@ -124,7 +125,7 @@ export const MODULE_DEFINITIONS = {
     'notifications', 'notification_receptionists', 'notification_preferences', 'notification_rules', 'notification_deliveries',
     'employees', 'departments', 'designations', 'company', 'clients', 'contacts', 'service_providers',
     'products', 'project_types',
-    'dashboard_widgets', 'email_configs', 'permission_audits', 'permission_versions', 'workflows'
+    'dashboard_widgets', 'dashboard_schemas', 'email_configs', 'permission_audits', 'permission_versions', 'workflows'
   ],
   hrms: [
     'employee_documents', 'employee_lifecycle_histories', 'employee_life_cycle_histories',
@@ -215,6 +216,7 @@ const staticModelMap = {
   status_configs,
   status_mappings,
   dashboard_widgets,
+  dashboard_schemas,
   activity_logs,
   time_tracker_sessions,
   workflows,
