@@ -3,7 +3,7 @@ import express from "express";
 import { authMiddleware } from "../Controller/AuthController.js";
 import { populateHelper } from "../helper/populateHelper.js";
 import { upload } from "../middlewares/multerConfig.js";
-import { queueMiddleware } from "../services/requestQueue.js";
+import { queueMiddleware } from "../utils/requestQueue.js";
 
 const router = express.Router();
 

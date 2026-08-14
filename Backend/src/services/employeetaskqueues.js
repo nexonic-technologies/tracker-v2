@@ -127,7 +127,7 @@ export default function employee_task_queues() {
       const { result } = ctx;
       if (result && result.employeeId) {
         try {
-          const { scheduleETARecalculation } = await import("../utils/scheduleETARecalculation.js");
+          const { scheduleETARecalculation } = await import("./business/etaEngine.js");
           await scheduleETARecalculation(result.employeeId);
         } catch (err) {
           console.error("[employee_task_queueservice] afterUpdate error:", err.message);

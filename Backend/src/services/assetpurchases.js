@@ -1,7 +1,7 @@
 // services/assets_purchases.js
 import models from '../models/Collection.js';
 
-import { handleGRNReceipt } from './assetHooksService.js';
+import { handleGRNReceipt } from './business/assetDomainHelper.js';
 
 const ALLOWED_TRANSITIONS = {
   'Draft': ['Pending Approval', 'Cancelled'],

@@ -136,7 +136,7 @@ export default function tickets() {
       const userId = user?.id;
       try {
         const { default: models } = await import('../models/Collection.js');
-        const { default: fcmService } = await import('./fcmService.js');
+        const { default: fcmService } = await import('../utils/notification/fcmService.js');
 
         const ticket = await models.tickets.findById(docId)
           .populate('createdBy', 'basicInfo.firstName basicInfo.lastName')
@@ -288,8 +288,8 @@ export default function tickets() {
       const userId = user?.id;
       try {
         const { default: models } = await import('../models/Collection.js');
-        const { emitTicketEvent } = await import('./ticketSocketEmitter.js');
-        const { default: fcmService } = await import('./fcmService.js');
+        const { emitTicketEvent } = await import('../utils/notification/ticketSocketEmitter.js');
+        const { default: fcmService } = await import('../utils/notification/fcmService.js');
 
         if (ctx.pendingCommentPayload) {
           await models.ticket_comments.create(ctx.pendingCommentPayload);
@@ -467,7 +467,7 @@ export default function tickets() {
 
             // Fire-and-forget ETA recalculation for each assigned developer
             if (taskData.assignedTo?.length) {
-              const { scheduleETARecalculation } = await import('../utils/scheduleETARecalculation.js');
+              const { scheduleETARecalculation } = await import('./business/etaEngine.js');
               for (const devId of taskData.assignedTo) {
                 scheduleETARecalculation(devId.toString()); // non-blocking
               }
@@ -483,7 +483,7 @@ export default function tickets() {
     afterRead: async ({ role, userId, docId, data }) => {
       try {
         if (!data) return data;
-        const { markCommentsAsRead, getUnreadCommentCount } = await import('./readReceiptsService.js');
+        const { markCommentsAsRead, getUnreadCommentCount } = await import('../utils/readReceiptsService.js');
 
         const isAgent = role.toString() === 'agent' || role.toString() === '6a25cbc1cd36294f5e578696';
         const userModel = isAgent ? 'agents' : 'employees';
@@ -508,7 +508,7 @@ export default function tickets() {
 
         // 2. If fetching a list of tickets (no docId)
         if (Array.isArray(data)) {
-          const { getUnreadCommentCountsForTickets } = await import('./readReceiptsService.js');
+          const { getUnreadCommentCountsForTickets } = await import('../utils/readReceiptsService.js');
           const ticketIds = data.map(ticket => ticket._id);
           const unreadCounts = await getUnreadCommentCountsForTickets(ticketIds, userId, userModel);
 
@@ -545,7 +545,7 @@ export default function tickets() {
  * @param {string|ObjectId} employeeId
  */
 export async function recalculateEmployeeETA(employeeId) {
-  const { scheduleETARecalculation } = await import('../utils/scheduleETARecalculation.js');
+  const { scheduleETARecalculation } = await import('./business/etaEngine.js');
   scheduleETARecalculation(employeeId); // intentionally not awaited
 }
 
@@ -594,7 +594,7 @@ function getExpectedTicketStatus(taskStatus) {
 
 async function notifyTicketConversion(ticket, task, convertedBy) {
   try {
-    const { default: fcmService } = await import('./fcmService.js');
+    const { default: fcmService } = await import('../utils/notification/fcmService.js');
 
     // Notify ticket creator if they didn't do the conversion themselves
     if (ticket.createdBy.toString() !== convertedBy.toString()) {

@@ -3,9 +3,9 @@ import mongoose from "mongoose";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { generateTaskCSV } from "../services/exportService.js";
+import { generateTaskCSV } from "../utils/exportService.js";
 import { authMiddleware } from "../Controller/AuthController.js";
-import pdfService from "../services/pdfService.js";
+import pdfService from "../utils/pdfService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

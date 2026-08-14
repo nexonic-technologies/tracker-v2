@@ -379,7 +379,7 @@ export async function runEmployeeLifecycle() {
     console.log(`✅ Payroll Run initiated: ${payrollRun._id} for month ${payrollRun.month}/${payrollRun.year}`);
 
     // Call service calculator synchronously to bypass Bull queue
-    const { runPayrollForEmployee } = await import('../../services/payrollEngine.js');
+    const { runPayrollForEmployee } = await import('../../services/business/payrollEngine.js');
     const payrollResult = await runPayrollForEmployee(
       employee._id,
       payrollRun.month,

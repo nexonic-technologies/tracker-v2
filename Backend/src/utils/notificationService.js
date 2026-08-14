@@ -4,7 +4,7 @@ import models from "../models/Collection.js";
 const notification = models.notifications;
 const session = models.sessions;
 const NotificationReceptionist = models.notificationreceptionists;
-import { sendPush } from "../utils/pushSender.js";
+import fcmService from "./notification/fcmService.js";
 
 // Optimized notification service with memory management
 export const sendNotification = async ({
@@ -38,7 +38,6 @@ export const sendNotification = async ({
     }
 
     // Map custom/legacy types to valid Schema enums:
-    // Schema allows: ['post', 'mention', 'reaction', 'comment', 'ticket', 'task', 'leave', 'system']
     const TYPE_MAPPING = {
       'attendance_request': 'system',
       'regularization_request': 'system',
@@ -91,32 +90,27 @@ export const sendNotification = async ({
       });
     }
 
-    // 4️⃣ Optimized push notification (only if user offline)
+    // 4️⃣ FCM Push Notification delivery (when user is offline or as fallback)
     if (socketsInRoom.length === 0) {
-      // User is offline, send push notification
-      const userSessions = await session.find({
-        userId: finalReceiver,
-        status: "Active",
-        fcmToken: { $ne: null },
-        lastUsedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Active in last 24h
-      }).select('fcmToken').lean();
+      try {
+        const userSessions = await session.find({
+          userId: finalReceiver,
+          status: "Active",
+          fcmToken: { $ne: null },
+          lastUsedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+        }).select('fcmToken').lean();
 
-      // Batch push notifications
-      const pushPromises = userSessions.map(sessionItem =>
-        sendPush({
-          pushToken: sessionItem.fcmToken,
-          title: title || "New Notification",
-          body: message,
-          data: {
-            path,
-            model: finalMeta?.model,
-            notificationId: newNotification._id.toString()
-          },
-        })
-      );
-
-      // Send all push notifications concurrently
-      await Promise.allSettled(pushPromises);
+        const tokens = userSessions.map(s => s.fcmToken).filter(Boolean);
+        if (tokens.length > 0) {
+          await fcmService.sendMulticast(
+            { title: title || "New Notification", body: message, meta: finalMeta, path },
+            [receptionist],
+            tokens
+          );
+        }
+      } catch (fcmErr) {
+        console.warn('[NotificationService] FCM delivery failed:', fcmErr.message);
+      }
     }
 
     return newNotification;

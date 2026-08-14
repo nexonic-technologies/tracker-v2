@@ -11,7 +11,7 @@ export default function feed_commentsService() {
       const { modelName, docId, userId } = ctx;
       try {
         const { default: models } = await import('../models/Collection.js');
-        const { default: fcmService } = await import('./fcmService.js');
+        const { default: fcmService } = await import('../utils/notification/fcmService.js');
         const { generateNotification } = await import('../middlewares/notificationMessagePrasher.js');
 
         const commentDoc = await models.feed_comments.findById(docId)

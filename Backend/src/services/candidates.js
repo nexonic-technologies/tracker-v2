@@ -2,6 +2,9 @@
  * candidates.js — Service hooks for recruitment pipeline.
  * Handles stage transitions, interview scheduling, offer/rejection,
  * and auto-creates Employee + Onboarding on Hired.
+ *
+ * ARCHITECTURE: All model access is resolved via ctx.tenantContext.getModel()
+ * to enforce multi-tenant isolation. Zero static model imports.
  */
 export default function candidates() {
   return {
@@ -24,10 +27,11 @@ export default function candidates() {
     },
 
     async beforeUpdate(ctx) {
-      const { body, docId, user } = ctx;
+      const { body, docId, user, tenantContext } = ctx;
       const userId = user?.id;
       if (!docId) return body;
-      const { default: Candidate } = await import('../models/Candidate.js');
+
+      const Candidate = tenantContext.getModel('Candidate');
       const existing = await Candidate.findById(docId).lean();
       if (!existing) throw new Error('Candidate not found');
 
@@ -53,22 +57,25 @@ export default function candidates() {
     },
 
     async afterUpdate(ctx) {
-      const { docId, body, user } = ctx;
+      const { docId, body, user, tenantContext } = ctx;
       const userId = user?.id;
       if (!docId) return;
-      const { default: Candidate } = await import('../models/Candidate.js');
+
+      const Candidate = tenantContext.getModel('Candidate');
       const candidate = await Candidate.findById(docId).lean();
       if (!candidate) return;
 
       // ─── STAGE: Offered ────────────────────────────────────────────────────
       if (body._oldStage !== 'Offered' && candidate.stage === 'Offered') {
         try {
-          const { default: JobOpening } = await import('../models/JobOpening.js');
-          const { default: Department } = await import('../models/Department.js');
-          const { default: Designation } = await import('../models/Designation.js');
-          const { default: Employee } = await import('../models/Employee.js');
-          const { default: email_config } = await import('../models/email_config.js');
-          const { default: pdfService } = await import('./pdfService.js');
+          const JobOpening = tenantContext.getModel('JobOpening');
+          const Department = tenantContext.getModel('Department');
+          const Designation = tenantContext.getModel('Designation');
+          const Employee = tenantContext.getModel('Employee');
+          const EmailConfig = tenantContext.getModel('email_config');
+          const Company = tenantContext.getModel('Company');
+
+          const { default: pdfService } = await import('../utils/pdfService.js');
           const nodemailer = await import('nodemailer');
           const fs = await import('fs');
           const path = await import('path');
@@ -81,15 +88,13 @@ export default function candidates() {
           const dept = job?.department ? await Department.findById(job.department).lean() : null;
           const desg = job?.designation ? await Designation.findById(job.designation).lean() : null;
 
-          // Fetch Reporting Manager details
-          const { default: Company } = await import('../models/Company.js');
           let company = await Company.findOne().lean();
           if (!company) {
             company = await Company.create({
               companyName: 'Axinix Technologies Group',
               legalName: 'Axinix Technologies Infomatic (India) Pvt. Ltd.',
               tagline: 'Leverage Technology to Enable Outcomes that Matter',
-              aboutText: 'Axinix Technologies Group, a conglomerate with the vision "Leverage Technology to Enable Outcomes that Matter", focuses on cutting-edge technology areas in Biometric, IoT, Cloud, & IT System Integration solutions and IT infrastructure management services, under the banners of Axinix Technologies Infomatic, Axinix Technologies Techserve, Axinix Technologies Biometric and Axinix Technologies Galaxy. Headquartered in Chennai, with a geographic spread of 8 branches and 250+ satellite locations Pan-India, Axinix Technologies’s 2200+ employee network offers exceptional services supporting a large client base across varied industry segments.',
+              aboutText: 'Axinix Technologies Group, a conglomerate with the vision "Leverage Technology to Enable Outcomes that Matter", focuses on cutting-edge technology areas in Biometric, IoT, Cloud, & IT System Integration solutions and IT infrastructure management services, under the banners of Axinix Technologies Infomatic, Axinix Technologies Techserve, Axinix Technologies Biometric and Axinix Technologies Galaxy. Headquartered in Chennai, with a geographic spread of 8 branches and 250+ satellite locations Pan-India, Axinix Technologies\'s 2200+ employee network offers exceptional services supporting a large client base across varied industry segments.',
               website: 'www.axinixtech.com',
               hrEmail: 'hr@axinixtech.com',
               itEmail: 'it@axinixtech.com',
@@ -128,17 +133,16 @@ export default function candidates() {
 
           // Update Candidate with offerLetterUrl
           const relativeUrl = `/uploads/offer_letters/${pdfFilename}`;
-          const { default: CandidateModel } = await import('../models/Candidate.js');
-          await CandidateModel.findByIdAndUpdate(docId, { offerLetterUrl: relativeUrl });
+          await Candidate.findByIdAndUpdate(docId, { offerLetterUrl: relativeUrl });
 
           // Send email with PDF offer letter attachment
-          const email_config = await email_config.findOne();
-          if (email_config && email_config.enabled) {
+          const emailCfg = await EmailConfig.findOne();
+          if (emailCfg && emailCfg.enabled) {
             const transporter = nodemailer.createTransport({
-              host: email_config.host,
-              port: email_config.port,
-              secure: email_config.port === 465,
-              auth: { user: email_config.username, pass: email_config.password },
+              host: emailCfg.host,
+              port: emailCfg.port,
+              secure: emailCfg.port === 465,
+              auth: { user: emailCfg.username, pass: emailCfg.password },
               tls: { rejectUnauthorized: false }
             });
 
@@ -212,7 +216,7 @@ export default function candidates() {
             const ccEmails = [company.hrEmail, company.payrollEmail].filter(Boolean);
 
             await transporter.sendMail({
-              from: `"${company.companyName} HR" <${email_config.fromEmail}>`,
+              from: `"${company.companyName} HR" <${emailCfg.fromEmail}>`,
               to: candidate.email,
               cc: ccEmails.length > 0 ? ccEmails : undefined,
               subject: emailSubject,
@@ -245,10 +249,10 @@ export default function candidates() {
         }
 
         try {
-          const { default: Employee } = await import('../models/Employee.js');
-          const { default: JobOpening } = await import('../models/JobOpening.js');
-          const { default: Onboarding } = await import('../models/Onboarding.js');
-          const { default: OnboardingTemplate } = await import('../models/OnboardingTemplate.js');
+          const Employee = tenantContext.getModel('Employee');
+          const JobOpening = tenantContext.getModel('JobOpening');
+          const Onboarding = tenantContext.getModel('Onboarding');
+          const OnboardingTemplate = tenantContext.getModel('OnboardingTemplate');
           const bcrypt = await import('bcryptjs');
 
           const job = candidate.jobOpeningId ? await JobOpening.findById(candidate.jobOpeningId).session(session).lean() : null;
@@ -296,7 +300,7 @@ export default function candidates() {
 
           // Create Initial SalaryStructure via salaryRevisionService inside transaction session
           try {
-            const { default: salaryRevisionService } = await import('./salaryRevisionService.js');
+            const { default: salaryRevisionService } = await import('./business/salaryRevisionService.js');
             const annualCTC = Number(candidate.offeredSalary) || 150024;
             await salaryRevisionService.createOrReviseStructure({
               employeeId: emp._id,
@@ -354,7 +358,7 @@ export default function candidates() {
           // Tier 2: Workflow engine lookup fallback
           if (checklist.length === 0) {
             try {
-              const { default: Workflow } = await import('../models/Workflow.js');
+              const Workflow = tenantContext.getModel('Workflow');
               const onboardingWorkflow = await Workflow.findOne({
                 modelName: 'onboardings',
                 triggerType: 'Onboarding',
@@ -425,7 +429,7 @@ export default function candidates() {
 
           // Emit Domain Event for Onboarding Started
           try {
-            const { default: domainEventService } = await import('./domainEventService.js');
+            const { default: domainEventService } = await import('../utils/domainEventService.js');
             domainEventService.emit('create', {
               eventId: `onboarding_start_${createdOnboarding._id}_${Date.now()}`,
               modelName: 'onboardings',

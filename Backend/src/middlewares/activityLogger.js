@@ -1,4 +1,4 @@
-import activityService from '../services/activityService.js';
+import activityService from '../utils/activityService.js';
 
 export const activityLogger = (action) => async (req, res, next) => {
   const originalJson = res.json;

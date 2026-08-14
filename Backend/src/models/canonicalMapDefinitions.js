@@ -296,6 +296,8 @@ export const CANONICAL_MODEL_NAMES = Object.freeze({
   EmployeeDocument: 'EmployeeDocument',
 
   employeelifecyclehistory: 'EmployeeLifecycleHistory',
+  employeelifecyclehistories: 'EmployeeLifecycleHistory',
+  employeelifecyclehistorys: 'EmployeeLifecycleHistory',
   employee_lifecycle_histories: 'EmployeeLifecycleHistory',
   employee_life_cycle_histories: 'EmployeeLifecycleHistory',
   EmployeeLifecycleHistory: 'EmployeeLifecycleHistory',

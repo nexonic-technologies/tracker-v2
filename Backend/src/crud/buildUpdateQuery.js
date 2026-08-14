@@ -3,7 +3,7 @@ import { getModel } from "../utils/appRegistry.js";
 import { getAllServices } from "../utils/servicesCache.js";
 import { pathToFileURL } from "url";
 import sanitizeUpdate from "../utils/sanitizeUpdate.js";
-import runRegistry from "../utils/registryExecutor.js";
+import runRegistry from "../utils/policy/registryExecutor.js";
 import { saveAuditLog } from "../utils/auditLogger.js";
 import { cachedImport } from "../utils/importCache.js";
 
@@ -142,7 +142,7 @@ export default async function buildUpdateQuery(ctx) {
 
   // Safe background domain event emission
   try {
-    const { default: domainEventService } = await cachedImport("../services/domainEventService.js");
+    const { default: domainEventService } = await cachedImport("../utils/domainEventService.js");
 
     // Extract a minimal diff snapshot of fields that changed
     const beforeSnapshot = {};

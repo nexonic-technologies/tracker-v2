@@ -10,7 +10,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import Employee from '../models/Employee.js';
 import SalaryStructure from '../models/SalaryStructure.js';
-import salaryRevisionService from '../services/salaryRevisionService.js';
+import salaryRevisionService from '../services/business/salaryRevisionService.js';
 
 async function runMigration() {
   console.log('🚀 [Migration] Starting SalaryStructure Reference Migration...');

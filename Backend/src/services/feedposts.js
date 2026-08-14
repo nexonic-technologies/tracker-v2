@@ -20,7 +20,7 @@ export default function feed_postsService() {
       const { modelName, docId, userId } = ctx;
       try {
         const { default: models } = await import('../models/Collection.js');
-        const { default: fcmService } = await import('./fcmService.js');
+        const { default: fcmService } = await import('../utils/notification/fcmService.js');
         const { generateNotification } = await import('../middlewares/notificationMessagePrasher.js');
 
         const postDoc = await models.feed_posts.findById(docId)
@@ -102,7 +102,7 @@ export default function feed_postsService() {
     async afterUpdate(ctx) {
       const { docId, userId, data, beforeDoc } = ctx;
       try {
-        const { default: fcmService } = await import('./fcmService.js');
+        const { default: fcmService } = await import('../utils/notification/fcmService.js');
         const { default: models } = await import('../models/Collection.js');
         const { generateNotification } = await import('../middlewares/notificationMessagePrasher.js');
 

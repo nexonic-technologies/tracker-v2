@@ -259,7 +259,7 @@ export default function attendances() {
         if (["Present", "Late Entry"].includes(attendanceDoc.status)) {
           try {
             const { default: models } = await import('../models/Collection.js');
-            const { scheduleETARecalculation } = await import('../utils/scheduleETARecalculation.js');
+            const { scheduleETARecalculation } = await import('./business/etaEngine.js');
 
             await models.operational_events.updateMany(
               { employeeId: attendanceDoc.employee, type: 'SLA_DELAY', resolvedAt: { $exists: false } },
@@ -396,16 +396,15 @@ export default function attendances() {
       // Feature: Task Status Domain Service - Auto-Hold tasks on checkout
       if (request === "Check-Out" || request === "Early check-out" || body.checkOut) {
         try {
-          // Dynamic import or require to avoid circular dependencies if any
-          const { taskStatusService } = await import('./taskStatus/taskStatusService.js');
-          await taskStatusService.handleEmployeeCheckout(attendanceDoc.employee, userId);
+          const { handleEmployeeCheckout } = await import('./business/attendanceCheckoutHelper.js');
+          await handleEmployeeCheckout(attendanceDoc.employee, userId, ctx);
         } catch (err) {
-          console.error('[AttendanceService] Failed to trigger taskStatusService on checkout:', err);
+          console.error('[AttendanceService] Failed to trigger handleEmployeeCheckout on checkout:', err);
         }
 
         try {
           // Auto-pause active time tracking session on checkout
-          const { pauseActiveTimerOnCheckout } = await import('TimeTrackerSessions.js');
+          const { pauseActiveTimerOnCheckout } = await import('./timetrackersessions.js');
           await pauseActiveTimerOnCheckout(attendanceDoc.employee);
         } catch (err) {
           console.error('[AttendanceService] Failed to auto-pause time tracker on checkout:', err);
@@ -417,7 +416,7 @@ export default function attendances() {
         if (["Present", "Late Entry"].includes(attendanceDoc.status)) {
           try {
             const { default: models } = await import('../models/Collection.js');
-            const { scheduleETARecalculation } = await import('../utils/scheduleETARecalculation.js');
+            const { scheduleETARecalculation } = await import('./business/etaEngine.js');
 
             await models.operational_events.updateMany(
               { employeeId: attendanceDoc.employee, type: 'SLA_DELAY', resolvedAt: { $exists: false } },

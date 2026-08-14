@@ -4,7 +4,7 @@
 // RULE: Zero hardcoded role names or designation strings.
 
 import express from 'express';
-import { getDashboardStats } from '../services/dashboardService.js';
+import { getDashboardStats } from '../services/business/dashboardService.js';
 
 const router = express.Router();
 

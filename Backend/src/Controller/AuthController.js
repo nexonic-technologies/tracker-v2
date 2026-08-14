@@ -773,7 +773,7 @@ export const sendManualTestNotification = async (req, res) => {
       return res.status(404).json({ message: "No FCM token found for this device" });
     }
 
-    const { default: fcmService } = await import('../services/fcmService.js');
+    const { default: fcmService } = await import('../utils/notification/fcmService.js');
     const NotificationReceptionist = getTenantModel('NotificationReceptionist');
     const NotificationContent = getTenantModel('NotificationContent');
 

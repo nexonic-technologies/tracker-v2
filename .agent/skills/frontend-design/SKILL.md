@@ -86,6 +86,12 @@ Every UI page MUST meet all of the following:
 - **Command-grade search**: Search inputs feel powerful — keyboard shortcut hint (`⌘K`), subtle glow on focus, instant typeahead feel.
 - **Typography hierarchy**: Display font, body font, and data/utility font are deliberately chosen and sized. Every text element has a clear role in the hierarchy.
 
+## LAW 4: Dynamic Department-Wise & Domain Menu Navigation for Reports (Anti-Tab-Dump Law)
+
+- **Tab-wise report dumps are FORBIDDEN**: Reports must never be dumped into flat, static tab strips with hardcoded select dropdowns.
+- **Dynamic Menu Scoping**: Report hubs must provide command-grade navigation menus with department-wise allocation filters (e.g. Engineering, HR & Operations, Finance & Accounts, Sales & CRM, Executive MIS), enabling users to scope reports by department, domain, and temporal range dynamically.
+- **Command-Grade Typeahead Search**: Search inputs must dynamically filter across all report titles, descriptions, and data records with instant response.
+
 ## LAW 3: Anti-Pattern Checklist (REJECT before shipping)
 
 Before committing any UI, verify none of these anti-patterns exist:
@@ -100,3 +106,4 @@ Before committing any UI, verify none of these anti-patterns exist:
 | Large empty hero section holding one label | Container defining space, not content |
 | Generic status chips with no micro-interaction | Static 2021 feel |
 | Sidebar with no glass/blur surface treatment | Flat and dated |
+| Flat tab-wise report dumps | Poor UX, missing department allocation & dynamic scoping |

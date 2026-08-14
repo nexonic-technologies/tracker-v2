@@ -8,17 +8,12 @@ const Employee = models.employees;
 const SideBar = models.sidebars;
 const Resource = models.resources;
 const Capability = models.capabilities;
-import { buildMenuTree } from "../services/menuVisibilityService.js";
+import { buildMenuTree } from "./menuVisibilityService.js";
 
 // Navigation cache: maps key "roleId:deptId:desigId" -> filtered navigation tree
 const navigationCache = new Map();
 let cachedVersion = 0;
 
-/**
- * Clear the in-memory navigation tree cache.
- * Call this whenever sidebar documents are created, updated, or deleted.
- * @param {string|null} roleId - Optional roleId to target eviction for a specific role
- */
 export function clearNavigationCache(roleId = null) {
   if (!roleId) {
     navigationCache.clear();
@@ -32,18 +27,10 @@ export function clearNavigationCache(roleId = null) {
   }
 }
 
-/**
- * Build the complete user context for the frontend.
- *
- * @param {string} userId   - Employee._id
- * @param {string} roleId   - Role._id (from JWT or Employee.professionalInfo.role)
- * @returns {object} Context payload
- */
+
 export async function buildUserContext(userId, roleId) {
   const roleStr = roleId?.toString();
   const tenantContext = getTenantStore();
-
-  // 1. Fetch role metadata from cache (no DB query needed if cached)
   let roleMeta = getRoleMeta(roleStr);
   if (!roleMeta) {
     await setCache();
@@ -172,8 +159,8 @@ export async function buildUserContext(userId, roleId) {
         // Core / mandatory sidebar items always visible to all users
         if (!itemKey || itemKey === 'core' || itemKey === 'dashboard' || itemKey === 'profile' || itemKey === 'settings') return true;
 
-        return normalizedEnabled.some(modKey => 
-          itemKey.includes(modKey) || 
+        return normalizedEnabled.some(modKey =>
+          itemKey.includes(modKey) ||
           modKey.includes(itemKey) ||
           itemTitle.includes(modKey) ||
           itemRoute.includes(modKey)

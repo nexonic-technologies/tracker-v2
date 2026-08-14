@@ -85,7 +85,7 @@ export default function employee_task_queue_requests() {
             console.log(`[QueueRequestService] Successfully committed task queue update for employee: ${doc.employeeId}`);
 
             // Queue changed — recalculate ETAs for all linked tickets (non-blocking)
-            const { scheduleETARecalculation } = await import('../utils/scheduleETARecalculation.js');
+            const { scheduleETARecalculation } = await import('./business/etaEngine.js');
             scheduleETARecalculation(doc.employeeId.toString());
           } catch (err) {
             console.error("[QueueRequestService] Commit transaction failed:", err);

@@ -7,7 +7,7 @@ import { buildMongoFilter } from "../utils/mongoFilterCompiler.js";
 import queryOptimizer from "../utils/queryOptimizer.js";
 import { cachedImport } from "../utils/importCache.js";
 
-import runRegistry from "../utils/registryExecutor.js";
+import runRegistry from "../utils/policy/registryExecutor.js";
 import sanitizeRead from "../utils/sanitizeRead.js";
 import sanitizePopulated from "../utils/sanitizePopulated.js";
 import safeAggregate from "../utils/safeAggregator.js";

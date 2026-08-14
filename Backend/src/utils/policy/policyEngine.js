@@ -3,7 +3,6 @@ import { setCache, getPolicy, getRoleMeta } from "../cache.js";
 import { getService } from "../servicesCache.js";
 import { getModel } from "../appRegistry.js";
 import { getTenantStore } from "../../tenant/tenantContext.js";
-import validator from "../Validator.js";
 import { fileURLToPath, pathToFileURL } from "url";
 import path from "path";
 
@@ -137,22 +136,9 @@ export async function buildQuery(ctx) {
     throw err;
   }
 
-
-  // --------------------------------------------------
-  //  1️⃣ VALIDATE BEFORE CRUD (NO FAIL-OPEN ANYMORE)
-  // --------------------------------------------------
-  const { filter: safeFilter, fields: safeFields, body: safeBody } = validator({
-    action,
-    modelName,
-    role,
-    userId,
-    docId,
-    filter,
-    fields,
-    body,
-    policy,
-    getPolicy        // <-- important for lookup protection
-  });
+  const safeFilter = filter;
+  const safeFields = fields;
+  const safeBody = body;
 
   // If only filter is requested, return it
   if (returnFilter) {

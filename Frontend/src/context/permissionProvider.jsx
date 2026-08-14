@@ -1,18 +1,3 @@
-// src/context/permissionProvider.jsx
-//
-// Central permission context for the entire application.
-// Fetches the unified permission context from GET /api/auth/me/context
-// and provides:
-//   - permissions: { modelName: { action: boolean } }
-//   - navigation: pre-filtered sidebar tree
-//   - capabilities: role capabilities array
-//   - can(action, resource): boolean check helper
-//   - canAny(actions, resource): boolean check helper
-//   - refresh(): manually re-fetch context
-//
-// Also listens for Socket.io "permissions:invalidated" events to
-// automatically re-fetch when permissions change on the backend.
-
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./authProvider";
 import axiosInstance from "../api/axiosInstance";

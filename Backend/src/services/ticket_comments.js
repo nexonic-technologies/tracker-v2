@@ -1,7 +1,7 @@
 import models from '../models/Collection.js';
 
-import { emitTicketEvent } from './ticketSocketEmitter.js';
-import fcmService from './fcmService.js';
+import { emitTicketEvent } from '../utils/notification/ticketSocketEmitter.js';
+import fcmService from '../utils/notification/fcmService.js';
 import mongoose from 'mongoose';
 
 /**

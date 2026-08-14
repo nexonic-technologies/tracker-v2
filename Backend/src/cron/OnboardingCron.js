@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import Onboarding from '../models/Onboarding.js';
 import general_settings from '../models/GeneralSettings.js';
-import asyncNotificationService from '../services/asyncNotificationService.js';
+import asyncNotificationService from '../utils/notification/asyncNotificationService.js';
 
 class OnboardingCron {
   constructor() {
@@ -56,22 +56,14 @@ class OnboardingCron {
 
           // Notify reporting manager
           if (onb.reportingTo?._id) {
-            await asyncNotificationService.queuePushNotification(
-              onb.reportingTo._id,
-              notificationTitle,
-              notificationBody,
-              { type: 'onboarding_overdue', onboardingId: onb._id.toString() }
-            );
-          }
-
-          // Queue email reminder to employee work email if available
-          const workEmail = onb.employeeId?.authInfo?.workEmail || onb.candidateId?.email;
-          if (workEmail) {
-            await asyncNotificationService.queueEmail(
-              workEmail,
-              `Reminder: Action Required for Your Onboarding Checklist`,
-              `<p>Dear ${empName},</p><p>Your onboarding checklist is currently <strong>${onb.completionPercent}% complete</strong>. Please upload any missing documents or complete assigned induction tasks at your earliest convenience.</p>`
-            );
+            await sendNotification({
+              recipient: onb.reportingTo._id,
+              title: notificationTitle,
+              message: notificationBody,
+              type: 'onboarding_overdue',
+              relatedModel: 'Onboarding',
+              relatedId: onb._id.toString()
+            });
           }
         }
       }

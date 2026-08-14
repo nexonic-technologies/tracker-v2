@@ -1,6 +1,6 @@
-import cacheService from '../services/cacheService.js';
-import asyncNotificationService from '../services/asyncNotificationService.js';
-import computationService from '../services/computationService.js';
+import cacheService from '../utils/cacheService.js';
+import asyncNotificationService from '../utils/notification/asyncNotificationService.js';
+import computationService from '../services/business/computationService.js';
 
 // Cache middleware for GET requests
 export const cacheMiddleware = (options = {}) => {

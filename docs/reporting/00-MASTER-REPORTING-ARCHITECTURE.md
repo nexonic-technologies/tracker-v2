@@ -2,7 +2,7 @@
 
 > **Version:** 1.0 — July 2026
 > **Scope:** All modules
-> **Status:** Specification — Engineering Implementation Ready
+> **Status:** Specification — Engineering Implementation Ready 
 
 ---
 

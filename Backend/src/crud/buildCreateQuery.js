@@ -4,7 +4,8 @@ import { getAllServices } from "../utils/servicesCache.js";
 import { getPolicy } from "../utils/cache.js";
 import { pathToFileURL } from "url";
 import sanitizeWrite from "../utils/sanitizeWrite.js";
-import runRegistry from "../utils/registryExecutor.js";
+import runRegistry from "../utils/policy/registryExecutor.js";
+import { saveAuditLog } from "../utils/auditLogger.js";
 import { cachedImport } from "../utils/importCache.js";
 
 export default async function buildCreateQuery(ctx) {
@@ -109,7 +110,7 @@ export default async function buildCreateQuery(ctx) {
 
   // Safe background domain event emission
   try {
-    const { default: domainEventService } = await cachedImport("../services/domainEventService.js");
+    const { default: domainEventService } = await cachedImport("../utils/domainEventService.js");
     const docsToEmit = Array.isArray(createdDocument) ? createdDocument : [createdDocument];
     for (const doc of docsToEmit) {
       if (doc && doc._id) {
@@ -124,6 +125,22 @@ export default async function buildCreateQuery(ctx) {
   } catch (err) {
     console.error(`[DomainEvent] Failed to emit create event for ${modelName}:`, err.message);
   }
+
+  // Auto pipeline audit logging
+  try {
+    const docIdForAudit = Array.isArray(createdDocument)
+      ? createdDocument[0]?._id
+      : createdDocument?._id;
+    await saveAuditLog({
+      action: "create",
+      modelName,
+      userId,
+      role,
+      docId: docIdForAudit,
+      beforeDoc: null,
+      afterDoc: Array.isArray(createdDocument) ? createdDocument[0] : createdDocument
+    });
+  } catch (_) {}
 
   return createdDocument;
 }

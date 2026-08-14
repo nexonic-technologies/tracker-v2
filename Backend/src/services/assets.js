@@ -4,7 +4,7 @@
 
 import models from '../models/Collection.js';
 
-import { writeLedgerEntry } from './assetHooksService.js';
+import { writeLedgerEntry } from './business/assetDomainHelper.js';
 
 // ── Status transition rules ────────────────────────────────────────────────────
 //

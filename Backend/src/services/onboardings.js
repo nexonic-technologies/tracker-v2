@@ -20,7 +20,7 @@ export default function onboardings() {
 
       const { default: Onboarding } = await import('../models/Onboarding.js');
       const { default: Employee } = await import('../models/Employee.js');
-      const { default: NotificationDispatcher } = await import('./NotificationDispatcher.js');
+      const { default: NotificationDispatcher } = await import('../utils/notification/NotificationDispatcher.js');
 
       const doc = await Onboarding.findById(docId);
       if (!doc || !doc.checklist || doc.checklist.length === 0) return;

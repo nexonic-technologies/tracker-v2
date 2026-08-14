@@ -116,7 +116,7 @@ router.get('/employees/:id/gantt-queue', authMiddleware, async (req, res) => {
 router.post('/tickets/:id/recalculate-eta', authMiddleware, async (req, res) => {
   try {
     const { default: models } = await import('../models/Collection.js');
-    const { scheduleETARecalculation } = await import('../utils/scheduleETARecalculation.js');
+    const { scheduleETARecalculation } = await import('../services/business/etaEngine.js');
 
     const ticket = await models.tickets
       .findById(req.params.id)

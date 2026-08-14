@@ -1,4 +1,4 @@
-import * as payrollEngine from './payrollEngine.js';
+import * as payrollEngine from './business/payrollEngine.js';
 
 const STATE_MACHINE = { Processing: [], Computed: ['Approved'], Approved: ['Paid'] };
 

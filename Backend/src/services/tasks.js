@@ -1,5 +1,5 @@
-import ticketTaskSync from './ticketTaskSync.js';
-import asyncNotificationService from './asyncNotificationService.js';
+import ticketTaskSync from './business/ticketTaskSync.js';
+import asyncNotificationService from '../utils/notification/asyncNotificationService.js';
 import { normalizeObjectIdArray } from '../utils/normalizeObjectId.js';
 
 /**
@@ -318,7 +318,7 @@ export default function tasks() {
             const newAssigned = (updateData.assignedTo || []).map(String);
             const addedDevs = newAssigned.filter(id => !oldAssigned.includes(id));
             if (addedDevs.length) {
-              const { scheduleETARecalculation } = await import('../utils/scheduleETARecalculation.js');
+              const { scheduleETARecalculation } = await import('./business/etaEngine.js');
               for (const devId of addedDevs) scheduleETARecalculation(devId);
             }
           }

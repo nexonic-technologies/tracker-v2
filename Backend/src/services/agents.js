@@ -1,4 +1,4 @@
-import AgentInviteService from '../services/AgentInviteService.js';
+import AgentInviteService from '../utils/mail/AgentInviteService.js';
 
 export default function agentService() {
   return {

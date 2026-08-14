@@ -6,7 +6,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '../../');
 
-const INDEXER_FILE = path.resolve(ROOT_DIR, 'Backend/src/services/databaseIndexer.js');
 const MODELS_DIR = path.resolve(ROOT_DIR, 'Backend/src/models');
 const SERVICES_DIR = path.resolve(ROOT_DIR, 'Backend/src/services');
 const ROUTES_DIR = path.resolve(ROOT_DIR, 'Backend/src/routes');
@@ -86,10 +85,14 @@ const MODEL_ALIAS_MAP = {
   'leaves': 'leaves',
   'leavetype': 'leave_types',
   'leave_types': 'leave_types',
-  'leavepolicy': 'leavepolicy',
+  'leavepolicy': 'leave_policies',
+  'leave_policy': 'leave_policies',
+  'leave_policies': 'leave_policies',
   'notification': 'notifications',
   'notifications': 'notifications',
-  'notificationreceptionist': 'notificationreceptionist',
+  'notificationreceptionist': 'notification_receptionists',
+  'notification_receptionist': 'notification_receptionists',
+  'notification_receptionists': 'notification_receptionists',
   'onboarding': 'onboardings',
   'onboardings': 'onboardings',
   'onboardingtemplate': 'onboarding_templates',
@@ -145,6 +148,8 @@ const MODEL_ALIAS_MAP = {
   'ticket_status_history': 'ticket_status_history',
   'todo': 'todos',
   'todos': 'todos',
+  'userlogin': 'userlogins',
+  'userlogins': 'userlogins',
   'wfhrequest': 'wfh_requests',
   'wfh_requests': 'wfh_requests',
   'workflow': 'workflows',
@@ -175,68 +180,56 @@ function parseIndexesFromModelsAndIndexer() {
     indexMap.get(canonical).push(fields);
   }
 
-  // 1. Parse databaseIndexer.js
-  if (fs.existsSync(INDEXER_FILE)) {
-    const content = fs.readFileSync(INDEXER_FILE, 'utf8');
-    const regex = /indexModel\(\s*['"]([^'"]+)['"]\s*,\s*\[([\s\S]*?)\]\s*\)/g;
-    let match;
-    while ((match = regex.exec(content)) !== null) {
-      const modelName = match[1];
-      const arrayContent = match[2];
-      const objRegex = /\{([\s\S]*?)\}/g;
-      let objMatch;
-      while ((objMatch = objRegex.exec(arrayContent)) !== null) {
-        const fieldsStr = objMatch[1];
-        const fields = [];
-        const fieldRegex = /['"]?([a-zA-Z0-9_.-]+)['"]?\s*:/g;
-        let fieldMatch;
-        while ((fieldMatch = fieldRegex.exec(fieldsStr)) !== null) {
-          fields.push(fieldMatch[1]);
-        }
-        if (fields.length > 0) {
-          addIndex(modelName, fields);
+  // Parse Mongoose Model Files strictly from Backend/src/models/**/*.js
+  if (fs.existsSync(MODELS_DIR)) {
+    function processModelDir(dirPath) {
+      const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name);
+        if (entry.isDirectory()) {
+          processModelDir(fullPath);
+        } else if (entry.isFile() && entry.name.endsWith('.js')) {
+          const content = fs.readFileSync(fullPath, 'utf8');
+          const modelNames = new Set();
+
+          const modelMatchRegex = /model\(\s*['"]([^'"]+)['"]/g;
+          let mm;
+          while ((mm = modelMatchRegex.exec(content)) !== null) {
+            modelNames.add(mm[1]);
+          }
+          if (modelNames.size === 0) {
+            modelNames.add(path.basename(entry.name, '.js').toLowerCase());
+          }
+
+          modelNames.forEach(collectionName => {
+            // Parse Schema.index({ field1: 1, field2: -1 })
+            const schemaIndexRegex = /\.index\(\s*\{([\s\S]*?)\}/g;
+            let idxMatch;
+            while ((idxMatch = schemaIndexRegex.exec(content)) !== null) {
+              const fieldsStr = idxMatch[1];
+              const fields = [];
+              const fieldRegex = /['"]?([a-zA-Z0-9_.-]+)['"]?\s*:/g;
+              let fieldMatch;
+              while ((fieldMatch = fieldRegex.exec(fieldsStr)) !== null) {
+                fields.push(fieldMatch[1]);
+              }
+              if (fields.length > 0) {
+                addIndex(collectionName, fields);
+              }
+            }
+
+            // Parse field inline { index: true } or { unique: true }
+            const inlineIndexRegex = /([a-zA-Z0-9_.]+)\s*:\s*\{[^}]*?\b(index|unique)\s*:\s*true/g;
+            let inlineMatch;
+            while ((inlineMatch = inlineIndexRegex.exec(content)) !== null) {
+              const fieldName = inlineMatch[1];
+              addIndex(collectionName, [fieldName]);
+            }
+          });
         }
       }
     }
-  }
-
-  // 2. Parse Mongoose Model Files (Backend/src/models/*.js)
-  if (fs.existsSync(MODELS_DIR)) {
-    const files = fs.readdirSync(MODELS_DIR);
-    files.forEach(file => {
-      if (!file.endsWith('.js')) return;
-      const content = fs.readFileSync(path.join(MODELS_DIR, file), 'utf8');
-
-      let collectionName = path.basename(file, '.js').toLowerCase();
-      const modelExportMatch = content.match(/model\(\s*['"]([^'"]+)['"]/);
-      if (modelExportMatch) {
-        collectionName = modelExportMatch[1];
-      }
-
-      // Parse Schema.index({ field1: 1, field2: -1 })
-      const schemaIndexRegex = /\.index\(\s*\{([\s\S]*?)\}/g;
-      let idxMatch;
-      while ((idxMatch = schemaIndexRegex.exec(content)) !== null) {
-        const fieldsStr = idxMatch[1];
-        const fields = [];
-        const fieldRegex = /['"]?([a-zA-Z0-9_.-]+)['"]?\s*:/g;
-        let fieldMatch;
-        while ((fieldMatch = fieldRegex.exec(fieldsStr)) !== null) {
-          fields.push(fieldMatch[1]);
-        }
-        if (fields.length > 0) {
-          addIndex(collectionName, fields);
-        }
-      }
-
-      // Parse field inline { index: true } or { unique: true }
-      const inlineIndexRegex = /([a-zA-Z0-9_.]+)\s*:\s*\{[^}]*?\b(index|unique)\s*:\s*true/g;
-      let inlineMatch;
-      while ((inlineMatch = inlineIndexRegex.exec(content)) !== null) {
-        const fieldName = inlineMatch[1];
-        addIndex(collectionName, [fieldName]);
-      }
-    });
+    processModelDir(MODELS_DIR);
   }
 
   return indexMap;
@@ -284,7 +277,7 @@ function checkIndexes() {
   const indexMap = parseIndexesFromModelsAndIndexer();
 
   if (indexMap.size === 0) {
-    console.error('🔴 Blocker: No database indexes parsed from models or databaseIndexer.js');
+    console.error('🔴 Blocker: No database indexes parsed from model files');
     process.exit(1);
   }
 

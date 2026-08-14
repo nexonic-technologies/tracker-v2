@@ -13,7 +13,7 @@
  */
 
 import mongoose from 'mongoose';
-import { computeSalary, calculateHourlyRate } from '../services/payrollEngine.js';
+import { computeSalary, calculateHourlyRate } from '../services/business/payrollEngine.js';
 
 // ASCII Formatting Helpers
 const green = (text) => `\x1b[32m${text}\x1b[0m`;

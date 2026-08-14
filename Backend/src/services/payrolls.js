@@ -1,4 +1,4 @@
-import * as payrollEngine from './payrollEngine.js';
+import * as payrollEngine from './business/payrollEngine.js';
 
 const FROZEN_FIELDS = [
   'grossSalary', 'netSalary', 'earnedBreakdown', 'deductionBreakdown',
@@ -11,15 +11,17 @@ export default function payrolls() {
   /**
    * Check if payroll period is closed
    */
-  async function checkPayrollPeriodLock(month, year, action) {
+  async function checkPayrollPeriodLock(month, year, action, ctx) {
     try {
-      const { default: models } = await import('../models/Collection.js');
-      if (!models.period_closures) return;
+      const PeriodClosure = ctx?.tenantContext?.getModel
+        ? ctx.tenantContext.getModel('period_closures')
+        : (await import('../models/Collection.js')).default.period_closures;
+      if (!PeriodClosure) return;
 
       // Create date from month/year (first day of the month)
       const targetDate = new Date(year, month - 1, 1);
 
-      const closure = await models.period_closures.findOne({
+      const closure = await PeriodClosure.findOne({
         startDate: { $lte: targetDate },
         endDate: { $gte: targetDate },
         status: { $in: ['Closed', 'In Progress'] },
@@ -46,9 +48,9 @@ export default function payrolls() {
       if (!employeeId || !month || !year) throw new Error('employeeId, month, and year are required.');
 
       // ── Period Lock Check ─────────────────────────────────────────────────
-      await checkPayrollPeriodLock(month, year, 'create');
+      await checkPayrollPeriodLock(month, year, 'create', ctx);
 
-      const { default: Payroll } = await import('../models/Payroll.js');
+      const Payroll = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('Payroll') : (await import('../models/Payroll.js')).default;
       const existing = await Payroll.findOne({ employeeId, month: Number(month), year: Number(year) }).lean();
 
       if (existing) {
@@ -68,7 +70,7 @@ export default function payrolls() {
 
     async afterCreate(ctx) {
       if (ctx.pendingDeleteExistingId && ctx.docId) {
-        const { default: Payroll } = await import('../models/Payroll.js');
+        const Payroll = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('Payroll') : (await import('../models/Payroll.js')).default;
         if (ctx.pendingDeleteExistingId.toString() !== ctx.docId.toString()) {
           await Payroll.deleteOne({ _id: ctx.pendingDeleteExistingId });
         }
@@ -76,16 +78,18 @@ export default function payrolls() {
     },
 
     async beforeUpdate(ctx) {
-      const { role, userId, docId, body, existingDoc } = ctx;
+      const { role, userId, docId, body } = ctx;
+      let existingDoc = ctx.existingDoc;
+
+      const Payroll = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('Payroll') : (await import('../models/Payroll.js')).default;
 
       if (!existingDoc) {
-        const { default: Payroll } = await import('../models/Payroll.js');
         existingDoc = await Payroll.findById(docId).lean();
       }
       if (!existingDoc) throw new Error('Payroll record not found.');
 
       // ── Period Lock Check ─────────────────────────────────────────────────
-      await checkPayrollPeriodLock(existingDoc.month, existingDoc.year, 'update');
+      await checkPayrollPeriodLock(existingDoc.month, existingDoc.year, 'update', ctx);
 
       // Immutability gate — frozen after Approved
       if (['Approved', 'Paid'].includes(existingDoc.status)) {

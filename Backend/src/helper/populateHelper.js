@@ -3,10 +3,11 @@ import { getRoleMeta } from "../utils/cache.js";
 import { parseFilter } from "../utils/filterParser.js";
 import queryOptimizer from "../utils/queryOptimizer.js";
 import { DEFAULT_POPULATE_FIELDS } from "../Config/defaultPopulateFields.js";
-import { raceConditionHandler } from "../services/raceConditionHandler.js";
+import { raceConditionHandler } from "../utils/raceConditionHandler.js";
 import { getFingerprint } from "../utils/deviceFingerprint.js";
 import { cachedImport } from "../utils/importCache.js";
 import { sanitizeErrorResponse } from "../utils/errorSanitizer.js";
+import buildReportQuery from "../crud/buildReportQuery.js";
 
 // Unified context helper with backward compatibility getters
 function makeCtx({ action, modelName, docId, fields, filter, populateFields, body, user, tenantContext }) {
@@ -93,6 +94,32 @@ export async function populateHelper(req, res, next) {
     // ------------------------ SPECIAL AGENT ENDPOINTS ------------------------
     if (action === 'read' && model === 'agents' && id && req.query.clientProducts === 'true') {
       return await handleAgentClientProducts(req, res, id);
+    }
+
+    // ------------------------ REPORT PIPELINE ------------------------
+    if (action === 'report') {
+      const ctx = makeCtx({
+        action,
+        modelName: model,
+        fields,
+        filter: optionsSource.filter || filter || {},
+        populateFields: rawPopulateFields,
+        body: req.body,
+        user: req.user,
+        tenantContext: req.tenantContext
+      });
+
+      const data = await buildReportQuery(ctx);
+
+      if (optionsSource.format === 'csv') {
+        const reportService = (await cachedImport('../services/business/reportService.js')).default;
+        const csv = reportService.toCSV(Array.isArray(data) ? data : [data]);
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${model}_report.csv"`);
+        return res.status(200).send(csv);
+      }
+
+      return res.status(200).json({ success: true, count: Array.isArray(data) ? data.length : 1, data });
     }
 
     // ------------------------ BULK UPSERT (ACCESS POLICIES) ------------------------
@@ -448,6 +475,15 @@ export async function populateHelper(req, res, next) {
     const isMutation = ['create', 'update', 'delete', 'bulk-upsert', 'bulk-create', 'bulk-update', 'bulk-delete'].includes(action);
     if (isMutation) {
       queryOptimizer.clearCache(model);
+      try {
+        const { processGenericVersionInvalidation } = await import('../utils/permissionInvalidator.js');
+        await processGenericVersionInvalidation({
+          modelName: model,
+          action,
+          data,
+          tenantContext: req.tenantContext
+        });
+      } catch (_) { }
     }
 
     // Build response with rate limit and lock info
@@ -477,7 +513,8 @@ export async function populateHelper(req, res, next) {
 
     return res.status(statusCode).json(response);
   } catch (error) {
-    next(error);
+    const { statusCode, payload } = sanitizeErrorResponse(error, req);
+    return res.status(statusCode).json(payload);
   }
 }
 
@@ -703,6 +740,7 @@ async function handleStatistics(req, res, next, modelName, user, filter) {
       type: 'statistics'
     });
   } catch (error) {
-    next(error);
+    const { statusCode, payload } = sanitizeErrorResponse(error, req);
+    return res.status(statusCode).json(payload);
   }
 }

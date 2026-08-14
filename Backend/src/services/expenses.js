@@ -210,7 +210,7 @@ export default function expensesService() {
         if (!statusChanged) return;
 
         const { default: models } = await import('../models/Collection.js');
-        const { default: fcmService } = await import('./fcmService.js');
+        const { default: fcmService } = await import('../utils/notification/fcmService.js');
 
         const expense = await models.expenses.findById(docId).lean();
         if (!expense?.employeeId) return;

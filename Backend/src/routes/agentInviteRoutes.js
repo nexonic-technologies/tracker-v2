@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import AgentInviteService from '../services/AgentInviteService.js';
+import AgentInviteService from '../utils/mail/AgentInviteService.js';
 
 const router = express.Router();
 

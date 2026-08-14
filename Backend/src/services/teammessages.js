@@ -1,7 +1,7 @@
 import models from '../models/Collection.js';
 
 import { io } from '../index.js';
-import NotificationDispatcher from './NotificationDispatcher.js';
+import NotificationDispatcher from '../utils/notification/NotificationDispatcher.js';
 
 class team_messagesService {
   beforeCreate(ctx) {

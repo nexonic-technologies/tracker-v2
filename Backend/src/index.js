@@ -9,14 +9,12 @@ import agentInviteRoutes from "./routes/agentInviteRoutes.js";
 import populateHelper from "./routes/populateRoutes.js";
 import fileRoutes from "./routes/fileRoutes.js";
 import locationRoutes from "./routes/locationRoutes.js";
-import bankRoutes from "./routes/bankRoutes.js";
 import configRoutes from "./routes/configRoutes.js";
 import adminSystemRoutes from "./routes/adminSystemRoutes.js";
 import exportRoutes from "./routes/exportRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
 import ganttRoutes from "./routes/ganttRoutes.js";
-import reportRoutes from "./routes/reportRoutes.js";
 
 import { apiHitLogger } from "./middlewares/apiHitLogger.js";
 import { authMiddleware } from "./Controller/AuthController.js";
@@ -25,12 +23,10 @@ import { agentAuthMiddleware } from "./middlewares/agentAuthMiddleware.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { requestTracer } from "./middlewares/requestTracer.js";
 import { rateLimitMiddleware } from "./middlewares/rateLimitMiddleware.js";
-import { raceConditionMiddleware } from "./services/raceConditionHandler.js";
-import { runSecurityTests } from "./utils/securityIntegrationTest.js";
+import { raceConditionMiddleware } from "./utils/raceConditionHandler.js";
 import { maintenanceMiddleware } from "./middlewares/maintenanceMiddleware.js";
 import connectDB from "./Config/ConnectDB.js";
 import cookieParser from "cookie-parser";
-import databaseIndexer from "./services/databaseIndexer.js";
 
 
 
@@ -114,11 +110,9 @@ app.use("/api/auth", AuthRouter);
 app.use("/api/populate", moduleGateMiddleware, populateHelper);
 app.use("/api/files", authMiddleware, fileRoutes);
 app.use("/api", locationRoutes);
-app.use("/api", bankRoutes);
 app.use("/api/config", configRoutes);
 app.use("/api/admin", authMiddleware, requireGlobalAdmin, adminSystemRoutes);
 app.use("/api/export", exportRoutes);
-app.use("/api/reports", reportRoutes);
 app.use("/api/dashboard", authMiddleware, dashboardRoutes);
 app.use("/api/search", authMiddleware, searchRoutes);
 app.use("/api", ganttRoutes); // Gantt queue + ETA recalculation
@@ -223,7 +217,7 @@ io.on("connection", (socket) => {
 
       if (!isRecipientConnected) {
         try {
-          const { default: NotificationDispatcher } = await import("./services/NotificationDispatcher.js");
+          const { default: NotificationDispatcher } = await import("./utils/notification/NotificationDispatcher.js");
           await NotificationDispatcher.dispatch({
             recipient: recipientId,
             title: `New Message from ${populatedMsg.sender?.basicInfo?.firstName || 'Colleague'}`,
@@ -488,17 +482,11 @@ export async function initApp() {
 
   // 3. Initialize CBAC UI capability cache
   try {
-    const { initializeCBACCache } = await import('./services/cbacCacheService.js');
+    const { initializeCBACCache } = await import('./utils/cbacCacheService.js');
     await initializeCBACCache();
   } catch (error) {
     // Silenced — CBAC cache failure is non-fatal
   }
-
-  // 4. Security self-check — non-blocking, won't crash server on failure
-  runSecurityTests().catch((error) => {
-    console.error("⛔ CRITICAL WARNING: Security self-check failed. Proceeding with caution...");
-    console.error(error);
-  });
 }
 
 export { app, server, io, activeConnections };

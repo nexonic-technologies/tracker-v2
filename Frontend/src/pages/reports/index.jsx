@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../api/axiosInstance';
 import MISReportCockpit from './MISReportCockpit';
+import DepartmentAllocation from './department-allocation';
+import ReportCatalogSidebar from './report-catalog-sidebar';
+import ReportDataGrid from './report-data-grid';
+import { fetchDepartments, DYNAMIC_REPORT_CATALOG } from './reportCatalog';
 import { 
-  FileText, Download, Calendar, Users, DollarSign, ShieldCheck, 
-  CheckCircle2, AlertCircle, BarChart3, Briefcase, Filter, Search, Award 
+  Download, Calendar, Users, DollarSign, ShieldCheck, 
+  CheckCircle2, BarChart3, Briefcase, Search, Award
 } from 'lucide-react';
 
 export default function ReportsHub() {
   const [activeTab, setActiveTab] = useState('mis');
+  const [departmentsList, setDepartmentsList] = useState([{ id: 'all', name: 'All Departments' }]);
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [activeReport, setActiveReport] = useState('daily-attendance');
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -19,46 +25,35 @@ export default function ReportsHub() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [searchTerm, setSearchTerm] = useState('');
 
-  const reportOptions = {
-    mis: [
-      { id: 'MIS-04', label: 'Monthly Business Review (MBR)', endpoint: '/populate/report/companies' }
-    ],
-    daily: [
-      { id: 'daily-attendance', label: 'Daily Attendance & Punch Register', endpoint: '/reports/daily-attendance' },
-      { id: 'daily-onboarding-sla', label: 'Daily Onboarding SLA Tracker', endpoint: '/reports/daily-onboarding-sla' },
-      { id: 'system-exceptions', label: 'Daily Exception & Error Audit', endpoint: '/reports/system-exceptions' }
-    ],
-    payroll: [
-      { id: 'monthly-payroll', label: 'Monthly Payroll Register & Variance Audit', endpoint: '/reports/monthly-payroll' },
-      { id: 'bank-advice', label: 'Bank Advice / NEFT Payout Batch Export', endpoint: '/reports/bank-advice' },
-      { id: 'pf-ecr', label: 'Statutory PF ECR Export (EPFO Layout)', endpoint: '/reports/pf-ecr' },
-      { id: 'esi-return', label: 'Statutory ESI Monthly Return Statement', endpoint: '/reports/esi-return' }
-    ],
-    tasks: [
-      { id: 'sprint-velocity', label: 'Sprint Velocity & Task Analytics', endpoint: '/reports/sprint-velocity' }
-    ],
-    assets: [
-      { id: 'asset-stock-ledger', label: 'Asset Allocation & Stock Ledger', endpoint: '/reports/asset-stock-ledger' }
-    ],
-    crm: [
-      { id: 'crm-pipeline', label: 'CRM Lead & Activity Pipeline Report', endpoint: '/reports/crm-pipeline' }
-    ],
-    audit: [
-      { id: 'lifecycle-audit', label: 'Employee Career Timeline Audit', endpoint: '/reports/lifecycle-audit' },
-      { id: 'headcount-analytics', label: 'Headcount & Attrition Analytics', endpoint: '/reports/headcount-analytics' }
-    ]
-  };
+  const categories = [
+    { id: 'mis', label: '⭐ MIS Executive Cockpit', icon: Award },
+    { id: 'daily', label: 'Daily Operations', icon: Calendar },
+    { id: 'payroll', label: 'Payroll & Statutory', icon: DollarSign },
+    { id: 'tasks', label: 'Tasks & Velocity', icon: CheckCircle2 },
+    { id: 'assets', label: 'Assets & Stock', icon: Briefcase },
+    { id: 'crm', label: 'CRM & Pipeline', icon: Users },
+    { id: 'audit', label: 'HR Analytics & Audit', icon: ShieldCheck }
+  ];
+
+  // Fetch departments dynamically from API
+  useEffect(() => {
+    async function loadDepts() {
+      const depts = await fetchDepartments();
+      setDepartmentsList(depts);
+    }
+    loadDepts();
+  }, []);
 
   const fetchReportData = async () => {
-    if (activeTab === 'mis') return; // MIS is handled by MISReportCockpit component
+    if (activeTab === 'mis') return;
     try {
       setLoading(true);
       setError(null);
 
-      const activeOption = Object.values(reportOptions).flat().find(r => r.id === activeReport);
+      const activeOption = DYNAMIC_REPORT_CATALOG.find(r => r.id === activeReport);
       if (!activeOption) return;
 
-      let url = `${activeOption.endpoint}?date=${selectedDate}&month=${selectedMonth}&year=${selectedYear}`;
+      let url = `${activeOption.endpoint}?date=${selectedDate}&month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartment}`;
       const res = await axiosInstance.get(url);
 
       if (res.data?.data) {
@@ -76,14 +71,14 @@ export default function ReportsHub() {
 
   useEffect(() => {
     fetchReportData();
-  }, [activeReport, selectedDate, selectedMonth, selectedYear, activeTab]);
+  }, [activeReport, selectedDate, selectedMonth, selectedYear, selectedDepartment, activeTab]);
 
   const handleDownloadCSV = async () => {
     try {
-      const activeOption = Object.values(reportOptions).flat().find(r => r.id === activeReport);
+      const activeOption = DYNAMIC_REPORT_CATALOG.find(r => r.id === activeReport);
       if (!activeOption) return;
 
-      let url = `${activeOption.endpoint}?date=${selectedDate}&month=${selectedMonth}&year=${selectedYear}&format=csv`;
+      let url = `${activeOption.endpoint}?date=${selectedDate}&month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartment}&format=csv`;
       const response = await axiosInstance.get(url, { responseType: 'blob' });
 
       const blob = new Blob([response.data], { type: 'text/csv' });
@@ -100,6 +95,14 @@ export default function ReportsHub() {
     }
   };
 
+  const filteredCatalog = DYNAMIC_REPORT_CATALOG.filter(r => {
+    const matchesTab = activeTab === 'all' || r.category === activeTab;
+    const matchesDept = selectedDepartment === 'all' || r.dept === selectedDepartment || r.dept === 'all';
+    const matchesSearch = r.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          r.description.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesTab && matchesDept && matchesSearch;
+  });
+
   const filteredData = reportData.filter(row =>
     Object.values(row).some(val =>
       String(val).toLowerCase().includes(searchTerm.toLowerCase())
@@ -110,196 +113,111 @@ export default function ReportsHub() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
+      {/* 2026-Grade Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
-            <BarChart3 className="w-7 h-7 text-blue-600 dark:text-blue-400" />
-            Enterprise ERP Reporting Hub
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Realtime executive MIS cockpits, daily operational registers, monthly payroll, and analytics.
+          <div className="flex items-center gap-2">
+            <span className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              <BarChart3 className="w-6 h-6" />
+            </span>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
+              Enterprise ERP Report Center
+            </h1>
+          </div>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+            Department-scoped executive cockpits, statutory exports, operational logs, and data analytics.
           </p>
         </div>
 
-        {activeTab !== 'mis' && (
-          <button
-            onClick={handleDownloadCSV}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg shadow-sm transition-colors cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            Export Report to CSV
-          </button>
-        )}
+        {/* Command-Grade Search & Export Controls */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[260px]">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search reports or dataset... (⌘K)"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold"
+            />
+          </div>
+
+          {activeTab !== 'mis' && (
+            <button
+              onClick={handleDownloadCSV}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export CSV
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Main Module Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-800 pb-2">
-        {[
-          { id: 'mis', label: '⭐ MIS Executive Cockpit', icon: Award },
-          { id: 'daily', label: 'Daily Operations', icon: Calendar },
-          { id: 'payroll', label: 'Payroll & Statutory', icon: DollarSign },
-          { id: 'tasks', label: 'Tasks & Velocity', icon: CheckCircle2 },
-          { id: 'assets', label: 'Assets & Stock', icon: Briefcase },
-          { id: 'crm', label: 'CRM & Pipeline', icon: Users },
-          { id: 'audit', label: 'HR Analytics & Audit', icon: ShieldCheck }
-        ].map(tab => {
+      {/* Department Allocation & Scope Control Bar */}
+      <DepartmentAllocation
+        departments={departmentsList}
+        selectedDepartment={selectedDepartment}
+        onSelectDepartment={setSelectedDepartment}
+        activeTab={activeTab}
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+        selectedMonth={selectedMonth}
+        onSelectMonth={setSelectedMonth}
+        selectedYear={selectedYear}
+        onSelectYear={setSelectedYear}
+      />
+
+      {/* Domain Navigation Menu Bar */}
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+        {categories.map(tab => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => {
                 setActiveTab(tab.id);
-                if (reportOptions[tab.id]?.[0]) {
-                  setActiveReport(reportOptions[tab.id][0].id);
-                }
+                const firstOption = DYNAMIC_REPORT_CATALOG.find(r => r.category === tab.id);
+                if (firstOption) setActiveReport(firstOption.id);
               }}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                 activeTab === tab.id
-                  ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600 dark:bg-slate-800 dark:text-blue-400'
-                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
               {tab.label}
             </button>
           );
         })}
       </div>
 
-      {/* Render MIS Cockpit if activeTab === 'mis' */}
+      {/* Main Content View */}
       {activeTab === 'mis' ? (
         <MISReportCockpit />
       ) : (
-        <>
-          {/* Sub Report Selector & Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                Select Specific Report
-              </label>
-              <select
-                value={activeReport}
-                onChange={e => setActiveReport(e.target.value)}
-                className="w-full text-sm bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 font-medium"
-              >
-                {(reportOptions[activeTab] || []).map(r => (
-                  <option key={r.id} value={r.id}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Dynamic Report Catalog Menu Sidebar */}
+          <div className="lg:col-span-1">
+            <ReportCatalogSidebar
+              reports={filteredCatalog}
+              activeReport={activeReport}
+              onSelectReport={setActiveReport}
+            />
+          </div>
 
-        {/* Date / Month Filters */}
-        <div className="flex items-center gap-2">
-          {activeTab === 'daily' ? (
-            <div className="w-full">
-              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                Filter Date
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={e => setSelectedDate(e.target.value)}
-                className="w-full text-sm bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 font-medium"
-              />
-            </div>
-          ) : (
-            <div className="flex gap-2 w-full">
-              <div className="w-1/2">
-                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                  Month
-                </label>
-                <select
-                  value={selectedMonth}
-                  onChange={e => setSelectedMonth(Number(e.target.value))}
-                  className="w-full text-sm bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 font-medium"
-                >
-                  {Array.from({ length: 12 }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      {new Date(0, i).toLocaleString('en', { month: 'long' })}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="w-1/2">
-                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                  Year
-                </label>
-                <input
-                  type="number"
-                  value={selectedYear}
-                  onChange={e => setSelectedYear(Number(e.target.value))}
-                  className="w-full text-sm bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 font-medium"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Quick Search */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
-            Search Dataset
-          </label>
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, ID, department..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 text-sm bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2"
+          {/* Report Data Grid */}
+          <div className="lg:col-span-3">
+            <ReportDataGrid
+              loading={loading}
+              error={error}
+              data={filteredData}
+              columns={columns}
             />
           </div>
         </div>
-      </div>
-
-      {/* Dataset Table View */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-xs">
-        {loading ? (
-          <div className="p-12 text-center text-sm text-gray-500 dark:text-gray-400">
-            Generating report dataset...
-          </div>
-        ) : error ? (
-          <div className="p-6 text-sm text-rose-600 bg-rose-50 dark:bg-rose-950/30 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5" />
-            {error}
-          </div>
-        ) : filteredData.length === 0 ? (
-          <div className="p-12 text-center text-sm text-gray-500 dark:text-gray-400">
-            No records found for the selected report filters.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-gray-100 dark:bg-slate-800/80 text-gray-700 dark:text-gray-300 font-semibold uppercase tracking-wider border-b border-gray-200 dark:border-gray-800">
-                <tr>
-                  {columns.map(col => (
-                    <th key={col} className="p-3">
-                      {col.replace(/([A-Z])/g, ' $1').trim()}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                {filteredData.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                    {columns.map(col => (
-                      <td key={col} className="p-3 font-medium text-slate-700 dark:text-slate-300">
-                        {typeof row[col] === 'object' ? JSON.stringify(row[col]) : String(row[col] ?? '-')}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </>
-  )}
-</div>
+      )}
+    </div>
   );
 }

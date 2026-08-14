@@ -268,7 +268,7 @@ export default function employeesService() {
       if (!docId || !existingDoc) return;
 
       try {
-        const { default: lifecycleHistoryService } = await import('./lifecycleHistoryService.js');
+        const { default: lifecycleHistoryService } = await import('./business/lifecycleHistoryService.js');
         const oldProf = existingDoc.professionalInfo || {};
         const newProf = body?.professionalInfo || {};
 

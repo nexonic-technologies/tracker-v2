@@ -5,7 +5,7 @@
 import models from '../models/Collection.js';
 
 import approvalEngine from '../utils/approval/approvalEngine.js';
-import { writeLedgerEntry } from './assetHooksService.js';
+import { writeLedgerEntry } from './business/assetDomainHelper.js';
 
 // ── Status transition rules ────────────────────────────────────────────────────
 const ALLOWED_TRANSITIONS = {

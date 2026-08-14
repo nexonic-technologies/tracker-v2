@@ -10,7 +10,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import Employee from '../models/Employee.js';
 import EmployeeLifecycleHistory from '../models/EmployeeLifecycleHistory.js';
-import lifecycleHistoryService from '../services/lifecycleHistoryService.js';
+import lifecycleHistoryService from '../services/business/lifecycleHistoryService.js';
 
 async function runBackfill() {
   console.log('🚀 [Backfill] Starting Employee Lifecycle Baseline Backfill...');

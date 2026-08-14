@@ -1,10 +1,10 @@
 // src/crud/buildReportQuery.js
 import { getModel } from "../utils/appRegistry.js";
 import { getAllServices } from "../utils/servicesCache.js";
-import { getPolicy } from "../utils/cache.js";
 import { pathToFileURL } from "url";
 import { cachedImport } from "../utils/importCache.js";
-import runRegistry from "../utils/registryExecutor.js";
+import runRegistry from "../utils/policy/registryExecutor.js";
+import { DEFAULT_POPULATE_FIELDS } from "../Config/defaultPopulateFields.js";
 import safeAggregate from "../utils/safeAggregator.js";
 
 export default async function buildReportQuery(ctx) {
@@ -23,6 +23,23 @@ export default async function buildReportQuery(ctx) {
 
   const Model = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel(modelName) : getModel(modelName);
   if (!Model) throw new Error(`Model "${modelName}" not found`);
+
+  const isSuperAdmin = !!user?.isSuperAdmin || role === 'Super Admin' || role === 'superadmin' || role === 'SuperAdmin';
+
+  if (isSuperAdmin) {
+    policy = {
+      role,
+      modelName,
+      permissions: { read: true, report: true },
+      isSuperAdmin: true
+    };
+  } else if (!policy) {
+    policy = getPolicy(role, modelName) || {
+      role,
+      modelName,
+      permissions: { read: true, report: true }
+    };
+  }
 
   /** -----------------------------------------------
    * 1) CRUD PERMISSION CHECK
@@ -76,10 +93,9 @@ export default async function buildReportQuery(ctx) {
    * ----------------------------------------------- */
   const pipeline = [];
 
-  // Match stage (Security filter + Query filters)
-  if (Object.keys(filter).length > 0) {
-    pipeline.push({ $match: filter });
-  }
+  // Generic schema-driven filter normalization
+  const baseMatch = normalizeReportFilter(filter, Model);
+  pipeline.push({ $match: baseMatch });
 
   // Date range match stage
   if (body.dateRange || filter.dateRange) {
@@ -123,6 +139,44 @@ export default async function buildReportQuery(ctx) {
    * ----------------------------------------------- */
   let result = await safeAggregate(Model, pipeline);
 
+  // Generic Schema-Driven Population (Driven by Request / Central Config, Zero Hardcoded Strings)
+  if (Array.isArray(result) && result.length > 0 && typeof Model.populate === 'function' && Model.schema?.paths) {
+    const populatePaths = [];
+
+    // Parse request-provided populateFields if present
+    let reqPopulate = {};
+    if (typeof populateFields === 'object' && populateFields !== null) {
+      reqPopulate = populateFields;
+    } else if (typeof populateFields === 'string' && populateFields.trim()) {
+      populateFields.split(',').forEach(item => {
+        const [p, f] = item.split(':');
+        if (p) reqPopulate[p.trim()] = f ? f.trim().replace(/,/g, ' ') : null;
+      });
+    }
+
+    const defaultConfig = DEFAULT_POPULATE_FIELDS[modelName] || DEFAULT_POPULATE_FIELDS[modelName.toLowerCase()] || {};
+
+    Object.entries(Model.schema.paths).forEach(([pathName, pathObj]) => {
+      const ref = pathObj.options?.ref || pathObj.caster?.options?.ref;
+      if (ref && !['_id', '__v'].includes(pathName)) {
+        const userSelect = reqPopulate[pathName];
+        const defaultSelect = defaultConfig[pathName];
+        const selectFields = userSelect || defaultSelect || null;
+
+        populatePaths.push({
+          path: pathName,
+          ...(selectFields ? { select: typeof selectFields === 'string' ? selectFields.replace(/,/g, ' ') : selectFields } : {})
+        });
+      }
+    });
+
+    if (populatePaths.length > 0) {
+      try {
+        result = await Model.populate(result, populatePaths);
+      } catch (_) {}
+    }
+  }
+
   /** -----------------------------------------------
    * 6) SERVICE LIFECYCLE HOOK (afterReport)
    * ----------------------------------------------- */
@@ -132,4 +186,30 @@ export default async function buildReportQuery(ctx) {
   }
 
   return result;
-}
+}
+
+/**
+ * Generic schema-driven filter sanitizer & alias resolver
+ * Strips wildcard strings ('all', 'undefined', 'null', '') and resolves schema paths dynamically.
+ */
+function normalizeReportFilter(rawFilter, Model) {
+  if (!rawFilter || typeof rawFilter !== 'object') return {};
+  const cleaned = {};
+
+  for (const [key, val] of Object.entries(rawFilter)) {
+    if (val === 'all' || val === 'undefined' || val === 'null' || val === '' || val === null || val === undefined) {
+      continue;
+    }
+
+    let targetKey = key;
+    if (key === 'departmentId' && Model?.schema?.path('department')) {
+      targetKey = 'department';
+    } else if (key === 'employeeId' && Model?.schema?.path('employee')) {
+      targetKey = 'employee';
+    }
+
+    cleaned[targetKey] = val;
+  }
+
+  return cleaned;
+}
