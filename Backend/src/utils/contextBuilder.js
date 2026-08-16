@@ -29,16 +29,75 @@ export function clearNavigationCache(roleId = null) {
 
 
 export async function buildUserContext(userId, roleId) {
-  const roleStr = roleId?.toString();
   const tenantContext = getTenantStore();
+  const RoleModel = tenantContext?.getModel ? tenantContext.getModel('roles') : Role;
+  const EmpModel = tenantContext?.getModel ? tenantContext.getModel('employees') : Employee;
+  const ResourceModel = tenantContext?.getModel ? tenantContext.getModel('resources') : Resource;
+  const SideBarModel = tenantContext?.getModel ? tenantContext.getModel('sidebars') : SideBar;
+
+  let roleStr = roleId?.toString();
+
+  // 1. Fetch user profile first (so we can accurately resolve the employee's dynamic role)
+  let user = await EmpModel.findById(userId)
+    .select(
+      "basicInfo.firstName basicInfo.lastName basicInfo.email basicInfo.profileImage " +
+      "professionalInfo.department professionalInfo.designation professionalInfo.role professionalInfo.empId isSuperAdmin"
+    )
+    .populate("professionalInfo.department", "name")
+    .populate("professionalInfo.designation", "name")
+    .populate("professionalInfo.role")
+    .lean();
+
+  if (!user) {
+    try {
+      const { getGlobalModels } = await import("../models/global/index.js");
+      const { UserLogin } = getGlobalModels();
+      const globalUser = await UserLogin.findById(userId).lean();
+      if (globalUser) {
+        user = {
+          _id: globalUser._id,
+          basicInfo: {
+            firstName: globalUser.name || globalUser.email?.split('@')[0] || "User",
+            lastName: "",
+            email: globalUser.email
+          },
+          professionalInfo: {
+            role: globalUser.role
+          },
+          isSuperAdmin: !!globalUser.isSuperAdmin
+        };
+      }
+    } catch (_) { }
+  }
+
+  if (!user) {
+    user = {
+      _id: userId,
+      basicInfo: { firstName: "Employee", lastName: "", email: "" },
+      professionalInfo: { role: roleStr || "Employee" },
+      isSuperAdmin: false
+    };
+  }
+
+  // Derive role string from employee record if roleId was missing, generic 'Employee', or an ObjectId
+  if (user?.professionalInfo?.role) {
+    const userRole = user.professionalInfo.role;
+    if (typeof userRole === 'object' && userRole !== null && userRole.name) {
+      roleStr = userRole.name;
+    } else if (typeof userRole === 'string' && userRole !== 'Employee') {
+      roleStr = userRole;
+    }
+  }
+
   let roleMeta = getRoleMeta(roleStr);
   if (!roleMeta) {
     await setCache();
     roleMeta = getRoleMeta(roleStr);
   }
+
   if (!roleMeta && roleStr) {
     const isObjId = mongoose.Types.ObjectId.isValid(roleStr);
-    const roleDoc = await Role.findOne({
+    const roleDoc = await RoleModel.findOne({
       $or: [
         { name: roleStr },
         { name: new RegExp(`^${roleStr}$`, 'i') },
@@ -61,50 +120,27 @@ export async function buildUserContext(userId, roleId) {
     }
   }
 
+  // If still not found and user has a role reference in DB, look up role on tenant DB
+  if (!roleMeta) {
+    const defaultRole = await RoleModel.findOne({ name: roleStr }).lean() || await RoleModel.findOne({ isActive: true }).lean();
+    if (defaultRole) {
+      roleMeta = {
+        id: defaultRole._id.toString(),
+        name: defaultRole.name,
+        isSuperAdmin: !!defaultRole.isSuperAdmin,
+        level: defaultRole.level || 1,
+        capabilities: [],
+        permissionVersion: defaultRole.permissionVersion || 1
+      };
+    }
+  }
+
   if (!roleMeta) {
     throw new Error(`Role "${roleStr}" not found in cache or database`);
   }
 
-  // 2. Fetch user profile
-  let user = await Employee.findById(userId)
-    .select(
-      "basicInfo.firstName basicInfo.lastName basicInfo.email basicInfo.profileImage " +
-      "professionalInfo.department professionalInfo.designation professionalInfo.role professionalInfo.empId"
-    )
-    .populate("professionalInfo.department", "name")
-    .populate("professionalInfo.designation", "name")
-    .lean();
-
-  if (!user) {
-    try {
-      const { default: UserLogin } = await import("../models/UserLogin.js");
-      const globalUser = await UserLogin.findById(userId).lean();
-      if (globalUser) {
-        user = {
-          _id: globalUser._id,
-          basicInfo: {
-            firstName: globalUser.name || globalUser.email?.split('@')[0] || "User",
-            lastName: "",
-            email: globalUser.email
-          },
-          professionalInfo: {
-            role: globalUser.role
-          }
-        };
-      }
-    } catch (_) { }
-  }
-
-  if (!user) {
-    user = {
-      _id: userId,
-      basicInfo: { firstName: "Super Admin", lastName: "", email: "" },
-      professionalInfo: { role: roleStr }
-    };
-  }
-
   // 3. Fetch all active Resource definitions to map keys
-  const allResources = await Resource.find({ isActive: true }).lean();
+  const allResources = await ResourceModel.find({ isActive: true }).lean();
   const resourceById = {};
   const resourceByModel = {};
 
@@ -115,22 +151,56 @@ export async function buildUserContext(userId, roleId) {
     }
   });
 
-  // 4. Determine if Super Admin
-  const isSuperAdmin = !!roleMeta?.isSuperAdmin;
+  // 4. Determine if Super Admin (Strict Schema Boolean)
+  const isSuperAdmin = !!user?.isSuperAdmin || !!roleMeta?.isSuperAdmin;
 
-  // 5. Build or retrieve cached navigation tree
-  const userDept = user.professionalInfo?.department?._id;
-  const userDesig = user.professionalInfo?.designation?._id;
+  // 5. Build permissions map
+  const permissions = {};
 
-  const tenantId = tenantContext?.tenantId || 'global';
-  const userDeptStr = userDept ? userDept.toString() : "all";
-  const userDesigStr = userDesig ? userDesig.toString() : "all";
-  const navCacheKey = `${tenantId}:${roleStr}:${userDeptStr}:${userDesigStr}`;
+  if (isSuperAdmin) {
+    allResources.forEach((res) => {
+      if (res.modelName) {
+        permissions[res.modelName] = {
+          read: true,
+          create: true,
+          update: true,
+          delete: true,
+          report: true
+        };
+      }
+    });
+  } else {
+    allResources.forEach((res) => {
+      if (!res.modelName) return;
+      const policy = getPolicy(roleMeta.id, res.modelName) || getPolicy(roleMeta.name, res.modelName);
+      if (policy && policy.permissions) {
+        permissions[res.modelName] = {
+          read: !!policy.permissions.read,
+          create: !!policy.permissions.create,
+          update: !!policy.permissions.update,
+          delete: !!policy.permissions.delete,
+          report: !!policy.permissions.report
+        };
+      } else {
+        permissions[res.modelName] = {
+          read: false,
+          create: false,
+          update: false,
+          delete: false,
+          report: false
+        };
+      }
+    });
+  }
 
-  // Invalidate local navigation tree cache if global permission cache version has bumped
+  // 5. Build filtered navigation tree
+  const deptId = user.professionalInfo?.department?._id?.toString() || user.professionalInfo?.department?.toString() || "none";
+  const desigId = user.professionalInfo?.designation?._id?.toString() || user.professionalInfo?.designation?.toString() || "none";
+  const navCacheKey = `${roleMeta.id}:${deptId}:${desigId}`;
+
   const currentVersion = getCacheVersion();
   if (currentVersion !== cachedVersion) {
-    navigationCache.clear();
+    clearNavigationCache();
     cachedVersion = currentVersion;
   }
 
@@ -139,7 +209,7 @@ export async function buildUserContext(userId, roleId) {
   // ![] === false in JS — an empty cached array would skip the rebuild.
   // Use Array.isArray guard so only a genuine cached non-empty array is reused.
   if (!Array.isArray(navigation)) {
-    let allSidebarItems = await SideBar.find({
+    let allSidebarItems = await SideBarModel.find({
       isActive: true,
       isDeleted: { $ne: true }
     })
@@ -169,15 +239,6 @@ export async function buildUserContext(userId, roleId) {
     }
 
     if (isSuperAdmin) {
-      // Super Admin bypasses all capability checks — build tree directly from all items
-      // Debug: log sidebar item breakdown to diagnose child resolution
-      const withParent = allSidebarItems.filter(i => !!i.parentId);
-      const withoutParent = allSidebarItems.filter(i => !i.parentId);
-      console.log(`[contextBuilder] SuperAdmin sidebar: total=${allSidebarItems.length} parents=${withoutParent.length} children=${withParent.length}`);
-      if (withParent.length > 0) {
-        console.log('[contextBuilder] Sample child parentId:', withParent[0].parentId, typeof withParent[0].parentId);
-      }
-
       const cleanMenuItem = (item) => ({
         _id: item._id?.toString() || item._id,
         title: item.title,
@@ -227,7 +288,7 @@ export async function buildUserContext(userId, roleId) {
   let roleCapabilities = [];
   try {
     if (isSuperAdmin) {
-      const allActiveCaps = await Capability.find({ status: 'active' }).lean();
+      const allActiveCaps = await CapabilityModel.find({ status: 'active' }).lean();
       roleCapabilities = allActiveCaps.map(cap => ({
         _id: cap._id?.toString(),
         key: cap.key,
@@ -236,7 +297,7 @@ export async function buildUserContext(userId, roleId) {
       }));
     } else {
       // Fetch role with capabilities populated
-      const role = await Role.findById(roleId)
+      const role = await RoleModel.findById(roleMeta.id)
         .populate('capabilities')
         .lean();
 

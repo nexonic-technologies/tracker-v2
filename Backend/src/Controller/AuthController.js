@@ -50,6 +50,7 @@ export const login = async (req, res, next) => {
         try {
           tenantRec = await Tenant.findOne({ tenantId: globalUser.tenantId }).populate('enabledModules').lean();
           if (tenantRec?.slug) tenantSlug = tenantRec.slug;
+          if (tenantRec?.dbName) dbName = tenantRec.dbName;
           if (Array.isArray(tenantRec?.enabledModules) && tenantRec.enabledModules.length > 0) {
             tenantModules = tenantRec.enabledModules.map((mod) => {
               if (typeof mod === 'string') return mod;
@@ -60,25 +61,84 @@ export const login = async (req, res, next) => {
         } catch (_) { }
 
         let resolvedName = globalUser.name;
-        if (!resolvedName && globalUser.employeeId && dbName) {
+        let resolvedRole = globalUser.role || 'Employee';
+        let resolvedIsSuperAdmin = !!globalUser.isSuperAdmin;
+        let resolvedDept = null;
+        let resolvedDesig = null;
+        let resolvedManager = null;
+
+        if (globalUser.employeeId && dbName) {
           try {
-            const { conn } = await TenantConnectionManager.getTenantConnection(dbName);
-            const EmpModel = conn.models.employees || conn.model('employees', Employee.schema);
-            const empDoc = await EmpModel.findById(globalUser.employeeId).select('basicInfo').lean();
+            const { default: TenantConnectionManager } = await import("../tenant/TenantConnectionManager.js");
+            const { conn, models: tenantModels } = await TenantConnectionManager.getTenantConnection(dbName);
+            const EmpModel = tenantModels?.employees || conn.models.employees || conn.model('employees', Employee.schema);
+            const RoleModel = tenantModels?.roles || conn.models.roles || conn.model('roles', models.roles.schema);
+            const empDoc = await EmpModel.findById(globalUser.employeeId)
+              .populate('professionalInfo.role')
+              .lean();
+
             if (empDoc?.basicInfo) {
               resolvedName = [empDoc.basicInfo.firstName, empDoc.basicInfo.lastName].filter(Boolean).join(' ');
             }
-          } catch (_) { }
+
+            if (empDoc?.professionalInfo?.role) {
+              const r = empDoc.professionalInfo.role;
+              if (typeof r === 'object' && r !== null && r.name) {
+                resolvedRole = r.name;
+                if (r.isSuperAdmin) resolvedIsSuperAdmin = true;
+              } else {
+                const roleIdStr = (r?._id || r)?.toString();
+                if (roleIdStr) {
+                  try {
+                    const roleDoc = await RoleModel.findById(roleIdStr).lean();
+                    if (roleDoc) {
+                      resolvedRole = roleDoc.name;
+                      if (roleDoc.isSuperAdmin) resolvedIsSuperAdmin = true;
+                    } else {
+                      const roleByName = await RoleModel.findOne({ name: roleIdStr }).lean();
+                      if (roleByName) {
+                        resolvedRole = roleByName.name;
+                        if (roleByName.isSuperAdmin) resolvedIsSuperAdmin = true;
+                      }
+                    }
+                  } catch (_) { }
+                }
+              }
+            }
+
+            if (empDoc?.isSuperAdmin) {
+              resolvedIsSuperAdmin = true;
+            }
+            resolvedDept = empDoc?.professionalInfo?.department;
+            resolvedDesig = empDoc?.professionalInfo?.designation;
+            resolvedManager = empDoc?.professionalInfo?.reportingManager;
+
+            // Sync back to Global UserLogin asynchronously to ensure cache coherence
+            if (globalUser.role !== resolvedRole || globalUser.isSuperAdmin !== resolvedIsSuperAdmin) {
+              UserLogin.updateOne(
+                { _id: globalUser._id },
+                { $set: { role: resolvedRole, isSuperAdmin: resolvedIsSuperAdmin } }
+              ).catch(e => console.error('[UserLogin sync on login error]', e.message));
+            }
+          } catch (err) {
+            console.error('[Tenant Employee lookup on login failed]', err.message);
+          }
         }
 
         user = {
           _id: globalUser.employeeId || globalUser._id,
           name: resolvedName || emailToUse.split('@')[0],
-          role: globalUser.role,
+          role: resolvedRole,
           userType: globalUser.userType,
-          isSuperAdmin: !!globalUser.isSuperAdmin,
+          isSuperAdmin: resolvedIsSuperAdmin,
           tenantSlug,
           enabledModules: tenantModules,
+          professionalInfo: {
+            role: resolvedRole,
+            department: resolvedDept,
+            designation: resolvedDesig,
+            reportingManager: resolvedManager
+          }
         };
         userType = globalUser.userType || "employee";
       }
@@ -819,10 +879,13 @@ export const getMe = async (req, res, next) => {
   try {
     const { id, userType } = req.user;
     let user;
+    const EmpModel = req.tenantContext?.getModel ? req.tenantContext.getModel('employees') : Employee;
+    const AgentModel = req.tenantContext?.getModel ? req.tenantContext.getModel('agents') : Agent;
+
     if (userType === "employee") {
-      user = await Employee.findById(id);
+      user = await EmpModel.findById(id).populate('professionalInfo.role');
     } else if (userType === "agent") {
-      user = await Agent.findById(id).populate("client");
+      user = await AgentModel.findById(id).populate("client");
     }
 
     if (!user) {
@@ -835,10 +898,13 @@ export const getMe = async (req, res, next) => {
     };
 
     if (userType === "employee") {
-      userData.role = user.professionalInfo?.role;
+      const r = user.professionalInfo?.role;
+      const resolvedRole = (typeof r === 'object' && r !== null) ? (r.name || r.title || r._id?.toString()) : (r || req.user.role);
+      userData.role = resolvedRole;
+      userData.isSuperAdmin = !!(user.isSuperAdmin || (typeof r === 'object' && r?.isSuperAdmin));
       userData.department = user.professionalInfo?.department;
       userData.designation = user.professionalInfo?.designation;
-      userData.name = user.basicInfo?.firstName;
+      userData.name = [user.basicInfo?.firstName, user.basicInfo?.lastName].filter(Boolean).join(' ') || user.name;
       userData.managerId = user.professionalInfo?.reportingManager;
       userData.workEmail = user.authInfo?.workEmail;
     } else {

@@ -34,6 +34,7 @@ export default async function buildUpdateQuery(ctx) {
    * 2) CLEAN BODY (no unauthorized fields)
    * ----------------------------------------------- */
   body = sanitizeUpdate({ body, policy });
+  ctx.body = body;
 
   /** -----------------------------------------------
    * 4) Registry (ABAC — isSelf, custom logic)
@@ -67,10 +68,12 @@ export default async function buildUpdateQuery(ctx) {
   const beforeUpdate = serviceInstance?.beforeUpdate;
   const afterUpdate = serviceInstance?.afterUpdate;
 
+  const targetFilter = docId
+    ? { _id: docId, ...(filter || {}) }
+    : (filter || {});
+
   if (typeof beforeUpdate === "function") {
-    const existingDoc = docId
-      ? await Model.findById(docId).lean()
-      : await Model.findOne(filter).lean();
+    const existingDoc = await Model.findOne(targetFilter).lean();
     ctx.existingDoc = existingDoc;
     const result = await beforeUpdate(ctx);
     if (result && typeof result === "object") {
@@ -80,9 +83,7 @@ export default async function buildUpdateQuery(ctx) {
   }
 
   // BEFORE writing: keep snapshot for audit
-  const beforeDoc = docId
-    ? await Model.findById(docId).lean()
-    : await Model.findOne(filter).lean();
+  const beforeDoc = await Model.findOne(targetFilter).lean();
 
 
   /** -----------------------------------------------
@@ -112,17 +113,10 @@ export default async function buildUpdateQuery(ctx) {
     return cleanDoc;
   }
 
-  if (docId) {
-    updatedDoc = await Model.findByIdAndUpdate(docId, { $set: updateBody }, {
-      new: true,
-      runValidators: true
-    });
-  } else {
-    updatedDoc = await Model.findOneAndUpdate(filter, { $set: updateBody }, {
-      new: true,
-      runValidators: true
-    });
-  }
+  updatedDoc = await Model.findOneAndUpdate(targetFilter, { $set: updateBody }, {
+    new: true,
+    runValidators: true
+  });
 
   if (!updatedDoc) throw new Error(`${modelName} not found`);
 

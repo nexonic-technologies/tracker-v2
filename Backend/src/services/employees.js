@@ -249,6 +249,43 @@ async function syncEmployeeUserLogin(employeeDoc, tenantStore) {
 
     const empName = [employeeDoc.basicInfo?.firstName, employeeDoc.basicInfo?.lastName].filter(Boolean).join(' ') || cleanEmail.split('@')[0];
 
+    // Dynamically resolve role name and isSuperAdmin flag
+    let roleName = 'Employee';
+    let isSuperAdmin = false;
+
+    if (employeeDoc.professionalInfo?.role) {
+      const rawRole = employeeDoc.professionalInfo.role;
+      if (typeof rawRole === 'object' && rawRole !== null) {
+        roleName = rawRole.name || rawRole.title || rawRole._id?.toString() || 'Employee';
+        isSuperAdmin = !!rawRole.isSuperAdmin;
+      } else if (typeof rawRole === 'string') {
+        try {
+          const { default: TenantConnectionManager } = await import('../tenant/TenantConnectionManager.js');
+          const { default: models } = await import('../models/Collection.js');
+          const { conn } = await TenantConnectionManager.getTenantConnection(dbName);
+          const RoleModel = conn.models.roles || conn.model('roles', models.roles.schema);
+          const mongoose = (await import('mongoose')).default;
+          if (mongoose.Types.ObjectId.isValid(rawRole)) {
+            const roleDoc = await RoleModel.findById(rawRole).lean();
+            if (roleDoc) {
+              roleName = roleDoc.name;
+              isSuperAdmin = !!roleDoc.isSuperAdmin;
+            } else {
+              roleName = rawRole;
+            }
+          } else {
+            roleName = rawRole;
+          }
+        } catch (_) {
+          roleName = rawRole;
+        }
+      }
+    }
+
+    if (employeeDoc.isSuperAdmin) {
+      isSuperAdmin = true;
+    }
+
     const updateFields = {
       email: cleanEmail,
       tenantId,
@@ -256,8 +293,9 @@ async function syncEmployeeUserLogin(employeeDoc, tenantStore) {
       employeeId: employeeDoc._id,
       userType: 'employee',
       name: empName,
+      role: roleName,
       status: (employeeDoc.status === 'Inactive' || employeeDoc.status === 'Terminated' || employeeDoc.isActive === false) ? 'Inactive' : 'Active',
-      isSuperAdmin: !!(employeeDoc.isSuperAdmin || (typeof employeeDoc.role === 'object' && employeeDoc.role?.isSuperAdmin)),
+      isSuperAdmin,
     };
 
     if (employeeDoc.authInfo?.password) {

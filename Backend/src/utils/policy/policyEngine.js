@@ -20,8 +20,27 @@ export async function resolvePolicy(ctx, targetModelName) {
 
   if (!role || !targetModelName) return null;
 
-  const roleIdOrName = typeof role === 'object' ? (role._id || role.id || role.name || '') : role;
+  let roleIdOrName = typeof role === 'object' ? (role._id || role.id || role.name || '') : role;
   let roleMeta = getRoleMeta(roleIdOrName) || getRoleMeta(role);
+
+  // If user role is generic 'Employee' or unmapped, attempt to resolve actual assigned role from tenant employee record
+  if (user?.id && (!roleMeta || roleIdOrName === 'Employee') && tenantContext && typeof tenantContext.getModel === 'function') {
+    try {
+      const EmpModel = tenantContext.getModel('employees');
+      if (EmpModel) {
+        const empDoc = await EmpModel.findById(user.id).select('professionalInfo.role isSuperAdmin').populate('professionalInfo.role').lean();
+        if (empDoc?.professionalInfo?.role) {
+          const r = empDoc.professionalInfo.role;
+          if (typeof r === 'object' && r !== null && r.name) {
+            roleIdOrName = r.name;
+          } else if (typeof r === 'string' && r !== 'Employee') {
+            roleIdOrName = r;
+          }
+          roleMeta = getRoleMeta(roleIdOrName);
+        }
+      }
+    } catch (_) {}
+  }
 
   if (!roleMeta && tenantContext && typeof tenantContext.getModel === 'function') {
     try {
@@ -69,7 +88,42 @@ export async function resolvePolicy(ctx, targetModelName) {
 
   let policy = tenantContext?.policyOverrides?.[role]?.[targetModelName] ||
     tenantContext?.policyOverrides?.[role]?.[targetModelName.toLowerCase()] ||
+    (roleMeta?.id ? getPolicy(roleMeta.id, targetModelName) : null) ||
+    (roleMeta?.name ? getPolicy(roleMeta.name, targetModelName) : null) ||
     getPolicy(role, targetModelName);
+
+  // Dynamic fallback: Query tenant database access_policies directly if cache miss
+  if (!policy && tenantContext && typeof tenantContext.getModel === 'function') {
+    try {
+      const PolicyModel = tenantContext.getModel('access_policies');
+      if (PolicyModel) {
+        const queryRoleIds = [
+          roleIdOrName,
+          ...(roleMeta?.id ? [roleMeta.id] : []),
+          ...(roleMeta?.name ? [roleMeta.name] : [])
+        ].filter(Boolean);
+
+        const p = await PolicyModel.findOne({
+          role: { $in: queryRoleIds },
+          modelName: { $regex: new RegExp(`^${targetModelName}$`, 'i') }
+        }).lean();
+
+        if (p) {
+          const permissionsObj = {};
+          if (Array.isArray(p.actions)) {
+            p.actions.forEach(act => { permissionsObj[act] = true; });
+          }
+          ["read", "create", "update", "delete", "report"].forEach(act => {
+            if (permissionsObj[act] === undefined) permissionsObj[act] = false;
+          });
+          policy = {
+            ...p,
+            permissions: permissionsObj
+          };
+        }
+      }
+    } catch (_) {}
+  }
 
   if (!policy && ['notifications', 'notification_preferences', 'notificationreceptionist', 'notificationrules', 'notification_deliveries', 'session', 'auditlog', 'dashboard_schemas', 'dashboard_widgets'].includes(targetModelName.toLowerCase())) {
     return {
@@ -96,10 +150,75 @@ export async function resolvePolicy(ctx, targetModelName) {
       return {
         role,
         modelName: targetModelName,
-        permissions: { read: true, create: true, update: true, delete: false },
-        forbiddenAccess: { read: [], create: [], update: [], delete: [] },
-        allowAccess: { read: ["*"], create: ["*"], update: ["*"], delete: [] },
-        conditions: {}
+        permissions: { read: true, create: true, update: false, delete: false },
+        forbiddenAccess: {
+          read: [
+            "offeredSalary",
+            "offerLetterUrl",
+            "offerExpiryDate",
+            "interviewRating",
+            "interviewNotes",
+            "interviewers",
+            "rejectionReason",
+            "rejectionMailSent",
+            "stageHistory",
+            "referredBy",
+            "employeeId",
+            "panNumber",
+            "expectedSalary"
+          ],
+          create: [
+            "stage",
+            "stageHistory",
+            "offeredSalary",
+            "offerLetterUrl",
+            "interviewRating",
+            "interviewNotes",
+            "interviewers",
+            "rejectionReason",
+            "employeeId"
+          ],
+          update: ["*"],
+          delete: ["*"]
+        },
+        allowAccess: {
+          read: [
+            "firstName",
+            "lastName",
+            "email",
+            "phone",
+            "linkedinUrl",
+            "resumeUrl",
+            "applicationId",
+            "jobOpeningId",
+            "stage",
+            "interviewDate",
+            "interviewTime",
+            "interviewType",
+            "joiningDate"
+          ],
+          create: [
+            "firstName",
+            "lastName",
+            "email",
+            "phone",
+            "linkedinUrl",
+            "resumeUrl",
+            "dob",
+            "gender",
+            "maritalStatus",
+            "fatherName",
+            "motherName",
+            "address",
+            "jobOpeningId",
+            "source"
+          ],
+          update: [],
+          delete: []
+        },
+        conditions: {
+          read: [{ registry: "isCandidateSelf" }]
+        }
       };
     }
   }

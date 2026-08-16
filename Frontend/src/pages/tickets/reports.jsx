@@ -10,22 +10,31 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-/* ── Fallback Color Tokens ── */
+/* ── Semantic Design System Token Mappings (WCAG 2.1 AA Compliant) ── */
 const COLOR_TOKENS = {
-  'Open': { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe', dot: '#3b82f6' },
-  'In Progress': { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe', dot: '#3b82f6' },
-  'Review': { bg: '#faf5ff', text: '#9333ea', border: '#e9d5ff', dot: '#a855f7' },
-  'Testing': { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0', dot: '#22c55e' },
-  'Completed': { bg: '#ecfdf5', text: '#059669', border: '#a7f3d0', dot: '#10b981' },
-  'Closed': { bg: '#f8fafc', text: '#64748b', border: '#e2e8f0', dot: '#94a3b8' },
-  'Pending': { bg: '#fffbeb', text: '#d97706', border: '#fde68a', dot: '#f59e0b' },
-  'High': { bg: '#fef2f2', text: '#dc2626', border: '#fecaca', dot: '#ef4444' },
-  'Critical': { bg: '#fef2f2', text: '#dc2626', border: '#fecaca', dot: '#ef4444' },
-  'Medium': { bg: '#fffbeb', text: '#d97706', border: '#fde68a', dot: '#f59e0b' },
-  'Low': { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0', dot: '#22c55e' },
+  'Open': { bg: 'var(--tracker-info-light)', text: 'var(--tracker-info)', border: 'var(--tracker-info)', dot: 'var(--tracker-info)' },
+  'In Progress': { bg: 'var(--tracker-warning-light)', text: 'var(--tracker-warning)', border: 'var(--tracker-warning)', dot: 'var(--tracker-warning)' },
+  'Review': { bg: 'var(--module-hr-light)', text: 'var(--module-hr)', border: 'var(--module-hr)', dot: 'var(--module-hr)' },
+  'Testing': { bg: 'var(--brand-teal-light)', text: 'var(--brand-teal)', border: 'var(--brand-teal)', dot: 'var(--brand-teal)' },
+  'Completed': { bg: 'var(--tracker-success-light)', text: 'var(--tracker-success)', border: 'var(--tracker-success)', dot: 'var(--tracker-success)' },
+  'Closed': { bg: 'var(--tracker-surface-2)', text: 'var(--tracker-ink-muted)', border: 'var(--tracker-border)', dot: 'var(--tracker-ink-subtle)' },
+  'Pending': { bg: 'var(--tracker-warning-light)', text: 'var(--tracker-warning)', border: 'var(--tracker-warning)', dot: 'var(--tracker-warning)' },
+  'High': { bg: 'var(--tracker-warning-light)', text: 'var(--tracker-warning)', border: 'var(--tracker-warning)', dot: 'var(--tracker-warning)' },
+  'Critical': { bg: 'var(--tracker-danger-light)', text: 'var(--tracker-danger)', border: 'var(--tracker-danger)', dot: 'var(--tracker-danger)' },
+  'Medium': { bg: 'var(--tracker-warning-light)', text: 'var(--tracker-warning)', border: 'var(--tracker-warning)', dot: 'var(--tracker-warning)' },
+  'Low': { bg: 'var(--tracker-success-light)', text: 'var(--tracker-success)', border: 'var(--tracker-success)', dot: 'var(--tracker-success)' },
 };
 
-const PALETTE = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#6366f1', '#14b8a6', '#f97316'];
+const PALETTE = [
+  'var(--module-ticket)',
+  'var(--brand-teal)',
+  'var(--tracker-success)',
+  'var(--tracker-warning)',
+  'var(--tracker-info)',
+  'var(--module-hr)',
+  'var(--tracker-danger)',
+  'var(--tracker-ink-muted)'
+];
 
 const REPORT_OPTIONS = [
   { value: 'status', label: 'By Status', icon: 'BarChart3', description: 'Grouped by ticket workflow status' },
@@ -93,7 +102,7 @@ const TicketReports = () => {
   useEffect(() => {
     const fetchStatusMaster = async () => {
       try {
-        const res = await axiosInstance.post('/populate/read/status_configss', { limit: 50 });
+        const res = await axiosInstance.post('/populate/read/status_configs', { limit: 50 });
         const configs = res.data?.data || [];
         const map = {};
         configs.forEach(config => {

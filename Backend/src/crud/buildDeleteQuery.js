@@ -66,7 +66,11 @@ export default async function buildDeleteQuery(ctx) {
     await beforeDelete(ctx);
   }
 
-  const beforeDoc = await Model.findById(docId).lean();
+  const targetFilter = docId
+    ? { _id: docId, ...(filter || {}) }
+    : (filter || {});
+
+  const beforeDoc = await Model.findOne(targetFilter).lean();
 
   /** -----------------------------------------------
    * 5) DELETE OPERATION (SOFT OR HARD)
@@ -93,25 +97,13 @@ export default async function buildDeleteQuery(ctx) {
       updateQuery.isActive = false;
     }
 
-    if (docId) {
-      deletedDoc = await Model.findByIdAndUpdate(
-        docId,
-        { $set: updateQuery },
-        { new: true }
-      );
-    } else {
-      deletedDoc = await Model.findOneAndUpdate(
-        filter,
-        { $set: updateQuery },
-        { new: true }
-      );
-    }
+    deletedDoc = await Model.findOneAndUpdate(
+      targetFilter,
+      { $set: updateQuery },
+      { new: true }
+    );
   } else {
-    if (docId) {
-      deletedDoc = await Model.findByIdAndDelete(docId);
-    } else {
-      deletedDoc = await Model.findOneAndDelete(filter);
-    }
+    deletedDoc = await Model.findOneAndDelete(targetFilter);
   }
 
   if (!deletedDoc) throw new Error(`${modelName} not found for delete`);

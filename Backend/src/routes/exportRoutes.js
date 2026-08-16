@@ -5,6 +5,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { generateTaskCSV } from "../utils/exportService.js";
 import { authMiddleware } from "../Controller/AuthController.js";
+import { getModel } from "../utils/appRegistry.js";
 import pdfService from "../utils/pdfService.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -46,7 +47,11 @@ router.get("/tasks", authMiddleware, async (req, res) => {
  */
 router.get("/oa/:id", authMiddleware, async (req, res) => {
   try {
-    const oa = await mongoose.model("orderacknowledgments")
+    const OA = req.tenantContext?.getModel
+      ? req.tenantContext.getModel("orderacknowledgments")
+      : getModel("orderacknowledgments");
+
+    const oa = await OA
       .findById(req.params.id)
       .populate("clientId", "name email")
       .lean();

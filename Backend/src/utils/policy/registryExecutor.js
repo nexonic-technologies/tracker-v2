@@ -54,7 +54,8 @@ export default async function runRegistry({
       modelName,
       fields: rule.fields,
       effect: rule.effect,
-      action
+      action,
+      existingFilter
     };
 
     let outcome = null;

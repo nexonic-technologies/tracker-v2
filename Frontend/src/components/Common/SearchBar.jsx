@@ -65,7 +65,7 @@ const SearchBar = ({ data, onFilter, searchFields, placeholder = "Search..." }) 
         value={searchTerm}
         onChange={(e) => handleSearch(e.target.value)}
         placeholder={placeholder}
-        className="block w-full pl-10 pr-10 py-2 border border-hairline rounded-[8px] focus:ring-1 focus:ring-[#7C3AED] focus:border-[#7C3AED] text-[13px] text-ink placeholder:text-ink-subtle bg-surface outline-none transition-colors"
+        className="block w-full pl-10 pr-10 py-2 border border-hairline rounded-[8px] focus:ring-1 focus:ring-[var(--module-ticket)] focus:border-[var(--module-ticket)] text-[13px] text-ink placeholder:text-ink-subtle bg-surface outline-none transition-colors"
       />
       {searchTerm && (
         <button

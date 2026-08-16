@@ -329,17 +329,17 @@ export default function attendances() {
 
       // ── Payroll Lock Gate ──────────────────────────────────────────────────
       // Once payroll is marked Paid for this period, attendance becomes immutable.
-      // HR Admins can bypass with _forceUnlock: true (for regularization corrections).
-      // _forceUnlock is stripped before DB write — it's a transient instruction only.
-      if (attendanceDoc.payrollLockedAt) {
-        if (!body._forceUnlock) {
-          throw new Error(
-            `Attendance for ${new Date(attendanceDoc.date).toDateString()} is locked — ` +
-            `payroll was processed and paid on ${new Date(attendanceDoc.payrollLockedAt).toDateString()}. ` +
-            `Submit a Regularization Request or contact HR Admin for corrections.`
-          );
-        }
-        // HR Admin override: strip the flag before the record hits DB
+      // Permitted overrides are governed by whether _forceUnlock was authorized by the Policy Engine.
+      if (attendanceDoc.payrollLockedAt && !body._forceUnlock) {
+        throw new Error(
+          `Attendance for ${new Date(attendanceDoc.date).toDateString()} is locked — ` +
+          `payroll was processed and paid on ${new Date(attendanceDoc.payrollLockedAt).toDateString()}. ` +
+          `Submit a Regularization Request or contact HR Admin for corrections.`
+        );
+      }
+
+      // Strip transient domain instruction before persisting to database
+      if ('_forceUnlock' in body) {
         delete body._forceUnlock;
       }
       // ── End Payroll Lock Gate ─────────────────────────────────────────────

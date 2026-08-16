@@ -480,7 +480,8 @@ export default function tickets() {
     },
 
     // ---------------- After Read ----------------
-    afterRead: async ({ role, userId, docId, data }) => {
+    afterRead: async (ctx) => {
+      const { role, userId, docId, data, user, policy } = ctx || {};
       try {
         if (!data) return data;
         const { markCommentsAsRead, getUnreadCommentCount } = await import('../utils/readReceiptsService.js');
@@ -499,6 +500,34 @@ export default function tickets() {
             // Strip internal comments for agents
             if (isAgent && ticket.comments) {
               ticket.comments = ticket.comments.filter(c => c.isPublic === true);
+            }
+
+            // Enrich comment capabilities (canEdit, canDelete, remainingEditTimeSeconds)
+            if (Array.isArray(ticket.comments)) {
+              const EDIT_WINDOW_MS = 15 * 60 * 1000;
+              const isSuperAdmin = ctx.user?.isSuperAdmin === true || ctx.policy?.isSuperAdmin === true;
+              const currentUserId = (userId || ctx.user?.id)?.toString();
+
+              ticket.comments = ticket.comments.map(c => {
+                const comment = c && typeof c === 'object' ? (c.toObject ? c.toObject() : { ...c }) : c;
+                if (!comment || typeof comment !== 'object') return comment;
+
+                const authorId = comment.commentedBy?._id?.toString() || comment.commentedBy?.toString();
+                const isAuthor = Boolean(currentUserId && authorId && currentUserId === authorId);
+
+                const createdAt = comment.createdAt ? new Date(comment.createdAt).getTime() : Date.now();
+                const ageMs = Date.now() - createdAt;
+                const withinGracePeriod = ageMs <= EDIT_WINDOW_MS;
+                const remainingMs = Math.max(0, EDIT_WINDOW_MS - ageMs);
+
+                comment.canEdit = Boolean(isSuperAdmin || (isAuthor && withinGracePeriod));
+                comment.canDelete = Boolean(isSuperAdmin || (isAuthor && withinGracePeriod));
+                comment.isAuthor = isAuthor;
+                comment.remainingEditTimeSeconds = isAuthor && !isSuperAdmin ? Math.round(remainingMs / 1000) : null;
+                comment.editWindowMinutes = 15;
+
+                return comment;
+              });
             }
 
             ticket.unreadCommentsCount = 0;

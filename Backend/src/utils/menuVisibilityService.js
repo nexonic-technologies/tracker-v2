@@ -1,17 +1,14 @@
-// src/services/menuVisibilityService.js
-// Menu visibility service based on CBAC capabilities
-// Determines which menu items should be visible based on designation + role + capabilities
-
 import { getUserCapabilities } from './cbacCacheService.js';
+import { getPolicy } from './cache.js';
 
 /**
  * Check if a menu item should be visible to a user
  *
  * Visibility Logic:
- * 1. Public items: Always visible
- * 2. Protected items: Require capability check
- * 3. Department/Designation filters: Applied regardless of capability
- * 4. Sidebar capabilities: Compare sidebar's required capabilities with user's role capabilities
+ * 1. Super Admin: Always visible
+ * 2. Public / Utility items: Always visible
+ * 3. Access Policies: User's role has read permission on the model
+ * 4. Sidebar capabilities: User's role has matching capability
  *
  * @param {Object} menuItem - Sidebar menu item with populated capabilities
  * @param {Object} user - User object with designation, role
@@ -46,37 +43,44 @@ export function isMenuItemVisible(menuItem, user, userCapabilities, roleMeta) {
     return true;
   }
 
-  // 1. Check visibility type
-  if (menuItem.visibility === 'public') {
-    return true; // Public items always visible
+  // 1. Public or utility routes always visible
+  if (menuItem.visibility === 'public' || isUtilityRoute(menuItem.mainRoute)) {
+    return true;
   }
 
-  // 2. Check department/designation filters (DEPRECATED - Rely strictly on capabilities)
+  // 2. Check access_policies permission (Single Source of Truth)
+  const routeKey = menuItem.mainRoute ? menuItem.mainRoute.replace(/^\//, '').split('/')[0].toLowerCase() : '';
+  const modelName = menuItem.modelName?.toLowerCase() || (menuItem.key ? menuItem.key.toLowerCase() : '') || routeKey;
 
-  // 3. Check sidebar capabilities for protected items
-  if (menuItem.visibility === 'protected') {
-    // Utility/public routes bypass capability checks
-    if (isUtilityRoute(menuItem.mainRoute)) {
+  if (modelName) {
+    const policy = (roleMeta?.id ? getPolicy(roleMeta.id, modelName) : null) ||
+      (roleMeta?.name ? getPolicy(roleMeta.name, modelName) : null) ||
+      getPolicy(roleMeta?.id, `${modelName}s`) ||
+      getPolicy(roleMeta?.name, `${modelName}s`) ||
+      getPolicy(roleMeta?.id, modelName.replace(/s$/, '')) ||
+      getPolicy(roleMeta?.name, modelName.replace(/s$/, ''));
+
+    if (policy && policy.permissions && policy.permissions.read === true) {
       return true;
     }
-
-    // If sidebar has no capabilities defined, default to hidden (fail-secure by default)
-    if (!menuItem.capabilities || menuItem.capabilities.length === 0) {
-      return false;
-    }
-
-    // Get user's capabilities from role
-    const userCaps = (roleMeta?.capabilities || []).map(normalizeCap);
-
-    // Check if user has at least one of the required capabilities
-    const requiredCaps = menuItem.capabilities.map(c => normalizeCap(c.key || c));
-    const hasCapability = requiredCaps.some(cap => userCaps.includes(cap));
-
-    return hasCapability;
   }
 
-  // Default: visible
-  return true;
+  // 3. Check sidebar capabilities for protected items
+  if (menuItem.capabilities && menuItem.capabilities.length > 0) {
+    const userCaps = (roleMeta?.capabilities || []).map(normalizeCap);
+    const requiredCaps = menuItem.capabilities.map(c => normalizeCap(c.key || c));
+    const hasCapability = requiredCaps.some(cap => userCaps.includes(cap));
+    if (hasCapability) {
+      return true;
+    }
+  }
+
+  // 4. If item is a parent container with children, allow tree construction to inspect children
+  if (menuItem.isParent || menuItem.hasChildren) {
+    return true;
+  }
+
+  return false;
 }
 
 /**

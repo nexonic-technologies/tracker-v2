@@ -27,6 +27,16 @@ const registry = {
   populateRef,
   isSameClient,
   isAllocatedTo,
+
+  isCandidateSelf: (user, record, context) => {
+    // Candidates accessing the public careers endpoint may only read their own specific applicationId
+    const applicationId = context?.existingFilter?.applicationId || context?.applicationId || user?.applicationId;
+    if (applicationId) {
+      return { filter: { applicationId } };
+    }
+    // Fail-closed: if no applicationId is provided, block full candidate table enumeration
+    return { filter: { _id: null } };
+  },
   
   isManager: (user, record, context) => {
     // Check if user is a manager (logic depends on your hierarchy)

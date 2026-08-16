@@ -14,7 +14,7 @@ import {
   FileIcon, FileText, FileSpreadsheet, FileArchive, PlayCircle, Music,
   Users, ChevronLeft, Globe, AlertTriangle, Link2, Activity, Info,
   Pencil, CheckCheck, Eye, Plus, MoreHorizontal, Loader2, Hash,
-  ChevronDown, AtSign, Smile, Bold, Italic, Code, List, RefreshCw
+  ChevronDown, AtSign, Smile, Bold, Italic, Code, List, RefreshCw, Trash2
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -158,7 +158,15 @@ const StatusSelect = ({ value, onChange }) => {
 };
 
 // ── Comment Card ───────────────────────────────────────────────────────────────
-const CommentCard = ({ comment, commentReads, participants, currentUserId, onViewFile }) => {
+const CommentCard = ({
+  comment,
+  commentReads,
+  participants,
+  currentUserId,
+  onViewFile,
+  onEditComment,
+  onDeleteComment
+}) => {
   const isPublic = comment.isPublic !== false;
 
   // Resolve commenter/author details from commentedBy or createdBy
@@ -177,8 +185,75 @@ const CommentCard = ({ comment, commentReads, participants, currentUserId, onVie
   const reads = (commentReads || []).filter(r => String(r.commentId) === String(comment._id));
   const allRead = reads.length > 0;
 
+  // Local State for Inline Edit
+  const [isEditing, setIsEditing] = useState(false);
+  const [editMessage, setEditMessage] = useState(comment.message || comment.comment || "");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Dynamic Countdown Timer for 15-min Window
+  const [remainingSec, setRemainingSec] = useState(
+    comment.remainingEditTimeSeconds != null ? comment.remainingEditTimeSeconds : null
+  );
+
+  useEffect(() => {
+    if (remainingSec == null || remainingSec <= 0) return;
+    const interval = setInterval(() => {
+      setRemainingSec(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [remainingSec]);
+
+  // Evaluate dynamic capabilities (server-provided, augmented with local countdown)
+  const canEdit = Boolean(comment.canEdit && (remainingSec == null || remainingSec > 0));
+  const canDelete = Boolean(comment.canDelete && (remainingSec == null || remainingSec > 0));
+
+  const formatTimer = (seconds) => {
+    if (seconds == null) return null;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    if (m > 0) return `${m}m ${s}s left`;
+    return `${s}s left`;
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editMessage.trim() || editMessage === '<p><br></p>') return;
+    setIsSaving(true);
+    try {
+      if (onEditComment) {
+        await onEditComment(comment._id, editMessage);
+      }
+      setIsEditing(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      if (onDeleteComment) {
+        await onDeleteComment(comment._id);
+      }
+      setShowDeleteConfirm(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <div className={`flex items-start gap-2.5 my-3 ${isMe ? "flex-row-reverse" : ""}`}>
+    <div className={`group flex items-start gap-2.5 my-3 relative ${isMe ? "flex-row-reverse" : ""}`}>
       {/* Avatar (Profile image or initials) */}
       <ProfileImage
         profileImage={profileImage}
@@ -189,10 +264,10 @@ const CommentCard = ({ comment, commentReads, participants, currentUserId, onVie
       />
 
       {/* Bubble Container: constraints width and aligns content */}
-      <div className={`flex flex-col max-w-[78%] sm:max-w-[70%] ${isMe ? "items-end" : "items-start"}`}>
+      <div className={`flex flex-col max-w-[82%] sm:max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
 
         {/* Chat Bubble */}
-        <div className={`rounded-2xl px-3.5 py-2.5 border shadow-xs transition-all ${!isPublic
+        <div className={`rounded-2xl px-3.5 py-2.5 border shadow-xs transition-all w-full ${!isPublic
           ? (isMe
             ? "bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 border-dashed rounded-tr-none"
             : "bg-amber-50/40 dark:bg-amber-950/10 border-amber-200/60 border-dashed rounded-tl-none")
@@ -202,7 +277,7 @@ const CommentCard = ({ comment, commentReads, participants, currentUserId, onVie
           }`}>
           {/* Header row inside bubble */}
           <div className="flex items-center justify-between gap-3 mb-1.5 flex-wrap">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[12px] font-semibold text-[var(--tracker-ink)]">
                 {isMe ? "You" : displayName}
               </span>
@@ -216,13 +291,27 @@ const CommentCard = ({ comment, commentReads, participants, currentUserId, onVie
                   <Lock size={8} /> Internal Note
                 </span>
               )}
+              {comment.edited && (
+                <span
+                  className="text-[9.5px] italic text-[var(--tracker-ink-subtle)]"
+                  title={comment.editedAt ? `Edited on ${formatDate(comment.editedAt)}` : "Edited"}
+                >
+                  (edited)
+                </span>
+              )}
             </div>
 
-            {/* Timestamp and Read Receipts */}
-            <div className="flex items-center gap-1 text-[10px] text-[var(--tracker-ink-subtle)] font-medium">
+            {/* Timestamp, countdown badge, and read receipts */}
+            <div className="flex items-center gap-1.5 text-[10px] text-[var(--tracker-ink-subtle)] font-medium">
+              {remainingSec != null && remainingSec > 0 && (
+                <span className="inline-flex items-center gap-1 text-[9.5px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded-full border border-amber-200/50">
+                  <Clock size={9} />
+                  {formatTimer(remainingSec)}
+                </span>
+              )}
               <span>{formatRelativeTime(comment.createdAt || comment.commentedAt)}</span>
               {isMe && (
-                <span className="shrink-0 ml-1">
+                <span className="shrink-0 ml-0.5">
                   {allRead ? (
                     <CheckCheck size={12} className="text-blue-500" />
                   ) : (
@@ -233,14 +322,46 @@ const CommentCard = ({ comment, commentReads, participants, currentUserId, onVie
             </div>
           </div>
 
-          {/* Comment Message Body */}
-          <div
-            className="text-[13.5px] text-[var(--tracker-ink)] leading-relaxed break-words text-left ql-editor !p-0"
-            dangerouslySetInnerHTML={{ __html: comment.message || comment.comment }}
-          />
+          {/* Comment Message Body OR Inline Editor */}
+          {isEditing ? (
+            <div className="mt-1 space-y-2">
+              <div className="bg-[var(--tracker-surface)] rounded-xl border border-[var(--tracker-border)] overflow-hidden">
+                <ReactQuill
+                  theme="snow"
+                  value={editMessage}
+                  onChange={setEditMessage}
+                  modules={quillModules}
+                />
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setIsEditing(false); setEditMessage(comment.message || comment.comment || ""); }}
+                  disabled={isSaving}
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--tracker-ink-muted)] hover:bg-[var(--tracker-surface-2)] transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  disabled={isSaving}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold bg-[var(--module-ticket)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 shadow-xs cursor-pointer"
+                >
+                  {isSaving && <Loader2 size={11} className="animate-spin" />}
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="text-[13.5px] text-[var(--tracker-ink)] leading-relaxed break-words text-left ql-editor !p-0"
+              dangerouslySetInnerHTML={{ __html: comment.message || comment.comment }}
+            />
+          )}
 
           {/* Comment Attachments inside bubble */}
-          {comment.attachments && comment.attachments.length > 0 && (
+          {comment.attachments && comment.attachments.length > 0 && !isEditing && (
             <div className="mt-3 pt-2.5 border-t border-[var(--tracker-border-soft)]">
               <p className="text-[9px] font-bold text-[var(--tracker-ink-subtle)] uppercase tracking-wider mb-2 text-left">
                 Attached Files ({comment.attachments.length})
@@ -263,6 +384,59 @@ const CommentCard = ({ comment, commentReads, participants, currentUserId, onVie
             </div>
           )}
         </div>
+
+        {/* Action Toolbar (Edit / Delete) - visible on hover or mobile, gated by dynamic capabilities */}
+        {!isEditing && (canEdit || canDelete) && (
+          <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 px-1">
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                title="Edit Comment (within 15m)"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-medium text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-2)] transition-colors cursor-pointer"
+              >
+                <Pencil size={11} />
+                <span>Edit</span>
+              </button>
+            )}
+
+            {canDelete && !showDeleteConfirm && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                title="Delete Comment"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-medium text-red-600/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+              >
+                <Trash2 size={11} />
+                <span>Delete</span>
+              </button>
+            )}
+
+            {/* Inline Delete Confirmation Popover */}
+            {showDeleteConfirm && (
+              <div className="inline-flex items-center gap-1.5 bg-[var(--tracker-surface)] border border-red-200 dark:border-red-900 rounded-lg px-2 py-0.5 shadow-sm text-[10.5px]">
+                <span className="text-red-600 font-medium">Delete?</span>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="font-bold text-red-600 hover:underline disabled:opacity-50 cursor-pointer"
+                >
+                  {isDeleting ? "Deleting…" : "Yes"}
+                </button>
+                <span className="text-[var(--tracker-ink-tertiary)]">·</span>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="text-[var(--tracker-ink-muted)] hover:underline cursor-pointer"
+                >
+                  No
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
@@ -601,6 +775,47 @@ const TicketDetailPage = () => {
     }
   };
 
+  const handleEditComment = async (commentId, message) => {
+    try {
+      await axiosInstance.put(`/populate/update/ticket_comments/${commentId}`, { message });
+      setTicket(prev => {
+        if (!prev) return prev;
+        const comments = (prev.comments || []).map(c => {
+          if (String(c._id) === String(commentId)) {
+            return { ...c, message, edited: true, editedAt: new Date() };
+          }
+          return c;
+        });
+        return { ...prev, comments };
+      });
+      toast.success("Comment updated");
+      fetchactivity_logs();
+    } catch (e) {
+      console.error(e);
+      const msg = e.response?.data?.message || "Failed to update comment";
+      toast.error(msg);
+      throw e;
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await axiosInstance.delete(`/populate/delete/ticket_comments/${commentId}`);
+      setTicket(prev => {
+        if (!prev) return prev;
+        const comments = (prev.comments || []).filter(c => String(c._id) !== String(commentId));
+        return { ...prev, comments };
+      });
+      toast.success("Comment deleted");
+      fetchactivity_logs();
+    } catch (e) {
+      console.error(e);
+      const msg = e.response?.data?.message || "Failed to delete comment";
+      toast.error(msg);
+      throw e;
+    }
+  };
+
   const isAssigned = (empId) =>
     (ticket?.assignedTo || []).some(a => (a._id || a) === empId);
 
@@ -829,8 +1044,10 @@ const TicketDetailPage = () => {
                       comment={c}
                       commentReads={commentReads}
                       participants={participants}
-                      currentUserId={user.id}
+                      currentUserId={user?.id || user?._id}
                       onViewFile={setViewerFile}
+                      onEditComment={handleEditComment}
+                      onDeleteComment={handleDeleteComment}
                     />
                   ))}
                 </div>

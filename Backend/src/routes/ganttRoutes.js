@@ -13,6 +13,13 @@ import { authMiddleware } from '../Controller/AuthController.js';
 
 const router = express.Router();
 
+const getTenantModel = (req, name, fallbackModels) => {
+  if (req.tenantContext && typeof req.tenantContext.getModel === 'function') {
+    return req.tenantContext.getModel(name);
+  }
+  return fallbackModels?.[name] || fallbackModels?.[name.toLowerCase()];
+};
+
 // ── GET /api/employees/:id/gantt-queue ────────────────────────────────────────
 router.get('/employees/:id/gantt-queue', authMiddleware, async (req, res) => {
   try {
@@ -23,11 +30,13 @@ router.get('/employees/:id/gantt-queue', authMiddleware, async (req, res) => {
     const employeeId = req.params.id;
 
     // 1. Load ETA multiplier
-    const settings = await models.general_settings.findOne().lean();
+    const GeneralSettingsModel = getTenantModel(req, 'general_settings', models);
+    const settings = await GeneralSettingsModel.findOne().lean();
     const multiplier = settings?.taskETA?.multiplier ?? 3;
 
     // 2. Load employee queue
-    const queueDoc = await models.employee_task_queues
+    const QueueModel = getTenantModel(req, 'employee_task_queues', models);
+    const queueDoc = await QueueModel
       .findOne({ employeeId })
       .lean();
 
@@ -49,11 +58,13 @@ router.get('/employees/:id/gantt-queue', authMiddleware, async (req, res) => {
     let queueAheadHours = 0;
     const entries = [];
 
+    const TasksModel = getTenantModel(req, 'tasks', models);
+
     for (const item of sortedQueue) {
       const estimatedH = item.estimatedHours || 2;
 
       // Fetch task details
-      const task = await models.tasks
+      const task = await TasksModel
         .findById(item.taskId)
         .select('title status priorityLevel estimatedHours linkedTicketId sprintId stageHistory')
         .lean();
@@ -118,7 +129,8 @@ router.post('/tickets/:id/recalculate-eta', authMiddleware, async (req, res) => 
     const { default: models } = await import('../models/Collection.js');
     const { scheduleETARecalculation } = await import('../services/business/etaEngine.js');
 
-    const ticket = await models.tickets
+    const TicketsModel = getTenantModel(req, 'tickets', models);
+    const ticket = await TicketsModel
       .findById(req.params.id)
       .select('assignedTo')
       .lean();
@@ -153,7 +165,11 @@ router.get('/tasks/:id/reassign-suggestions', authMiddleware, async (req, res) =
     const { default: models } = await import('../models/Collection.js');
     const taskId = req.params.id;
 
-    const task = await models.tasks.findById(taskId).lean();
+    const TasksModel = getTenantModel(req, 'tasks', models);
+    const EmployeesModel = getTenantModel(req, 'employees', models);
+    const QueueModel = getTenantModel(req, 'employee_task_queues', models);
+
+    const task = await TasksModel.findById(taskId).lean();
     if (!task) {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
@@ -163,7 +179,7 @@ router.get('/tasks/:id/reassign-suggestions', authMiddleware, async (req, res) =
     let roleId = null;
 
     if (currentAssigneeId) {
-      const currentEmployee = await models.employees.findById(currentAssigneeId).lean();
+      const currentEmployee = await EmployeesModel.findById(currentAssigneeId).lean();
       deptId = currentEmployee?.professionalInfo?.department;
       roleId = currentEmployee?.professionalInfo?.role;
     }
@@ -174,7 +190,7 @@ router.get('/tasks/:id/reassign-suggestions', authMiddleware, async (req, res) =
       query._id = { $ne: currentAssigneeId };
     }
 
-    const candidates = await models.employees
+    const candidates = await EmployeesModel
       .find(query)
       .select('basicInfo.firstName basicInfo.lastName professionalInfo.department professionalInfo.role')
       .lean();
@@ -191,7 +207,7 @@ router.get('/tasks/:id/reassign-suggestions', authMiddleware, async (req, res) =
       if (matchesRole) score += 10;
 
       // 2. Load Check (40% Weight)
-      const queueDoc = await models.employee_task_queues
+      const queueDoc = await QueueModel
         .findOne({ employeeId: cand._id })
         .lean();
 

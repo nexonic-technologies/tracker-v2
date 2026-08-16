@@ -3,12 +3,6 @@
 // Sanitizes body BEFORE creating/updating a document.
 // Prevents user from writing unauthorized fields.
 //
-// Rules:
-//  - remove forbiddenAccess.create
-//  - keep only allowAccess.create (unless "*")
-//  - supports nested dot-notation
-//  - works on object and array bodies
-//
 
 export default function sanitizeWrite({ body, policy, action = "create" }) {
   if (!body || typeof policy !== "object") return body;
@@ -24,32 +18,52 @@ export default function sanitizeWrite({ body, policy, action = "create" }) {
   return sanitizeSingle({ body, allowed, forbidden });
 }
 
-
 /** ------------------------------------------------------------
  * Sanitize a single object (internal)
  * ------------------------------------------------------------ */
 function sanitizeSingle({ body, allowed, forbidden }) {
   const clone = JSON.parse(JSON.stringify(body || {})); // safe deep copy
+  const sanitized = sanitizeRecursive(clone, allowed, forbidden);
+  return cleanEmptyStrings(sanitized);
+}
 
-  // 1) Remove forbidden fields
-  for (const key of Object.keys(clone)) {
-    if (forbidden.some(deny => matchNested(key, deny))) {
-      delete clone[key];
-      continue;
-    }
-  }
+function sanitizeRecursive(obj, allowed, forbidden, prefix = "") {
+  if (obj === null || typeof obj !== "object" || Array.isArray(obj)) return obj;
+  const result = {};
 
-  // 2) Allow list enforcement (only if no wildcard)
-  if (!allowed.includes("*")) {
-    for (const key of Object.keys(clone)) {
-      if (!allowed.some(allow => matchNested(key, allow))) {
-        delete clone[key];
+  for (const [key, value] of Object.entries(obj)) {
+    const fullPath = prefix ? `${prefix}.${key}` : key;
+
+    // 1) Explicitly forbidden check
+    const isForbidden = forbidden.some(deny =>
+      fullPath === deny || fullPath.startsWith(deny + ".") || deny === "*"
+    );
+    if (isForbidden) continue;
+
+    // 2) Allowed check
+    const isWildcard = allowed.includes("*");
+    const isExactOrChildAllowed = isWildcard || allowed.some(allow =>
+      fullPath === allow || fullPath.startsWith(allow + ".")
+    );
+    const hasAllowedDescendants = !isWildcard && allowed.some(allow =>
+      allow.startsWith(fullPath + ".")
+    );
+
+    if (isExactOrChildAllowed) {
+      if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+        result[key] = sanitizeRecursive(value, allowed, forbidden, fullPath);
+      } else {
+        result[key] = value;
+      }
+    } else if (hasAllowedDescendants && value !== null && typeof value === "object" && !Array.isArray(value)) {
+      const nested = sanitizeRecursive(value, allowed, forbidden, fullPath);
+      if (nested && Object.keys(nested).length > 0) {
+        result[key] = nested;
       }
     }
   }
 
-  // 3) Normalize empty strings to null (prevents Mongoose BSON CastError on optional ObjectIds/Dates)
-  return cleanEmptyStrings(clone);
+  return result;
 }
 
 function cleanEmptyStrings(obj) {
@@ -66,20 +80,4 @@ function cleanEmptyStrings(obj) {
     }
   }
   return obj;
-}
-
-
-/** ------------------------------------------------------------
- * Dot-notation matcher used for nested write access
- *
- * field: "authInfo.email"
- * rule : "authInfo"    -> true
- * rule : "authInfo.email" -> true
- * rule : "salary" -> false
- * ------------------------------------------------------------ */
-function matchNested(field, rule) {
-  if (field === rule) return true;
-  if (field.startsWith(rule + ".")) return true;
-  if (rule.startsWith(field + ".")) return true;
-  return false;
 }

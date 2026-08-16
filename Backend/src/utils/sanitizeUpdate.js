@@ -1,8 +1,7 @@
 // src/utils/sanitizeUpdate.js
 //
 // Sanitizes update body BEFORE writing to DB.
-// Strategy: Same engine as sanitizeWrite, but for update action.
-// Danger prevented: updating sensitive fields injected by client.
+// Strategy: Exact-path recursive evaluation prevents unauthorized field injection.
 //
 
 export default function sanitizeUpdate({ body, policy, action = "update" }) {
@@ -19,32 +18,52 @@ export default function sanitizeUpdate({ body, policy, action = "update" }) {
   return sanitizeSingle({ body, allowed, forbidden });
 }
 
-
 /** ------------------------------------------------------------
  * Sanitize one update object
  * ------------------------------------------------------------ */
 function sanitizeSingle({ body, allowed, forbidden }) {
   const clone = JSON.parse(JSON.stringify(body || {})); // safe deep copy
+  const sanitized = sanitizeRecursive(clone, allowed, forbidden);
+  return cleanEmptyStrings(sanitized);
+}
 
-  // 1) Remove forbidden fields
-  for (const key of Object.keys(clone)) {
-    if (forbidden.some(deny => matchNested(key, deny))) {
-      delete clone[key];
-      continue;
-    }
-  }
+function sanitizeRecursive(obj, allowed, forbidden, prefix = "") {
+  if (obj === null || typeof obj !== "object" || Array.isArray(obj)) return obj;
+  const result = {};
 
-  // 2) Apply allow list if no wildcard
-  if (!allowed.includes("*")) {
-    for (const key of Object.keys(clone)) {
-      if (!allowed.some(allow => matchNested(key, allow))) {
-        delete clone[key];
+  for (const [key, value] of Object.entries(obj)) {
+    const fullPath = prefix ? `${prefix}.${key}` : key;
+
+    // 1) Explicitly forbidden check
+    const isForbidden = forbidden.some(deny =>
+      fullPath === deny || fullPath.startsWith(deny + ".") || deny === "*"
+    );
+    if (isForbidden) continue;
+
+    // 2) Allowed check
+    const isWildcard = allowed.includes("*");
+    const isExactOrChildAllowed = isWildcard || allowed.some(allow =>
+      fullPath === allow || fullPath.startsWith(allow + ".")
+    );
+    const hasAllowedDescendants = !isWildcard && allowed.some(allow =>
+      allow.startsWith(fullPath + ".")
+    );
+
+    if (isExactOrChildAllowed) {
+      if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+        result[key] = sanitizeRecursive(value, allowed, forbidden, fullPath);
+      } else {
+        result[key] = value;
+      }
+    } else if (hasAllowedDescendants && value !== null && typeof value === "object" && !Array.isArray(value)) {
+      const nested = sanitizeRecursive(value, allowed, forbidden, fullPath);
+      if (nested && Object.keys(nested).length > 0) {
+        result[key] = nested;
       }
     }
   }
 
-  // 3) Normalize empty strings to null (prevents Mongoose BSON CastError on optional ObjectIds/Dates)
-  return cleanEmptyStrings(clone);
+  return result;
 }
 
 function cleanEmptyStrings(obj) {
@@ -61,19 +80,4 @@ function cleanEmptyStrings(obj) {
     }
   }
   return obj;
-}
-
-
-/** ------------------------------------------------------------
- * Dot-notation matcher (nested support)
- *
- * field: "authInfo.email"
- * rule : "authInfo"          -> block / allow both
- * rule : "authInfo.email"    -> exact match
- * ------------------------------------------------------------ */
-function matchNested(field, rule) {
-  if (field === rule) return true;
-  if (field.startsWith(rule + ".")) return true;
-  if (rule.startsWith(field + ".")) return true;
-  return false;
 }

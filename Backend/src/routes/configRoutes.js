@@ -5,6 +5,26 @@ import { getAllowedModelKeys } from '../models/tenantRegistry.js';
 
 const router = express.Router();
 
+/**
+ * Middleware: Verify user has authority to modify platform access policies
+ */
+const requirePolicyAdmin = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+    const isSuperAdmin = req.user.isSuperAdmin === true || req.isSuperAdmin === true;
+    const tenantSlug = (req.user.tenantSlug || req.user.tenantId || '').toLowerCase();
+    const isGlobalAdmin = tenantSlug === 'admin' || tenantSlug === 'default' || req.user.tenantId === 'admin';
+
+    if (!isSuperAdmin && !isGlobalAdmin) {
+        return res.status(403).json({
+            success: false,
+            message: "⛔ Access Denied: Policy modification is restricted to platform administrators only."
+        });
+    }
+    next();
+};
+
 // Get list of all available models for dropdowns
 // ?fields=true → also returns top-level schema field names per model
 router.get('/models', (req, res) => {
@@ -46,7 +66,7 @@ router.get('/models', (req, res) => {
     }
 });
 
-router.post('/refresh-policy', async (req, res) => {
+router.post('/refresh-policy', requirePolicyAdmin, async (req, res) => {
     try {
         await setCache();
         res.json({
@@ -71,7 +91,7 @@ router.post('/refresh-policy', async (req, res) => {
  * Creates AccessPolicy records for ALL existing roles for each listed model,
  * then refreshes the policy cache. Safe to call multiple times (upsert).
  */
-router.post('/seed-model-policies', async (req, res) => {
+router.post('/seed-model-policies', requirePolicyAdmin, async (req, res) => {
     try {
         const { models: modelNames = [], permissions = {} } = req.body;
 

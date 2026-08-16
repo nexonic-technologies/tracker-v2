@@ -36,8 +36,17 @@ export async function setCache() {
             Resource.find({ isActive: true }).lean(),
         ]);
 
+        const roleIdToNameMap = new Map();
+        roles.forEach((r) => {
+            if (r._id && r.name) {
+                roleIdToNameMap.set(r._id.toString(), r.name);
+            }
+        });
+
         policies.forEach((p) => {
+            if (!p.role) return;
             const role = p.role.toString();
+            const roleName = roleIdToNameMap.get(role);
             const scopedKey = `${tenantId}:${role}`;
             if (!cache.has(scopedKey)) cache.set(scopedKey, {});
             if (!cache.has(role)) cache.set(role, {});
@@ -51,7 +60,7 @@ export async function setCache() {
             }
 
             // Default standard CRUD actions to false if not explicitly granted in the array
-            ["read", "create", "update", "delete"].forEach((act) => {
+            ["read", "create", "update", "delete", "report"].forEach((act) => {
                 if (permissionsObj[act] === undefined) {
                     permissionsObj[act] = false;
                 }
@@ -63,7 +72,20 @@ export async function setCache() {
             };
 
             cache.get(scopedKey)[p.modelName] = policyItem;
+            cache.get(scopedKey)[p.modelName.toLowerCase()] = policyItem;
             cache.get(role)[p.modelName] = policyItem;
+            cache.get(role)[p.modelName.toLowerCase()] = policyItem;
+
+            if (roleName) {
+                const scopedNameKey = `${tenantId}:${roleName}`;
+                if (!cache.has(scopedNameKey)) cache.set(scopedNameKey, {});
+                if (!cache.has(roleName)) cache.set(roleName, {});
+
+                cache.get(scopedNameKey)[p.modelName] = policyItem;
+                cache.get(scopedNameKey)[p.modelName.toLowerCase()] = policyItem;
+                cache.get(roleName)[p.modelName] = policyItem;
+                cache.get(roleName)[p.modelName.toLowerCase()] = policyItem;
+            }
         });
 
         resourceKeyMap.clear();

@@ -2,14 +2,19 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useAuth } from "@providers/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { useGenericAPI } from "@hooks/useGenericAPI";
+import axiosInstance from "@api/axiosInstance";
 import toast from "react-hot-toast";
+import ProfileImage from "@components/Common/ProfileImage";
 import {
   LogIn, LogOut, CheckCircle, XCircle,
-  Clock, TrendingUp, Zap, ChevronLeft, ChevronRight, Plus, MapPin
+  Clock, TrendingUp, Zap, ChevronLeft, ChevronRight, Plus, MapPin,
+  Users, CheckSquare, Search, SlidersHorizontal, ArrowRight,
+  ShieldCheck, AlertCircle, CalendarDays, Check, X, FileText,
+  Activity, ExternalLink, RefreshCw, Send, Loader2
 } from "lucide-react";
 
 /* ════════════════════════════════
-   HELPERS
+   HELPERS & DATE UTILITIES
    ════════════════════════════════ */
 const fmt12 = (d) => {
   if (!d) return "—";
@@ -95,7 +100,7 @@ const MONTH_NAMES = [
 ];
 
 /* ════════════════════════════════
-   CIRCULAR RING
+   CIRCULAR PROGRESS RING
    ════════════════════════════════ */
 const Ring = ({ pct, size = 52, sw = 5, color }) => {
   const r = (size - sw) / 2;
@@ -103,46 +108,85 @@ const Ring = ({ pct, size = 52, sw = 5, color }) => {
   return (
     <svg width={size} height={size} style={{ transform: "rotate(-90deg)", flexShrink: 0 }}>
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={sw} className="text-hairline-soft" />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+      <circle
+        cx={size / 2} cy={size / 2} r={r} fill="none"
         stroke={color} strokeWidth={sw}
         strokeDasharray={c} strokeDashoffset={c - (Math.min(pct, 100) / 100) * c}
         strokeLinecap="round"
-        style={{ transition: "stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)" }} />
+        style={{ transition: "stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)" }}
+      />
     </svg>
   );
 };
 
 /* ════════════════════════════════
-   MAIN COMPONENT
+   MAIN ATTENDANCE HUB
    ════════════════════════════════ */
 const AttendancePage = () => {
   const { user, loading: authLoading } = useAuth();
   const { read, create, update } = useGenericAPI();
   const navigate = useNavigate();
 
+  // Active Control Center Tab: "my" | "team" | "approvals"
+  const [activeTab, setActiveTab] = useState("my");
+
+  // Dynamic capability resolution (Sacred Zero-Hardcode Law)
+  const isSuperAdmin = Boolean(
+    user?.isSuperAdmin === true ||
+    user?.isSuperAdmin === 'true' ||
+    user?.role?.isSuperAdmin === true ||
+    user?.roleMeta?.isSuperAdmin === true ||
+    user?.role === 'Super Admin' ||
+    user?.roleTitle === 'Super Admin' ||
+    user?.role?.name === 'Super Admin' ||
+    user?.role?.title === 'Super Admin'
+  );
+
+  const canViewTeam = Boolean(
+    isSuperAdmin ||
+    user?.canViewTeam === true ||
+    user?.roleMeta?.canViewTeam === true ||
+    user?.isManager === true ||
+    user?.departmentHead === true ||
+    user?.subordinatesCount > 0
+  );
+
+  // ── My Attendance States ──
   const [todayRec, setTodayRec]         = useState(null);
   const [records, setRecords]           = useState([]);
   const [pageLoading, setPageLoading]   = useState(true);
   const [actionBusy, setActionBusy]     = useState(false);
   const [now, setNow]                   = useState(new Date());
 
-  // View settings states
-  const [viewType, setViewType]         = useState("monthly"); // "monthly" | "weekly" | "daywise"
+  // View settings states: Daywise is the default primary UX
+  const [viewType, setViewType]         = useState("daywise"); // "daywise" | "weekly" | "monthly"
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-11
   const [selectedYear, setSelectedYear]   = useState(new Date().getFullYear());
   const [weekOffset, setWeekOffset]     = useState(0);
   const [selectedDayOffset, setSelectedDayOffset] = useState(0);
 
-  // Drawer modal state for monthly details view
+  // Drawer state for day details & self-service regularization
   const [detailDate, setDetailDate]     = useState(null);
 
-  /* clock ticking */
+  // ── Team Presence States ──
+  const [teamPresence, setTeamPresence] = useState([]);
+  const [teamLoading, setTeamLoading]   = useState(false);
+  const [teamSearch, setTeamSearch]     = useState("");
+  const [deptFilter, setDeptFilter]     = useState("all");
+
+  // ── Approvals Queue States ──
+  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [approvalsLoading, setApprovalsLoading] = useState(false);
+  const [selectedApproval, setSelectedApproval] = useState(null);
+  const [approvalActionBusy, setApprovalActionBusy] = useState(false);
+
+  /* Clock ticking */
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  /* active hours calculator */
+  /* Active hours calculator */
   const activeHours = useMemo(() => {
     if (!todayRec?.checkIn) return 0;
     if (todayRec.punches && todayRec.punches.length > 0) {
@@ -171,7 +215,7 @@ const AttendancePage = () => {
     }
   }, [viewType, selectedMonth, selectedYear, weekOffset, selectedDayOffset]);
 
-  /* fetch today's record independently */
+  /* Fetch today's personal record */
   const fetchTodayRecord = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -188,11 +232,11 @@ const AttendancePage = () => {
       const recs = res?.data || [];
       setTodayRec(recs.length > 0 ? recs[0] : null);
     } catch (e) {
-      // handled
+      console.error(e);
     }
-  }, [user?.id]);
+  }, [user?.id, read]);
 
-  /* fetch range records based on current view type */
+  /* Fetch range records for personal calendar */
   const fetchAll = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -211,30 +255,134 @@ const AttendancePage = () => {
       });
       setRecords(res?.data || []);
     } catch (e) {
-      // handled
+      console.error(e);
     } finally {
       setPageLoading(false);
     }
-  }, [user?.id, activeDaysList]);
+  }, [user?.id, activeDaysList, read]);
+
+  /* Fetch Team Live Presence */
+  const fetchTeamPresence = useCallback(async () => {
+    if (!canViewTeam) return;
+    try {
+      setTeamLoading(true);
+      const todayStr = getLocalDateString();
+      const [attRes, empRes] = await Promise.all([
+        axiosInstance.post('/populate/read/attendances', {
+          filter: {
+            date: {
+              $gte: `${todayStr}T00:00:00.000Z`,
+              $lte: `${todayStr}T23:59:59.999Z`
+            }
+          },
+          populateFields: {
+            employee: 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,professionalInfo.designation,professionalInfo.department'
+          },
+          limit: 500
+        }),
+        axiosInstance.post('/populate/read/employees', {
+          fields: 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,professionalInfo.designation,professionalInfo.department',
+          populateFields: {
+            'professionalInfo.department': 'name',
+            'professionalInfo.designation': 'title'
+          },
+          filter: { 'professionalInfo.isActive': { $ne: false } },
+          limit: 500
+        })
+      ]);
+
+      const attendances = attRes.data?.data || [];
+      const allEmployees = empRes.data?.data || [];
+
+      const attMap = {};
+      attendances.forEach(a => {
+        const empId = a.employee?._id || a.employee;
+        if (empId) attMap[String(empId)] = a;
+      });
+
+      const presenceList = allEmployees.map(emp => {
+        const att = attMap[String(emp._id)];
+        const hasIn = Boolean(att?.checkIn);
+        const hasOut = Boolean(att?.checkOut);
+        const isOnline = hasIn && !hasOut;
+        const isLeave = att?.status === 'Leave';
+
+        let status = 'Absent';
+        if (isLeave) status = 'On Leave';
+        else if (isOnline) status = 'Checked In';
+        else if (hasIn && hasOut) status = 'Completed Shift';
+
+        return {
+          _id: emp._id,
+          employee: emp,
+          attendance: att,
+          status,
+          checkIn: att?.checkIn,
+          checkOut: att?.checkOut,
+          workHours: att?.workHours,
+          department: emp.professionalInfo?.department?.name || emp.professionalInfo?.department || 'General',
+          designation: emp.professionalInfo?.designation?.title || emp.professionalInfo?.designation || 'Staff'
+        };
+      });
+
+      setTeamPresence(presenceList);
+    } catch (e) {
+      console.error('Failed to fetch team presence', e);
+    } finally {
+      setTeamLoading(false);
+    }
+  }, [canViewTeam]);
+
+  /* Fetch Pending Approvals */
+  const fetchPendingApprovals = useCallback(async () => {
+    if (!canViewTeam) return;
+    try {
+      setApprovalsLoading(true);
+      const [leavesRes, regsRes] = await Promise.all([
+        axiosInstance.post('/populate/read/leaves', {
+          filter: { status: 'Pending' },
+          populateFields: {
+            employeeId: 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,professionalInfo.designation'
+          },
+          limit: 100
+        }),
+        axiosInstance.post('/populate/read/regularizations', {
+          filter: { status: 'Pending' },
+          populateFields: {
+            employeeId: 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,professionalInfo.designation'
+          },
+          limit: 100
+        })
+      ]);
+
+      const leaves = (leavesRes.data?.data || []).map(l => ({ ...l, requestType: 'Leave' }));
+      const regularizations = (regsRes.data?.data || []).map(r => ({ ...r, requestType: 'Regularization' }));
+      setPendingApprovals([...leaves, ...regularizations]);
+    } catch (e) {
+      console.error('Failed to fetch pending approvals', e);
+    } finally {
+      setApprovalsLoading(false);
+    }
+  }, [canViewTeam]);
 
   useEffect(() => {
     if (!user?.id || authLoading) return;
     fetchTodayRecord();
-  }, [user?.id, authLoading, fetchTodayRecord]);
-
-  useEffect(() => {
-    if (!user?.id || authLoading) return;
     fetchAll();
-  }, [user?.id, authLoading, fetchAll]);
+    if (canViewTeam) {
+      fetchTeamPresence();
+      fetchPendingApprovals();
+    }
+  }, [user?.id, authLoading, canViewTeam, fetchTodayRecord, fetchAll, fetchTeamPresence, fetchPendingApprovals]);
 
-  /* check in handler */
+  /* Check in handler */
   const handleCheckIn = async () => {
     if (!user || actionBusy) return;
     setActionBusy(true);
     try {
       const loc = await getBrowserLocation();
       if (!loc) {
-        toast.error("Location access is required to check in. Please enable location permissions in your browser to proceed.");
+        toast.error("Location access is required to check in. Please enable location permissions in your browser.");
         return;
       }
 
@@ -245,27 +393,34 @@ const AttendancePage = () => {
         }, "Checked in!");
       } else {
         await create('attendances', {
-          employee: user.id, employeeName: user.name,
+          employee: user.id,
+          employeeName: user.name,
           date: getLocalDateString(),
-          checkIn: new Date().toISOString(), status: "Present",
-          managerId: user.managerId, workType: "fixed",
+          checkIn: new Date().toISOString(),
+          status: "Present",
+          managerId: user.managerId,
+          workType: "fixed",
           location: loc,
         }, "Checked in!");
       }
       await fetchTodayRecord();
       await fetchAll();
-    } catch (e) { /* handled */ }
-    finally { setActionBusy(false); }
+      if (canViewTeam) fetchTeamPresence();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActionBusy(false);
+    }
   };
 
-  /* check out handler */
+  /* Check out handler */
   const handleCheckOut = async () => {
     if (!todayRec || actionBusy) return;
     setActionBusy(true);
     try {
       const loc = await getBrowserLocation();
       if (!loc) {
-        toast.error("Location access is required to check out. Please enable location permissions in your browser to proceed.");
+        toast.error("Location access is required to check out. Please enable location permissions in your browser.");
         return;
       }
 
@@ -275,11 +430,36 @@ const AttendancePage = () => {
       }, "Checked out!");
       await fetchTodayRecord();
       await fetchAll();
-    } catch (e) { /* handled */ }
-    finally { setActionBusy(false); }
+      if (canViewTeam) fetchTeamPresence();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActionBusy(false);
+    }
   };
 
-  /* stats calculation */
+  /* Handle Quick Approval / Rejection */
+  const handleQuickApproval = async (reqItem, status, comment = "") => {
+    setApprovalActionBusy(true);
+    try {
+      const model = reqItem.requestType === "Leave" ? "leaves" : "regularizations";
+      await axiosInstance.put(`/populate/update/${model}/${reqItem._id}`, {
+        status: status === "Approved" ? "Approved" : "Rejected",
+        approverComment: comment || (status === "Approved" ? "Approved by reviewer" : "Rejected by reviewer"),
+        approvedAt: new Date().toISOString()
+      });
+      toast.success(`${reqItem.requestType} request ${status.toLowerCase()}`);
+      setSelectedApproval(null);
+      await fetchPendingApprovals();
+    } catch (e) {
+      console.error(e);
+      toast.error(e.response?.data?.message || `Failed to ${status.toLowerCase()} request`);
+    } finally {
+      setApprovalActionBusy(false);
+    }
+  };
+
+  /* Stats calculation for personal view */
   const presentDays = useMemo(() => {
     return records.filter((r) => r.status === "Present" || r.checkIn).length;
   }, [records]);
@@ -312,10 +492,9 @@ const AttendancePage = () => {
 
   const attendRate = workDaysPassed > 0 ? Math.round((presentDays / workDaysPassed) * 100) : 0;
 
-  /* day helpers */
-  const getDayRec  = (d) => records.find((r) => isSameDay(r.date, d));
-  
-  const getDayHrs  = (d) => {
+  const getDayRec = (d) => records.find((r) => isSameDay(r.date, d));
+
+  const getDayHrs = (d) => {
     const r = getDayRec(d);
     if (!r?.checkIn) return null;
     if (isToday(d)) {
@@ -347,14 +526,14 @@ const AttendancePage = () => {
   };
 
   const STATUS = {
-    present: { bg: "bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400", label: "Present" },
-    absent:  { bg: "bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400", label: "Absent" },
-    leave:   { bg: "bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400", label: "Leave" },
-    weekend: { bg: "bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400", label: "Weekend" },
-    future:  { bg: "bg-transparent text-ink-tertiary border border-dashed border-hairline", label: "Upcoming" },
+    present: { bg: "bg-[var(--tracker-success-light)] text-[var(--tracker-success)]", label: "Present" },
+    absent:  { bg: "bg-[var(--tracker-danger-light)] text-[var(--tracker-danger)]", label: "Absent" },
+    leave:   { bg: "bg-[var(--tracker-warning-light)] text-[var(--tracker-warning)]", label: "Leave" },
+    weekend: { bg: "bg-surface-2 text-ink-muted", label: "Weekend" },
+    future:  { bg: "bg-transparent text-ink-subtle border border-dashed border-hairline", label: "Upcoming" },
   };
 
-  const isCurrentlyCheckedIn = !!(
+  const isCurrentlyCheckedIn = Boolean(
     todayRec &&
     todayRec.checkIn &&
     (todayRec.punches && todayRec.punches.length > 0
@@ -362,10 +541,10 @@ const AttendancePage = () => {
       : !todayRec.checkOut)
   );
 
-  const hasIn  = !!todayRec?.checkIn;
-  const hasOut = !!todayRec?.checkOut;
+  const hasIn  = Boolean(todayRec?.checkIn);
+  const hasOut = Boolean(todayRec?.checkOut);
   const pct    = Math.min((activeHours / TARGET) * 100, 100);
-  const ringColor = pct >= 100 ? "var(--tracker-success)" : pct >= 60 ? "var(--tracker-ink)" : "var(--tracker-ink-subtle)";
+  const ringColor = pct >= 100 ? "var(--tracker-success)" : pct >= 60 ? "var(--module-hr)" : "var(--tracker-ink-subtle)";
 
   /* Date formatting labels */
   const monthNameLabel = `${MONTH_NAMES[selectedMonth]} ${selectedYear}`;
@@ -383,438 +562,746 @@ const AttendancePage = () => {
     return targetDay.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
   };
 
+  // ── Team Presence Filtered List ──
+  const departments = useMemo(() => {
+    const depts = new Set(teamPresence.map(p => p.department).filter(Boolean));
+    return ["all", ...Array.from(depts)];
+  }, [teamPresence]);
+
+  const filteredTeamPresence = useMemo(() => {
+    return teamPresence.filter(p => {
+      const matchesSearch = !teamSearch || 
+        `${p.employee?.basicInfo?.firstName || ""} ${p.employee?.basicInfo?.lastName || ""}`.toLowerCase().includes(teamSearch.toLowerCase()) ||
+        p.designation.toLowerCase().includes(teamSearch.toLowerCase());
+      const matchesDept = deptFilter === "all" || p.department === deptFilter;
+      return matchesSearch && matchesDept;
+    });
+  }, [teamPresence, teamSearch, deptFilter]);
+
+  const checkedInCount = teamPresence.filter(p => p.status === 'Checked In').length;
+  const onLeaveCount = teamPresence.filter(p => p.status === 'On Leave').length;
+  const absentCount = teamPresence.filter(p => p.status === 'Absent').length;
+
   if (pageLoading) return (
-    <div className="flex items-center justify-center h-full bg-canvas text-ink">
-      <div className="h-8 w-8 border-4 border-hairline border-t-accent rounded-full animate-spin" />
+    <div className="flex items-center justify-center h-full bg-canvas text-ink py-20">
+      <div className="h-8 w-8 border-4 border-hairline border-t-[var(--module-hr)] rounded-full animate-spin" />
     </div>
   );
 
   const detailRecord = detailDate ? getDayRec(detailDate) : null;
 
   return (
-    <div data-module="hr" className="h-full flex flex-col gap-3 overflow-y-auto bg-canvas text-ink" style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}>
+    <div data-module="hr" className="h-full flex flex-col gap-4 overflow-y-auto bg-canvas text-ink p-1 sm:p-2">
       
-      {/* ─── TODAY CARD ─── */}
-      <div className="bg-surface rounded-tracker-card border border-hairline p-5 lg:p-6 flex-shrink-0 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-ink" />
-            <span className="text-[16px] font-medium text-ink leading-tight">Today</span>
-          </div>
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[12px] font-medium ${hasIn ? 'bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400'}`}>
-            {hasIn ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-            {hasIn ? "Present" : "Absent"}
-          </div>
+      {/* ─── CONTROL CENTER HEADER & SEGMENTED TABS ─── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-hairline-soft pb-3">
+        <div>
+          <p className="lmx-page-eyebrow mb-0">HUMAN RESOURCES</p>
+          <h1 className="text-[19px] font-semibold text-ink flex items-center gap-2 tracking-tight">
+            <Clock size={19} className="text-[var(--module-hr)]" />
+            Attendance Control Center
+          </h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-6 sm:gap-10">
-          {/* Check In */}
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-[8px] bg-surface-1 flex items-center justify-center">
-              <LogIn className="h-5 w-5 text-ink" />
-            </div>
-            <div>
-              <p className="text-[12px] text-ink-subtle mb-0.5">Check In</p>
-              <p className={`text-[15px] font-medium tabular-nums leading-none ${hasIn ? 'text-ink' : 'text-ink-tertiary'}`}>
-                {hasIn ? fmt12(todayRec.checkIn) : "--:--"}
-              </p>
-            </div>
-          </div>
+        {/* Tab Navigation (Context-Aware Persona Routing) */}
+        <div className="lmx-tab-bar">
+          <button
+            onClick={() => setActiveTab("my")}
+            className={`lmx-tab ${activeTab === "my" ? "lmx-tab-active" : ""}`}
+          >
+            <Clock size={13} />
+            My Attendance
+          </button>
 
-          {/* Check Out */}
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-[8px] bg-surface-1 flex items-center justify-center">
-              <LogOut className="h-5 w-5 text-ink" />
-            </div>
-            <div>
-              <p className="text-[12px] text-ink-subtle mb-0.5">Check Out</p>
-              <p className={`text-[15px] font-medium tabular-nums leading-none ${hasOut ? 'text-ink' : 'text-ink-tertiary'}`}>
-                {hasOut ? fmt12(todayRec.checkOut) : "--:--"}
-              </p>
-            </div>
-          </div>
-
-          {/* Hours Ring */}
-          <div className="flex items-center gap-3">
-            <div className="relative inline-flex items-center justify-center">
-              <Ring pct={pct} size={44} sw={4} color={ringColor} />
-              <span className="absolute text-[11px] font-medium text-ink">
-                {Math.floor(activeHours)}h
-              </span>
-            </div>
-            <div>
-              <p className="text-[12px] text-ink-subtle mb-0.5">Active</p>
-              <p className="text-[15px] font-medium text-ink leading-none">{fmtHM(activeHours)}</p>
-            </div>
-          </div>
-
-          {/* Spacer + Action */}
-          <div className="ml-auto flex-shrink-0 mt-2 sm:mt-0">
-            {!isCurrentlyCheckedIn ? (
-              <button onClick={handleCheckIn} disabled={actionBusy}
-                className="flex items-center gap-2 px-5 py-2.5 tracker-btn-accent cursor-pointer disabled:opacity-50">
-                <LogIn className="h-4 w-4" />
-                {actionBusy ? "..." : (todayRec?.checkIn ? "Check In Again" : "Check In")}
-              </button>
-            ) : (
-              <button onClick={handleCheckOut} disabled={actionBusy}
-                className="flex items-center gap-2 px-5 py-2.5 tracker-btn-secondary cursor-pointer disabled:opacity-50">
-                <LogOut className="h-4 w-4" />
-                {actionBusy ? "..." : "Check Out"}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ─── STATS ROW ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-shrink-0">
-        <StatCard icon={CheckCircle} value={`${presentDays}/${workDaysPassed}`} label="Days Present" />
-        <StatCard icon={Clock}       value={fmtHM(totalHrs)}                   label="Active Hours" />
-        <StatCard icon={TrendingUp}  value={`${attendRate}%`}                  label="Attendance Rate" />
-        <StatCard icon={Zap}         value={fmtHM(activeHours)}                label="Today Active" />
-      </div>
-
-      {/* ─── ATTENDANCE LIST & VIEW SWITCHER ─── */}
-      <div className="bg-surface rounded-tracker-card border border-hairline flex-1 min-h-[400px] flex flex-col shadow-sm">
-        
-        {/* Header toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 border-b border-hairline-soft">
-          <div className="flex items-center gap-3">
-            <span className="text-[16px] font-medium text-ink">Attendance Logs</span>
-            
-            {/* View Switcher Tabs */}
-            <div className="flex bg-surface-1 p-0.5 rounded-[8px] text-[12px] font-medium border border-hairline-soft">
-              <button 
-                onClick={() => setViewType("monthly")}
-                className={`px-3 py-1 rounded-[6px] transition-all ${viewType === "monthly" ? "bg-surface text-ink shadow-xs" : "text-ink-muted hover:text-ink"}`}
-              >
-                Monthly
-              </button>
-              <button 
-                onClick={() => setViewType("weekly")}
-                className={`px-3 py-1 rounded-[6px] transition-all ${viewType === "weekly" ? "bg-surface text-ink shadow-xs" : "text-ink-muted hover:text-ink"}`}
-              >
-                Weekly
-              </button>
-              <button 
-                onClick={() => setViewType("daywise")}
-                className={`px-3 py-1 rounded-[6px] transition-all ${viewType === "daywise" ? "bg-surface text-ink shadow-xs" : "text-ink-muted hover:text-ink"}`}
-              >
-                Day-wise
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
+          {canViewTeam && (
             <button
-              onClick={() => navigate('/Attendance/leave-regularization')}
-              className="flex items-center gap-1.5 tracker-btn-secondary py-1 px-3 text-[12px] cursor-pointer"
+              onClick={() => setActiveTab("team")}
+              className={`lmx-tab ${activeTab === "team" ? "lmx-tab-active" : ""}`}
             >
-              <Plus className="h-3.5 w-3.5" />
-              Apply Leave / Request
+              <Users size={13} />
+              Team Live Presence
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--module-hr-light)] text-[var(--module-hr)] font-bold">
+                {teamPresence.length}
+              </span>
             </button>
+          )}
 
-            <div className="h-6 w-px bg-hairline-soft" />
-
-            {/* Monthly Navigators */}
-            {viewType === "monthly" && (
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => {
-                    if (selectedMonth === 0) {
-                      setSelectedMonth(11);
-                      setSelectedYear(prev => prev - 1);
-                    } else {
-                      setSelectedMonth(prev => prev - 1);
-                    }
-                  }}
-                  className="p-1 rounded-[6px] hover:bg-surface-1 text-ink-muted transition-colors cursor-pointer"
-                  aria-label="Previous Month"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                
-                <select 
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                  className="bg-transparent text-sm font-semibold border-none focus:outline-none focus:ring-0 cursor-pointer pr-8 py-1 rounded-[6px] hover:bg-surface-1"
-                >
-                  {MONTH_NAMES.map((name, i) => (
-                    <option key={i} value={i}>{name}</option>
-                  ))}
-                </select>
-
-                <select 
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="bg-transparent text-sm font-semibold border-none focus:outline-none focus:ring-0 cursor-pointer pr-8 py-1 rounded-[6px] hover:bg-surface-1"
-                >
-                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(yr => (
-                    <option key={yr} value={yr}>{yr}</option>
-                  ))}
-                </select>
-
-                <button
-                  onClick={() => {
-                    if (selectedMonth === 11) {
-                      setSelectedMonth(0);
-                      setSelectedYear(prev => prev + 1);
-                    } else {
-                      setSelectedMonth(prev => prev + 1);
-                    }
-                  }}
-                  className="p-1 rounded-[6px] hover:bg-surface-1 text-ink-muted transition-colors cursor-pointer"
-                  aria-label="Next Month"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-
-            {/* Weekly Navigators */}
-            {viewType === "weekly" && (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setWeekOffset(prev => prev - 1)}
-                  className="p-1.5 rounded-[6px] hover:bg-surface-1 text-ink-muted transition-colors cursor-pointer"
-                  aria-label="Previous week"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setWeekOffset(0)}
-                  className={`px-3 py-1 rounded-[6px] text-[12px] font-semibold transition-colors cursor-pointer ${weekOffset === 0 ? 'bg-surface-1 text-ink' : 'text-ink-muted hover:bg-surface-1'}`}
-                >
-                  {weekOffset === 0 ? "This Week" : weekLabel()}
-                </button>
-                <button
-                  onClick={() => setWeekOffset(prev => prev + 1)}
-                  className="p-1.5 rounded-[6px] hover:bg-surface-1 text-ink-muted transition-colors cursor-pointer"
-                  aria-label="Next week"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-
-            {/* Day-wise Navigators */}
-            {viewType === "daywise" && (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setSelectedDayOffset(prev => prev - 1)}
-                  className="p-1.5 rounded-[6px] hover:bg-surface-1 text-ink-muted transition-colors cursor-pointer"
-                  aria-label="Previous day"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setSelectedDayOffset(0)}
-                  className={`px-3 py-1 rounded-[6px] text-[12px] font-semibold transition-colors cursor-pointer ${selectedDayOffset === 0 ? 'bg-surface-1 text-ink' : 'text-ink-muted hover:bg-surface-1'}`}
-                >
-                  {selectedDayOffset === 0 ? "Today" : dayLabel()}
-                </button>
-                <button
-                  onClick={() => setSelectedDayOffset(prev => prev + 1)}
-                  className="p-1.5 rounded-[6px] hover:bg-surface-1 text-ink-muted transition-colors cursor-pointer"
-                  aria-label="Next day"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
+          {canViewTeam && (
+            <button
+              onClick={() => setActiveTab("approvals")}
+              className={`lmx-tab ${activeTab === "approvals" ? "lmx-tab-active" : ""}`}
+            >
+              <CheckSquare size={13} />
+              Approvals Queue
+              {pendingApprovals.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--tracker-danger-light)] text-[var(--tracker-danger)] font-bold">
+                  {pendingApprovals.length}
+                </span>
+              )}
+            </button>
+          )}
         </div>
+      </div>
 
-        {/* View Layout Renderer with Fixed Height & Scroll */}
-        <div className="flex-1 max-h-[380px] overflow-y-auto scrollbar-thin">
-          {viewType === "monthly" ? (
-            /* Monthly Calendar Grid Layout */
-            <div className="p-5">
-              <div className="grid grid-cols-7 gap-2 mb-3 text-center text-xs font-semibold text-ink-subtle">
-                {DAY_LABELS.map(lbl => <div key={lbl}>{lbl}</div>)}
+      {/* ══════════════════════════════════════════════════════════════════
+          TAB 1: MY ATTENDANCE (Individual Employee Self-Service)
+          ══════════════════════════════════════════════════════════════════ */}
+      {activeTab === "my" && (
+        <div className="space-y-4">
+          {/* ─── TODAY CARD ─── */}
+          <div className="bg-surface rounded-tracker-card border border-hairline p-5 lg:p-6 flex-shrink-0 shadow-xs">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div className="flex items-center gap-2.5">
+                <Clock className="h-5 w-5 text-[var(--module-hr)]" />
+                <span className="text-[16px] font-semibold text-ink leading-tight">Today</span>
+                {isCurrentlyCheckedIn && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                )}
               </div>
-              <div className="grid grid-cols-7 gap-2">
-                {/* Pad first week days */}
-                {Array.from({ length: activeDaysList[0].getDay() }).map((_, i) => (
-                  <div key={`pad-${i}`} className="h-20 bg-surface-1/10 rounded-[8px] border border-dashed border-hairline-soft" />
-                ))}
-                
-                {/* Calendar Days */}
+              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold ${hasIn ? 'bg-[var(--tracker-success-light)] text-[var(--tracker-success)]' : 'bg-[var(--tracker-danger-light)] text-[var(--tracker-danger)]'}`}>
+                {hasIn ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                {hasIn ? "Present" : "Not Checked In"}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-6 sm:gap-8">
+                {/* Check In */}
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-surface-1 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-hairline-soft">
+                    <LogIn className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[11.5px] text-ink-subtle mb-0.5 font-medium">Check In</p>
+                    <p className={`text-[15px] font-semibold tabular-nums leading-none ${hasIn ? 'text-ink' : 'text-ink-subtle'}`}>
+                      {hasIn ? fmt12(todayRec.checkIn) : "--:--"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Check Out */}
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-surface-1 flex items-center justify-center text-amber-600 dark:text-amber-400 border border-hairline-soft">
+                    <LogOut className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[11.5px] text-ink-subtle mb-0.5 font-medium">Check Out</p>
+                    <p className={`text-[15px] font-semibold tabular-nums leading-none ${hasOut ? 'text-ink' : 'text-ink-subtle'}`}>
+                      {hasOut ? fmt12(todayRec.checkOut) : "--:--"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Hours Ring */}
+                <div className="flex items-center gap-3">
+                  <div className="relative inline-flex items-center justify-center">
+                    <Ring pct={pct} size={44} sw={4} color={ringColor} />
+                    <span className="absolute text-[11px] font-bold text-ink">
+                      {Math.floor(activeHours)}h
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-[11.5px] text-ink-subtle mb-0.5 font-medium">Active Logged</p>
+                    <p className="text-[15px] font-semibold text-ink leading-none">{fmtHM(activeHours)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Check-In / Check-Out Action Button */}
+              <div className="flex items-center gap-2">
+                {!hasIn ? (
+                  <button
+                    onClick={handleCheckIn}
+                    disabled={actionBusy}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                  >
+                    {actionBusy ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />}
+                    Clock In
+                  </button>
+                ) : isCurrentlyCheckedIn ? (
+                  <button
+                    onClick={handleCheckOut}
+                    disabled={actionBusy}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                  >
+                    {actionBusy ? <Loader2 size={15} className="animate-spin" /> : <LogOut size={15} />}
+                    Clock Out
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface-2 text-ink-muted">
+                    <CheckCircle size={13} className="text-emerald-500" /> Shift Completed
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ─── SUMMARY KPI STRIP ─── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatCard icon={CheckCircle} value={`${presentDays} / ${workDaysPassed} d`} label="Days Present" />
+            <StatCard icon={Clock} value={fmtHM(totalHrs)} label="Total Logged Hours" />
+            <StatCard icon={TrendingUp} value={`${attendRate}%`} label="Monthly Attendance Rate" />
+          </div>
+
+          {/* ─── ATTENDANCE LEDGER & CALENDAR ─── */}
+          <div className="bg-surface rounded-tracker-card border border-hairline p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-hairline-soft">
+              <div className="flex items-center gap-2">
+                <CalendarDays size={16} className="text-[var(--module-hr)]" />
+                <h2 className="text-[15px] font-semibold text-ink">
+                  {viewType === "monthly" ? monthNameLabel : viewType === "weekly" ? weekLabel() : dayLabel()}
+                </h2>
+              </div>
+
+              {/* View Selector & Navigators */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* View Selector & Navigators: Daywise first & default, Weekly second, Monthly third */}
+                <div className="inline-flex rounded-lg border border-hairline p-0.5 bg-surface-1">
+                  {[
+                    { id: "daywise", label: "Daywise" },
+                    { id: "weekly", label: "Weekly" },
+                    { id: "monthly", label: "Monthly" }
+                  ].map(v => (
+                    <button
+                      key={v.id}
+                      onClick={() => setViewType(v.id)}
+                      className={`px-3 py-1 rounded-md text-[11.5px] font-medium transition-all cursor-pointer ${viewType === v.id ? "bg-surface text-ink shadow-xs font-semibold" : "text-ink-muted hover:text-ink"}`}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Date Navigator Controls */}
+                <div className="flex items-center gap-1">
+                  {viewType === "daywise" && (
+                    <>
+                      <button
+                        onClick={() => setSelectedDayOffset(d => d - 1)}
+                        className="p-1 rounded-md border border-hairline bg-surface hover:bg-surface-1 text-ink cursor-pointer"
+                        title="Previous Day"
+                      >
+                        <ChevronLeft size={14} />
+                      </button>
+                      {selectedDayOffset !== 0 && (
+                        <button
+                          onClick={() => setSelectedDayOffset(0)}
+                          className="px-2 py-0.5 text-[11px] font-semibold text-[var(--module-hr)] hover:bg-[var(--module-hr-light)] rounded-md transition-colors cursor-pointer"
+                        >
+                          Today
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setSelectedDayOffset(d => d + 1)}
+                        disabled={selectedDayOffset >= 0}
+                        className="p-1 rounded-md border border-hairline bg-surface hover:bg-surface-1 text-ink cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Next Day"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                    </>
+                  )}
+
+                  {viewType === "weekly" && (
+                    <>
+                      <button
+                        onClick={() => setWeekOffset(w => w - 1)}
+                        className="p-1 rounded-md border border-hairline bg-surface hover:bg-surface-1 text-ink cursor-pointer"
+                        title="Previous Week"
+                      >
+                        <ChevronLeft size={14} />
+                      </button>
+                      {weekOffset !== 0 && (
+                        <button
+                          onClick={() => setWeekOffset(0)}
+                          className="px-2 py-0.5 text-[11px] font-semibold text-[var(--module-hr)] hover:bg-[var(--module-hr-light)] rounded-md transition-colors cursor-pointer"
+                        >
+                          This Week
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setWeekOffset(w => w + 1)}
+                        disabled={weekOffset >= 0}
+                        className="p-1 rounded-md border border-hairline bg-surface hover:bg-surface-1 text-ink cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Next Week"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                    </>
+                  )}
+
+                  {viewType === "monthly" && (
+                    <>
+                      <button
+                        onClick={() => setSelectedMonth(m => m === 0 ? 11 : m - 1)}
+                        className="p-1 rounded-md border border-hairline bg-surface hover:bg-surface-1 text-ink cursor-pointer"
+                        title="Previous Month"
+                      >
+                        <ChevronLeft size={14} />
+                      </button>
+                      <button
+                        onClick={() => setSelectedMonth(m => m === 11 ? 0 : m + 1)}
+                        className="p-1 rounded-md border border-hairline bg-surface hover:bg-surface-1 text-ink cursor-pointer"
+                        title="Next Month"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ── Daywise Dedicated Breakdown Card ── */}
+            {viewType === "daywise" && (() => {
+              const d = activeDaysList[0] || new Date();
+              const rec = getDayRec(d);
+              const hrs = getDayHrs(d);
+              const st = dayStatus(d);
+              const sty = STATUS[st] || STATUS.absent;
+              const punches = rec?.punches || [];
+
+              return (
+                <div className="space-y-4 pt-1 animate-in fade-in duration-150">
+                  {/* Day Summary Header */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-1 p-4 rounded-xl border border-hairline-soft">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-surface flex items-center justify-center font-bold text-ink border border-hairline shadow-xs">
+                        {DAY_LABELS[d.getDay()]}
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-ink">
+                          {d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                        </h3>
+                        <p className="text-xs text-ink-subtle">
+                          {isToday(d) ? "Today's Active Attendance Record" : "Historical Attendance Record"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${sty.bg}`}>
+                        {sty.label}
+                      </span>
+                      <button
+                        onClick={() => setDetailDate(d)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-[var(--module-hr-light)] text-[var(--module-hr)] hover:bg-[var(--module-hr)] hover:text-white rounded-lg transition-colors cursor-pointer"
+                      >
+                        <FileText size={12} />
+                        {st === "leave" || st === "weekend" || st === "holiday" ? "View Details" : "Details & Regularize"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Day Key Metrics Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="bg-surface-1 p-3 rounded-xl border border-hairline-soft">
+                      <span className="text-[11px] font-semibold text-ink-subtle uppercase block mb-0.5">Clock In</span>
+                      <span className="text-sm font-bold text-ink tabular-nums">
+                        {rec?.checkIn ? fmt12(rec.checkIn) : "--:--"}
+                      </span>
+                    </div>
+                    <div className="bg-surface-1 p-3 rounded-xl border border-hairline-soft">
+                      <span className="text-[11px] font-semibold text-ink-subtle uppercase block mb-0.5">Clock Out</span>
+                      <span className="text-sm font-bold text-ink tabular-nums">
+                        {rec?.checkOut ? fmt12(rec.checkOut) : "--:--"}
+                      </span>
+                    </div>
+                    <div className="bg-surface-1 p-3 rounded-xl border border-hairline-soft">
+                      <span className="text-[11px] font-semibold text-ink-subtle uppercase block mb-0.5">Work Hours</span>
+                      <span className="text-sm font-bold text-ink tabular-nums">
+                        {hrs != null ? fmtHM(hrs) : "—"}
+                      </span>
+                    </div>
+                    <div className="bg-surface-1 p-3 rounded-xl border border-hairline-soft flex items-center justify-between">
+                      <div>
+                        <span className="text-[11px] font-semibold text-ink-subtle uppercase block mb-0.5">Target (8h)</span>
+                        <span className={`text-xs font-bold ${hrs >= TARGET ? "text-emerald-600" : "text-ink-muted"}`}>
+                          {hrs >= TARGET ? "Goal Met ✓" : `${Math.round(((hrs || 0) / TARGET) * 100)}%`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Punch Sessions Stream */}
+                  <div className="bg-surface-1 p-4 rounded-xl border border-hairline-soft space-y-3">
+                    <h4 className="text-xs font-bold text-ink uppercase tracking-wide flex items-center gap-1.5 pb-1 border-b border-hairline-soft">
+                      <Clock size={13} className="text-[var(--module-hr)]" />
+                      Punch Sessions ({punches.length > 0 ? punches.length : rec?.checkIn ? 1 : 0})
+                    </h4>
+
+                    {punches.length === 0 ? (
+                      <div className="text-center py-4 text-ink-subtle text-xs">
+                        {rec?.checkIn ? "Single punch session recorded for this day." : "No punches logged for this date."}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {punches.map((p, idx) => (
+                          <div key={idx} className="bg-surface p-2.5 rounded-lg border border-hairline flex items-center justify-between text-xs shadow-2xs">
+                            <span className="font-bold text-ink-subtle">Session #{idx + 1}</span>
+                            <div className="flex items-center gap-2 tabular-nums">
+                              <span className="text-emerald-600 font-semibold">{fmt12(p.checkIn)}</span>
+                              <span className="text-ink-subtle">➔</span>
+                              <span className={p.checkOut ? "text-amber-600 font-semibold" : "text-emerald-600 font-extrabold"}>
+                                {p.checkOut ? fmt12(p.checkOut) : "Active"}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Geotag Map Coordinates (If Available) */}
+                  {rec?.location?.latitude && rec?.location?.longitude && (
+                    <div className="bg-surface-1 p-4 rounded-xl border border-hairline-soft space-y-2">
+                      <div className="flex items-center justify-between text-xs font-semibold text-ink">
+                        <span className="flex items-center gap-1"><MapPin size={13} className="text-[var(--module-hr)]" /> Verified Geotag Location</span>
+                        <span className="text-ink-subtle tabular-nums">{rec.location.latitude.toFixed(4)}, {rec.location.longitude.toFixed(4)}</span>
+                      </div>
+                      <div className="w-full h-36 rounded-lg overflow-hidden border border-hairline">
+                        <iframe
+                          title="Day Geotag Map"
+                          width="100%"
+                          height="100%"
+                          frameBorder="0"
+                          src={`https://maps.google.com/maps?q=${rec.location.latitude},${rec.location.longitude}&z=15&output=embed`}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ── Multi-Day Ledger (Weekly & Monthly Views) ── */}
+            {viewType !== "daywise" && (
+              <div className="divide-y divide-hairline-soft">
                 {activeDaysList.map((d, i) => {
-                  const st = dayStatus(d);
-                  const hrs = getDayHrs(d);
                   const rec = getDayRec(d);
-                  const sty = STATUS[st];
+                  const hrs = getDayHrs(d);
+                  const st = dayStatus(d);
+                  const sty = STATUS[st] || STATUS.absent;
                   const tod = isToday(d);
-                  
+
                   return (
                     <div
                       key={i}
                       onClick={() => setDetailDate(d)}
-                      className={`h-20 p-2 rounded-[8px] border cursor-pointer transition-all flex flex-col justify-between hover:shadow-xs ${
-                        tod 
-                          ? "border-accent bg-accent-muted/20" 
-                          : "border-hairline hover:border-accent bg-surface"
-                      }`}
+                      className={`flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer ${tod ? "bg-surface-1 border border-hairline-soft font-semibold" : "hover:bg-surface-1/50"}`}
                     >
-                      <div className="flex justify-between items-start">
-                        <span className={`text-[12px] font-semibold ${tod ? 'text-accent' : 'text-ink'}`}>{d.getDate()}</span>
-                        {rec?.checkIn && (
-                          <span className="text-[10px] tabular-nums text-ink-subtle font-medium">{fmt12(rec.checkIn).split(" ")[0]}</span>
-                        )}
+                      <div className="flex items-center gap-3 min-w-[120px]">
+                        <span className="text-[13px] font-bold text-ink w-8">{DAY_LABELS[d.getDay()]}</span>
+                        <span className="text-[12px] text-ink-subtle">{d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
                       </div>
-                      
-                      <div className="flex items-center justify-between gap-1 flex-wrap mt-1">
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-[4px] font-bold ${sty.bg}`}>
+
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold ${sty.bg}`}>
                           {sty.label}
                         </span>
-                        {hrs != null && (
-                          <span className="text-[10px] tabular-nums font-semibold text-ink-muted">
-                            {hrs.toFixed(1)}h
-                          </span>
-                        )}
+                      </div>
+
+                      <div className="hidden sm:flex items-center gap-4 text-xs tabular-nums text-ink">
+                        <div>In: <span className="font-semibold">{rec?.checkIn ? fmt12(rec.checkIn) : "--:--"}</span></div>
+                        <div>Out: <span className="font-semibold">{rec?.checkOut ? fmt12(rec.checkOut) : "--:--"}</span></div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold tabular-nums text-ink">{hrs != null ? fmtHM(hrs) : "—"}</span>
+                        <ChevronRight size={14} className="text-ink-subtle" />
                       </div>
                     </div>
                   );
                 })}
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          TAB 2: TEAM REAL-TIME PRESENCE (Manager/Admin Control Center)
+          ══════════════════════════════════════════════════════════════════ */}
+      {activeTab === "team" && canViewTeam && (
+        <div className="space-y-4 animate-in fade-in duration-150">
+          {/* Team Summary Ribbon */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="bg-surface rounded-xl border border-hairline p-3.5 flex items-center justify-between shadow-xs">
+              <div>
+                <p className="text-[11px] font-semibold text-ink-subtle uppercase">Total Team</p>
+                <p className="text-[19px] font-extrabold text-ink leading-tight">{teamPresence.length}</p>
+              </div>
+              <Users size={18} className="text-[var(--module-hr)]" />
+            </div>
+
+            <div className="bg-surface rounded-xl border border-hairline p-3.5 flex items-center justify-between shadow-xs">
+              <div>
+                <p className="text-[11px] font-semibold text-emerald-600 uppercase flex items-center gap-1">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                  Checked In
+                </p>
+                <p className="text-[19px] font-extrabold text-emerald-600 leading-tight">{checkedInCount}</p>
+              </div>
+              <LogIn size={18} className="text-emerald-500" />
+            </div>
+
+            <div className="bg-surface rounded-xl border border-hairline p-3.5 flex items-center justify-between shadow-xs">
+              <div>
+                <p className="text-[11px] font-semibold text-amber-600 uppercase">On Leave</p>
+                <p className="text-[19px] font-extrabold text-amber-600 leading-tight">{onLeaveCount}</p>
+              </div>
+              <CalendarDays size={18} className="text-amber-500" />
+            </div>
+
+            <div className="bg-surface rounded-xl border border-hairline p-3.5 flex items-center justify-between shadow-xs">
+              <div>
+                <p className="text-[11px] font-semibold text-red-600 uppercase">Absent / Not In</p>
+                <p className="text-[19px] font-extrabold text-red-600 leading-tight">{absentCount}</p>
+              </div>
+              <XCircle size={18} className="text-red-500" />
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-3 rounded-xl border border-hairline shadow-xs">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle" />
+              <input
+                type="text"
+                value={teamSearch}
+                onChange={e => setTeamSearch(e.target.value)}
+                placeholder="Search team members by name or title…"
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-hairline bg-surface-1 text-ink outline-none focus:border-[var(--module-hr)]"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                value={deptFilter}
+                onChange={e => setDeptFilter(e.target.value)}
+                className="px-2.5 py-1.5 text-xs rounded-lg border border-hairline bg-surface text-ink cursor-pointer outline-none"
+              >
+                {departments.map(d => (
+                  <option key={d} value={d}>{d === "all" ? "All Departments" : d}</option>
+                ))}
+              </select>
+
+              <button
+                onClick={fetchTeamPresence}
+                disabled={teamLoading}
+                className="p-1.5 rounded-lg border border-hairline bg-surface hover:bg-surface-1 text-ink-muted hover:text-ink cursor-pointer"
+                title="Refresh team presence"
+              >
+                <RefreshCw size={13} className={teamLoading ? "animate-spin" : ""} />
+              </button>
+            </div>
+          </div>
+
+          {/* Team Members Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filteredTeamPresence.map(member => (
+              <div
+                key={member._id}
+                className="bg-surface rounded-xl border border-hairline p-4 flex items-start gap-3 shadow-xs hover:border-[var(--module-hr)] transition-all"
+              >
+                <ProfileImage
+                  profileImage={member.employee?.basicInfo?.profileImage}
+                  firstName={member.employee?.basicInfo?.firstName}
+                  lastName={member.employee?.basicInfo?.lastName}
+                  px={36}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1">
+                    <h3 className="text-[13px] font-semibold text-ink truncate">
+                      {member.employee?.basicInfo?.firstName} {member.employee?.basicInfo?.lastName}
+                    </h3>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                      member.status === "Checked In" ? "bg-[var(--tracker-success-light)] text-[var(--tracker-success)]" :
+                      member.status === "On Leave" ? "bg-[var(--tracker-warning-light)] text-[var(--tracker-warning)]" :
+                      member.status === "Completed Shift" ? "bg-surface-2 text-ink-muted" :
+                      "bg-[var(--tracker-danger-light)] text-[var(--tracker-danger)]"
+                    }`}>
+                      {member.status}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-ink-muted truncate">{member.designation} · {member.department}</p>
+                  
+                  <div className="mt-2 pt-2 border-t border-hairline-soft flex items-center justify-between text-[11px] text-ink-subtle">
+                    <span>In: <strong className="text-ink">{member.checkIn ? fmt12(member.checkIn) : "—"}</strong></span>
+                    <span>Out: <strong className="text-ink">{member.checkOut ? fmt12(member.checkOut) : "—"}</strong></span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          TAB 3: APPROVALS & REGULARIZATIONS (Anti-Popup Inline Queue)
+          ══════════════════════════════════════════════════════════════════ */}
+      {activeTab === "approvals" && canViewTeam && (
+        <div className="space-y-4 animate-in fade-in duration-150">
+          <div className="flex items-center justify-between bg-surface p-4 rounded-xl border border-hairline shadow-xs">
+            <div>
+              <h2 className="text-[15px] font-semibold text-ink">Pending Regularizations & Leave Requests</h2>
+              <p className="text-xs text-ink-muted mt-0.5">Review, verify, and resolve staff attendance exceptions in real-time.</p>
+            </div>
+            <button
+              onClick={fetchPendingApprovals}
+              disabled={approvalsLoading}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-hairline rounded-lg bg-surface text-ink hover:bg-surface-1 cursor-pointer"
+            >
+              <RefreshCw size={12} className={approvalsLoading ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          </div>
+
+          {pendingApprovals.length === 0 ? (
+            <div className="bg-surface rounded-2xl border border-dashed border-hairline p-12 text-center">
+              <ShieldCheck size={36} className="mx-auto text-emerald-500 mb-2 opacity-80" />
+              <p className="text-sm font-semibold text-ink">No Pending Requests</p>
+              <p className="text-xs text-ink-subtle mt-1">All regularization and leave requests have been resolved.</p>
             </div>
           ) : (
-            /* List Layout (Weekly & Day-wise) */
-            <div className="divide-y divide-hairline-soft">
-              {activeDaysList.map((d, i) => {
-                const st  = dayStatus(d);
-                const hrs = getDayHrs(d);
-                const rec = getDayRec(d);
-                const sty = STATUS[st];
-                const tod = isToday(d);
-                const punches = rec?.punches || [];
+            <div className="space-y-3">
+              {pendingApprovals.map(reqItem => {
+                const emp = reqItem.employeeId;
+                const empName = emp?.basicInfo ? `${emp.basicInfo.firstName || ""} ${emp.basicInfo.lastName || ""}`.trim() : (reqItem.employeeName || "Employee");
+                const isReg = reqItem.requestType === "Regularization";
 
                 return (
                   <div
-                    key={i}
-                    onClick={() => setDetailDate(d)}
-                    className={`
-                      flex flex-wrap items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors
-                      ${tod ? 'bg-surface-1/50' : 'hover:bg-surface-1/30'}
-                    `}
+                    key={reqItem._id}
+                    className="bg-surface rounded-xl border border-hairline p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs hover:border-[var(--module-hr)] transition-all"
                   >
-                    {/* Day label + date */}
-                    <div className={`w-24 flex-shrink-0 ${tod ? 'text-ink' : 'text-ink-muted'}`}>
-                      <span className="text-[13px] font-bold">{DAY_LABELS[d.getDay()]}</span>
-                      <span className="text-[12px] ml-1.5 font-normal text-ink-subtle">{d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                    </div>
-
-                    {/* Status badge */}
-                    <div className={`px-2.5 py-1 rounded-[6px] text-[11px] font-bold flex-shrink-0 ${sty.bg}`}>
-                      {sty.label}
-                    </div>
-
-                    {/* Multi-punch sessions or Single check-in/out */}
-                    {punches.length > 1 ? (
-                      <div className="flex flex-col gap-1.5 min-w-[260px] flex-1 py-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-ink-subtle mb-0.5">
-                          Punch Sessions ({punches.length})
-                        </span>
-                        <div className="flex flex-col gap-1.5">
-                          {punches.map((p, idx) => (
-                            <div key={idx} className="flex items-center gap-3 text-xs font-semibold bg-surface-1/80 px-3 py-1.5 rounded-lg border border-hairline-soft w-fit shadow-2xs">
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface text-ink-subtle">
-                                Session #{idx + 1}
-                              </span>
-                              <div className="flex items-center gap-1.5">
-                                <LogIn className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                                <span className="font-bold text-ink tabular-nums">{fmt12(p.checkIn)}</span>
-                              </div>
-                              <span className="text-ink-subtle">➔</span>
-                              <div className="flex items-center gap-1.5">
-                                <LogOut className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                                <span className={p.checkOut ? "font-bold text-ink tabular-nums" : "text-emerald-600 dark:text-emerald-400 font-extrabold"}>
-                                  {p.checkOut ? fmt12(p.checkOut) : "Active"}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
+                    <div className="flex items-start gap-3">
+                      <ProfileImage
+                        profileImage={emp?.basicInfo?.profileImage}
+                        firstName={emp?.basicInfo?.firstName}
+                        lastName={emp?.basicInfo?.lastName}
+                        px={36}
+                      />
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[13px] font-bold text-ink">{empName}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${isReg ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"}`}>
+                            {reqItem.requestType}
+                          </span>
                         </div>
+                        <p className="text-[11.5px] text-ink-subtle mt-0.5">
+                          Date: <strong className="text-ink">{new Date(reqItem.requestDate || reqItem.startDate).toLocaleDateString()}</strong>
+                          {reqItem.reason && ` · Reason: "${reqItem.reason}"`}
+                        </p>
+                        {isReg && (
+                          <p className="text-[11px] text-ink-muted mt-1 font-medium">
+                            Requested Times: In: <span className="font-semibold text-emerald-600">{fmt12(reqItem.requestedCheckIn)}</span> · Out: <span className="font-semibold text-amber-600">{fmt12(reqItem.requestedCheckOut)}</span>
+                          </p>
+                        )}
                       </div>
-                    ) : (
-                      <>
-                        {/* Check In */}
-                        <div className="flex items-center gap-2 w-28 flex-shrink-0">
-                          <LogIn className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                          <span className={`text-[13px] tabular-nums ${rec?.checkIn ? 'text-ink font-bold' : 'text-ink-tertiary'}`}>
-                            {rec?.checkIn ? fmt12(rec.checkIn) : "--:--"}
-                          </span>
-                        </div>
-
-                        {/* Check Out */}
-                        <div className="flex items-center gap-2 w-28 flex-shrink-0">
-                          <LogOut className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                          <span className={`text-[13px] tabular-nums ${rec?.checkOut ? 'text-ink font-bold' : 'text-ink-tertiary'}`}>
-                            {rec?.checkOut ? fmt12(rec.checkOut) : "--:--"}
-                          </span>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Hours Bar */}
-                    <div className="flex-1 min-w-[120px] flex items-center justify-end">
-                      {hrs != null ? (
-                        <div className="flex items-center gap-3 w-full max-w-[200px]">
-                          <div className="flex-1 h-2 bg-hairline rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{
-                                width: `${Math.min((hrs / TARGET) * 100, 100)}%`,
-                                background: hrs >= TARGET ? 'var(--tracker-success)' : 'var(--tracker-ink)',
-                              }}
-                            />
-                          </div>
-                          <span className="text-[13px] font-bold text-ink tabular-nums">{fmtHM(hrs)}</span>
-                        </div>
-                      ) : (
-                        <span className="text-[13px] text-ink-tertiary">
-                          {st === "weekend" ? "Off" : st === "future" ? "" : "—"}
-                        </span>
-                      )}
                     </div>
 
-                    {/* Arrow navigator */}
-                    <ChevronRight className="h-4 w-4 text-ink-subtle flex-shrink-0" />
+                    {/* Quick Approve / Reject Actions */}
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <button
+                        onClick={() => handleQuickApproval(reqItem, "Approved")}
+                        disabled={approvalActionBusy}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                      >
+                        <Check size={12} />
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleQuickApproval(reqItem, "Rejected")}
+                        disabled={approvalActionBusy}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        <X size={12} />
+                        Reject
+                      </button>
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
         </div>
-      </div>
+      )}
 
-      {/* ─── DETAIL DRAWER (Monthly Details View) ─── */}
+      {/* ─── SLIDE-OVER DETAIL & REGULARIZATION DRAWER (Anti-Popup Law) ─── */}
       {detailDate && (
         <DayDetailsDrawer 
           date={detailDate}
           record={detailRecord}
+          currentUserId={user?.id}
           onClose={() => setDetailDate(null)}
+          onRegularizationSubmitted={() => {
+            fetchAll();
+            if (canViewTeam) fetchPendingApprovals();
+          }}
         />
       )}
     </div>
   );
 };
 
-/* ── DayDetailsDrawer Component ── */
-function DayDetailsDrawer({ date, record, onClose }) {
+/* ══════════════════════════════════════════════════════════════════
+   SLIDE-OVER DRAWER WITH INLINE REGULARIZATION (Zero Popup Law)
+   ══════════════════════════════════════════════════════════════════ */
+function DayDetailsDrawer({ date, record, currentUserId, onClose, onRegularizationSubmitted }) {
   if (!date) return null;
   const isWeekendDay = isWeekend(date);
   const status = record ? record.status : isWeekendDay ? "Weekend" : "Absent";
   const punches = record?.punches || [];
   
-  // Calculate active hours dynamically if punches are open
+  // Inline regularization state
+  const [showRegForm, setShowRegForm] = useState(false);
+  const [reqCheckIn, setReqCheckIn]   = useState("");
+  const [reqCheckOut, setReqCheckOut] = useState("");
+  const [reason, setReason]           = useState("");
+  const [isSubmittingReg, setIsSubmittingReg] = useState(false);
+
   const hrs = record?.workHours != null 
     ? record.workHours 
     : record?.checkIn 
       ? Math.max(0, (new Date(record.checkOut || new Date()) - new Date(record.checkIn)) / 3600000) 
       : 0;
+
+  const handleCreateRegularization = async (e) => {
+    e.preventDefault();
+    if (!reason.trim()) {
+      toast.error("Please provide a reason for regularization");
+      return;
+    }
+    setIsSubmittingReg(true);
+    try {
+      const targetDateStr = getLocalDateString(date);
+      await axiosInstance.post('/populate/create/regularizations', {
+        employeeId: currentUserId,
+        requestDate: targetDateStr,
+        originalCheckIn: record?.checkIn || null,
+        originalCheckOut: record?.checkOut || null,
+        requestedCheckIn: reqCheckIn ? `${targetDateStr}T${reqCheckIn}:00.000Z` : null,
+        requestedCheckOut: reqCheckOut ? `${targetDateStr}T${reqCheckOut}:00.000Z` : null,
+        reason: reason.trim(),
+        status: "Pending"
+      });
+      toast.success("Regularization request submitted!");
+      setShowRegForm(false);
+      if (onRegularizationSubmitted) onRegularizationSubmitted();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to submit regularization");
+    } finally {
+      setIsSubmittingReg(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs transition-opacity">
@@ -824,82 +1311,161 @@ function DayDetailsDrawer({ date, record, onClose }) {
         {/* Drawer Header */}
         <div className="flex items-center justify-between pb-4 border-b border-hairline">
           <div>
-            <h3 className="text-lg font-semibold text-ink">
+            <h3 className="text-[17px] font-semibold text-ink">
               {new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
             </h3>
-            <p className="text-xs text-ink-muted mt-1">Detailed Attendance Logs</p>
+            <p className="text-xs text-ink-muted mt-0.5">Attendance Ledger & Geotag Details</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-surface-1 rounded-tracker-md text-ink-muted hover:text-ink cursor-pointer">
-            <XCircle size={20} />
+          <button onClick={onClose} className="p-1.5 hover:bg-surface-1 rounded-lg text-ink-muted hover:text-ink cursor-pointer">
+            <X size={18} />
           </button>
         </div>
 
         {/* Status Section */}
-        <div className="py-5 space-y-4">
+        <div className="py-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-ink-subtle">Status</span>
-            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-              status === "Present" ? "bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400" :
-              status === "Leave" ? "bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400" :
-              status === "Weekend" ? "bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-400" :
-              "bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400"
+            <span className="text-xs font-semibold text-ink-subtle uppercase">Attendance Status</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+              status === "Present" ? "bg-[var(--tracker-success-light)] text-[var(--tracker-success)]" :
+              status === "Leave" ? "bg-[var(--tracker-warning-light)] text-[var(--tracker-warning)]" :
+              status === "Weekend" ? "bg-surface-2 text-ink-muted" :
+              "bg-[var(--tracker-danger-light)] text-[var(--tracker-danger)]"
             }`}>
               {status}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-surface-1 p-3.5 rounded-tracker-md">
-              <span className="text-[11px] font-semibold text-ink-subtle uppercase block mb-1">Check In</span>
-              <span className="text-sm font-medium text-ink tabular-nums">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-surface-1 p-3 rounded-xl border border-hairline-soft">
+              <span className="text-[10.5px] font-semibold text-ink-subtle uppercase block mb-0.5">Clock In</span>
+              <span className="text-sm font-bold text-ink tabular-nums">
                 {record?.checkIn ? fmt12(record.checkIn) : "—"}
               </span>
             </div>
-            <div className="bg-surface-1 p-3.5 rounded-tracker-md">
-              <span className="text-[11px] font-semibold text-ink-subtle uppercase block mb-1">Check Out</span>
-              <span className="text-sm font-medium text-ink tabular-nums">
+            <div className="bg-surface-1 p-3 rounded-xl border border-hairline-soft">
+              <span className="text-[10.5px] font-semibold text-ink-subtle uppercase block mb-0.5">Clock Out</span>
+              <span className="text-sm font-bold text-ink tabular-nums">
                 {record?.checkOut ? fmt12(record.checkOut) : "—"}
               </span>
             </div>
           </div>
 
-          <div className="bg-surface-1 p-3.5 rounded-tracker-md flex items-center justify-between">
+          <div className="bg-surface-1 p-3 rounded-xl border border-hairline-soft flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-semibold text-ink-subtle uppercase block mb-0.5">Work Hours</span>
-              <span className="text-sm font-semibold text-ink tabular-nums">
+              <span className="text-[10.5px] font-semibold text-ink-subtle uppercase block mb-0.5">Effective Work Hours</span>
+              <span className="text-sm font-bold text-ink tabular-nums">
                 {record?.checkIn ? fmtHM(hrs) : "—"}
               </span>
             </div>
             {hrs >= TARGET && (
-              <span className="text-xs text-green-600 font-medium">Goal met ✓</span>
+              <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md">
+                Goal Met ✓
+              </span>
             )}
           </div>
         </div>
 
-        {/* Punch logs */}
-        <div className="flex-1 space-y-4">
-          <h4 className="text-sm font-semibold text-ink flex items-center gap-1.5 pb-2 border-b border-hairline-soft">
-            <Clock size={16} />
+        {/* Inline Self-Service Regularization (Only for workdays / missed punch days) */}
+        {status === "Leave" ? (
+          <div className="my-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+            <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+            <span>Approved Leave Record • No regularization required for authorized time off.</span>
+          </div>
+        ) : status === "Weekend" ? (
+          <div className="my-2 p-3 bg-surface-1 border border-hairline-soft rounded-xl flex items-center gap-2 text-xs text-ink-subtle">
+            <span className="h-2 w-2 rounded-full bg-ink-subtle shrink-0" />
+            <span>Scheduled Non-Working Weekend • Regularization not applicable.</span>
+          </div>
+        ) : status === "Holiday" ? (
+          <div className="my-2 p-3 bg-surface-1 border border-hairline-soft rounded-xl flex items-center gap-2 text-xs text-ink-subtle">
+            <span className="h-2 w-2 rounded-full bg-ink-subtle shrink-0" />
+            <span>Official Holiday • Regularization not applicable.</span>
+          </div>
+        ) : (
+          <div className="my-2 p-3 bg-surface-1 rounded-xl border border-hairline-soft">
+            {!showRegForm ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-ink">Need an adjustment?</p>
+                  <p className="text-[11px] text-ink-subtle">Missed punch or incorrect hours logged.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowRegForm(true)}
+                  className="px-2.5 py-1 text-xs font-semibold bg-[var(--module-hr)] text-white rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+                >
+                  Request Regularization
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleCreateRegularization} className="space-y-2.5 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between pb-1 border-b border-hairline-soft">
+                  <span className="text-xs font-bold text-ink">Regularization Request</span>
+                  <button type="button" onClick={() => setShowRegForm(false)} className="text-xs text-ink-subtle hover:text-ink">Cancel</button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-semibold text-ink-subtle uppercase block mb-0.5">Req In Time</label>
+                    <input
+                      type="time"
+                      value={reqCheckIn}
+                      onChange={e => setReqCheckIn(e.target.value)}
+                      className="w-full px-2 py-1 text-xs rounded border border-hairline bg-surface text-ink outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-ink-subtle uppercase block mb-0.5">Req Out Time</label>
+                    <input
+                      type="time"
+                      value={reqCheckOut}
+                      onChange={e => setReqCheckOut(e.target.value)}
+                      className="w-full px-2 py-1 text-xs rounded border border-hairline bg-surface text-ink outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-ink-subtle uppercase block mb-0.5">Reason</label>
+                  <textarea
+                    rows={2}
+                    value={reason}
+                    onChange={e => setReason(e.target.value)}
+                    placeholder="Reason for regularization..."
+                    className="w-full p-1.5 text-xs rounded border border-hairline bg-surface text-ink outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReg}
+                  className="w-full py-1.5 rounded-lg text-xs font-bold bg-[var(--module-hr)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  {isSubmittingReg ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                  Submit Request
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* Punch Logs Timeline */}
+        <div className="flex-1 space-y-3 mt-2">
+          <h4 className="text-xs font-bold text-ink uppercase tracking-wide flex items-center gap-1.5 pb-1 border-b border-hairline-soft">
+            <Clock size={13} className="text-[var(--module-hr)]" />
             Punch History
           </h4>
 
           {punches.length === 0 ? (
-            <div className="text-center py-6 text-ink-subtle text-xs">
-              {record?.checkIn ? "Single punch session recorded." : "No punches logged for this date."}
+            <div className="text-center py-4 text-ink-subtle text-xs">
+              {record?.checkIn ? "Single check-in/out session recorded." : "No punch logs for this date."}
             </div>
           ) : (
-            <div className="relative border-l border-hairline ml-3.5 pl-5 space-y-5">
+            <div className="relative border-l border-hairline ml-3 pl-4 space-y-3">
               {punches.map((p, index) => (
-                <div key={index} className="relative">
-                  <span className="absolute -left-[27px] top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-surface border border-accent">
-                    <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                  </span>
-                  <div>
-                    <span className="text-xs font-semibold text-ink-subtle">Session #{index + 1}</span>
-                    <div className="grid grid-cols-2 gap-2 mt-1.5 text-xs text-ink-muted">
-                      <div>In: <span className="font-medium text-ink tabular-nums">{fmt12(p.checkIn)}</span></div>
-                      <div>Out: <span className="font-medium text-ink tabular-nums">{p.checkOut ? fmt12(p.checkOut) : "Active"}</span></div>
-                    </div>
+                <div key={index} className="relative text-xs">
+                  <span className="absolute -left-[21px] top-1 flex h-2.5 w-2.5 rounded-full bg-[var(--module-hr)]" />
+                  <span className="text-[11px] font-semibold text-ink-subtle">Session #{index + 1}</span>
+                  <div className="grid grid-cols-2 gap-2 mt-0.5 text-ink-muted">
+                    <div>In: <strong className="text-ink">{fmt12(p.checkIn)}</strong></div>
+                    <div>Out: <strong className="text-ink">{p.checkOut ? fmt12(p.checkOut) : "Active"}</strong></div>
                   </div>
                 </div>
               ))}
@@ -907,30 +1473,21 @@ function DayDetailsDrawer({ date, record, onClose }) {
           )}
         </div>
 
-        {/* Location Coordinates if available */}
-        {record?.location && (
-          <div className="mt-auto pt-4 border-t border-hairline space-y-3">
-            {record.location.latitude && record.location.longitude && (
-              <div className="w-full h-40 rounded-lg overflow-hidden border border-hairline shadow-inner">
-                <iframe
-                  title="Geotag Map"
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  src={`https://maps.google.com/maps?q=${record.location.latitude},${record.location.longitude}&z=15&output=embed`}
-                  allowFullScreen
-                />
-              </div>
-            )}
-            <div>
-              <span className="text-xs font-semibold text-ink-subtle flex items-center gap-1 mb-1">
-                <MapPin size={12} />
-                Geotag Coordinates
-              </span>
-              <div className="grid grid-cols-2 gap-2 mt-1 text-[11px] text-ink-muted tabular-nums">
-                <div>Lat: {record.location.latitude || "N/A"}</div>
-                <div>Lng: {record.location.longitude || "N/A"}</div>
-              </div>
+        {/* Geotag Map Coordinates */}
+        {record?.location?.latitude && record?.location?.longitude && (
+          <div className="mt-auto pt-3 border-t border-hairline space-y-2">
+            <div className="w-full h-32 rounded-lg overflow-hidden border border-hairline">
+              <iframe
+                title="Geotag Location"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                src={`https://maps.google.com/maps?q=${record.location.latitude},${record.location.longitude}&z=15&output=embed`}
+              />
+            </div>
+            <div className="flex items-center justify-between text-[10.5px] text-ink-subtle font-medium">
+              <span className="flex items-center gap-1"><MapPin size={11} /> Verified Geotag</span>
+              <span>Lat: {record.location.latitude.toFixed(4)}, Lng: {record.location.longitude.toFixed(4)}</span>
             </div>
           </div>
         )}
@@ -940,15 +1497,15 @@ function DayDetailsDrawer({ date, record, onClose }) {
   );
 }
 
-/* ── Sub Components ── */
+/* ── Metric Stat Card ── */
 const StatCard = ({ icon: Icon, value, label }) => (
-  <div className="bg-surface rounded-tracker-lg border border-hairline p-4 flex items-center gap-3 shadow-sm">
-    <div className="h-10 w-10 rounded-tracker-md bg-accent-muted flex items-center justify-center flex-shrink-0">
-      <Icon className="h-5 w-5 text-accent" />
+  <div className="bg-surface rounded-xl border border-hairline p-3.5 flex items-center gap-3 shadow-xs">
+    <div className="h-9 w-9 rounded-lg bg-[var(--module-hr-light)] flex items-center justify-center flex-shrink-0 text-[var(--module-hr)]">
+      <Icon size={18} />
     </div>
     <div>
-      <p className="text-[18px] font-semibold text-ink leading-[1.20] tabular-nums">{value}</p>
-      <p className="text-[12px] text-ink-muted mt-0.5">{label}</p>
+      <p className="text-[16px] font-bold text-ink leading-tight tabular-nums">{value}</p>
+      <p className="text-[11px] text-ink-muted mt-0.5">{label}</p>
     </div>
   </div>
 );

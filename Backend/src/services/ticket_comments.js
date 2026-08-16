@@ -147,23 +147,73 @@ export default function ticketCommentsService() {
       }
     },
 
+    // ---------------- After Read ----------------
+    afterRead: async (ctx) => {
+      const { data, user, policy } = ctx;
+      if (!data) return data;
+
+      const EDIT_WINDOW_MINUTES = 15;
+      const EDIT_WINDOW_MS = EDIT_WINDOW_MINUTES * 60 * 1000;
+      const currentUserId = (user?.id || user?._id)?.toString();
+      const isSuperAdmin = user?.isSuperAdmin === true || policy?.isSuperAdmin === true;
+
+      const enrichComment = (item) => {
+        if (!item || typeof item !== 'object') return item;
+        const comment = item.toObject ? item.toObject() : { ...item };
+
+        const authorId = comment.commentedBy?._id?.toString() || comment.commentedBy?.toString();
+        const isAuthor = Boolean(currentUserId && authorId && currentUserId === authorId);
+
+        const createdAt = comment.createdAt ? new Date(comment.createdAt).getTime() : Date.now();
+        const ageMs = Date.now() - createdAt;
+        const withinGracePeriod = ageMs <= EDIT_WINDOW_MS;
+        const remainingMs = Math.max(0, EDIT_WINDOW_MS - ageMs);
+
+        comment.canEdit = Boolean(isSuperAdmin || (isAuthor && withinGracePeriod));
+        comment.canDelete = Boolean(isSuperAdmin || (isAuthor && withinGracePeriod));
+        comment.isAuthor = isAuthor;
+        comment.remainingEditTimeSeconds = isAuthor && !isSuperAdmin ? Math.round(remainingMs / 1000) : null;
+        comment.editWindowMinutes = EDIT_WINDOW_MINUTES;
+
+        return comment;
+      };
+
+      if (Array.isArray(data)) {
+        return data.map(enrichComment);
+      }
+      return enrichComment(data);
+    },
+
     // ---------------- Before Update ----------------
     beforeUpdate: async (ctx) => {
-      const { role, userId, docId, body, existingDoc } = ctx;
-      if (!existingDoc) {
-        existingDoc = await models.ticket_comments.findById(docId).lean();
-      }
-      if (!existingDoc) throw new Error('Comment not found');
+      const { user, docId, body, existingDoc, policy } = ctx;
+      const CommentModel = ctx.tenantContext?.getModel
+        ? ctx.tenantContext.getModel('ticket_comments')
+        : (await import('../models/Collection.js')).default.ticket_comments;
 
-      // Only the author can update their own comment
-      if (existingDoc.commentedBy.toString() !== userId.toString()) {
+      const doc = existingDoc || (await CommentModel.findById(docId).lean());
+      if (!doc) throw new Error('Comment not found');
+
+      const isAuthor = doc.commentedBy?.toString() === user?.id?.toString();
+      const isSuperAdmin = user?.isSuperAdmin === true || policy?.isSuperAdmin === true;
+
+      // Only the author or platform super admin can update a comment
+      if (!isAuthor && !isSuperAdmin) {
         throw new Error('⛔ Access Denied: You can only edit your own comments.');
+      }
+
+      // Domain Invariant: Authors may only edit comments within a 15-minute grace window from creation
+      if (isAuthor && !isSuperAdmin && doc.createdAt) {
+        const ageMinutes = (Date.now() - new Date(doc.createdAt).getTime()) / (1000 * 60);
+        if (ageMinutes > 15) {
+          throw new Error('⛔ Comments can only be edited within 15 minutes of posting.');
+        }
       }
 
       // Restrict modification to message / attachments only
       const updatedBody = {
-        message: body.message || existingDoc.message,
-        attachments: body.attachments || existingDoc.attachments,
+        message: body.message || doc.message,
+        attachments: body.attachments || doc.attachments,
         edited: true,
         editedAt: new Date()
       };
@@ -173,11 +223,15 @@ export default function ticketCommentsService() {
 
     // ---------------- After Update ----------------
     afterUpdate: async (ctx) => {
-      const { role, userId, docId, data, body, beforeDoc } = ctx;
+      const { docId } = ctx;
       try {
-        const comment = await models.ticket_comments.findById(docId).lean();
-        if (comment) {
-          await models.tickets.findByIdAndUpdate(comment.ticketId, { updatedAt: new Date() });
+        const { default: models } = await import('../models/Collection.js');
+        const CommentModel = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('ticket_comments') : models.ticket_comments;
+        const TicketModel = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('tickets') : models.tickets;
+
+        const comment = await CommentModel.findById(docId).lean();
+        if (comment && comment.ticketId) {
+          await TicketModel.findByIdAndUpdate(comment.ticketId, { updatedAt: new Date() });
         }
       } catch (error) {
         console.error('[ticket_comments service] error in afterUpdate hook:', error);
@@ -186,29 +240,36 @@ export default function ticketCommentsService() {
 
     // ---------------- Before Delete ----------------
     beforeDelete: async (ctx) => {
-      const { role, userId, docId, modelName } = ctx;
-      const comment = await models.ticket_comments.findById(docId).lean();
-      if (!comment) throw new Error('Comment not found');
+      const { user, docId, existingDoc, policy } = ctx;
+      const CommentModel = ctx.tenantContext?.getModel
+        ? ctx.tenantContext.getModel('ticket_comments')
+        : (await import('../models/Collection.js')).default.ticket_comments;
 
-      // Check if user is the author
-      const isAuthor = comment.commentedBy.toString() === userId.toString();
-      if (isAuthor) return; // Author is allowed to delete
+      const doc = existingDoc || (await CommentModel.findById(docId).lean());
+      if (!doc) throw new Error('Comment not found');
 
-      // Check if user is Admin/Super Admin dynamically via Access Policies
-      const policy = await models.access_policies.findOne({ role: role, modelName: 'ticket_comments' }).lean();
-      const hasDeletePermission = policy?.permissions?.delete === true;
+      const isAuthor = doc.commentedBy?.toString() === user?.id?.toString();
+      const isSuperAdmin = user?.isSuperAdmin === true || policy?.isSuperAdmin === true;
 
-      if (!hasDeletePermission) {
-        throw new Error('⛔ Access Denied: You do not have permission to delete this comment.');
+      // Domain Invariant: Authors may only delete comments within 15 minutes of posting.
+      // Super admins or users with policy-authorized moderation bypass the time window.
+      if (isAuthor && !isSuperAdmin && doc.createdAt) {
+        const ageMinutes = (Date.now() - new Date(doc.createdAt).getTime()) / (1000 * 60);
+        if (ageMinutes > 15) {
+          throw new Error('⛔ Comments can only be deleted within 15 minutes of posting. Please contact an administrator.');
+        }
       }
     },
 
     // ---------------- After Delete ----------------
     afterDelete: async (ctx) => {
-      const { doc, userId } = ctx;
+      const { doc } = ctx;
       try {
+        const { default: models } = await import('../models/Collection.js');
+        const TicketModel = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('tickets') : models.tickets;
+
         if (doc && doc.ticketId) {
-          await models.tickets.findByIdAndUpdate(doc.ticketId, { updatedAt: new Date() });
+          await TicketModel.findByIdAndUpdate(doc.ticketId, { updatedAt: new Date() });
         }
       } catch (error) {
         console.error('[ticket_comments service] error in afterDelete hook:', error);

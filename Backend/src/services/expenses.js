@@ -62,38 +62,11 @@ export default function expensesService() {
 
   return {
     async beforeRead(ctx) {
-      const { filter = {}, user } = ctx;
-      const role = user?.role;
-      const userId = user?.id;
+      const { filter = {} } = ctx;
 
-      const { getPolicy } = await import('../utils/cache.js');
-      const policy = getPolicy(role, 'expenses');
-      const hasAllAccess = policy?.allowAccess?.read?.includes('*') || (!policy?.forbiddenAccess?.read?.includes('status') && policy?.permissions?.read);
-
-      // Check if viewing pending approvals tab
-      if (filter.status === 'pending' && filter.viewMode === 'approvals') {
-        delete filter.viewMode; // delete transient UI field
-
-        if (hasAllAccess) {
-          return { filter };
-        }
-
-        // Managers can see pending expenses of employees reporting to them
-        const { default: models } = await import('../models/Collection.js');
-        const reportingEmployees = await models.employees.find({
-          'professionalInfo.reportingManager': userId
-        }).select('_id').lean();
-
-        const employeeIds = reportingEmployees.map(emp => emp._id);
-        filter.employeeId = { $in: employeeIds };
-
-        return { filter };
-      }
-
-      // Default: regular read request
-      if (!hasAllAccess && userId) {
-        // Enforce reading own expenses only
-        filter.employeeId = userId;
+      // Check if viewing pending approvals tab — strip transient UI flag
+      if (filter.viewMode) {
+        delete filter.viewMode;
       }
 
       return { filter };
@@ -171,21 +144,9 @@ export default function expensesService() {
 
     async beforeUpdate(ctx) {
       const { body, user, existingDoc } = ctx;
-      const role = user?.role;
       const userId = user?.id;
-      const { getPolicy } = await import('../utils/cache.js');
-      const policy = getPolicy(role, 'expenses');
-      const forbidden = policy?.forbiddenAccess?.update || [];
-      const sensitiveFields = ['status', 'approvedBy', 'rejectedBy', 'approvedAt', 'rejectedAt'];
-      const isPrivileged = policy?.permissions?.update && !forbidden.includes('status');
 
-      for (const field of sensitiveFields) {
-        if (body[field] !== undefined && (forbidden.includes(field) || !policy?.permissions?.update)) {
-          throw new Error(`Forbidden: You do not have permission to update field '${field}'`);
-        }
-      }
-
-      if (body.status === 'approved' && isPrivileged) {
+      if (body.status === 'approved') {
         // ── Period Lock Check on approval ─────────────────────────────────
         const date = existingDoc?.date;
         if (date) await checkExpensePeriodLock(date, 'approve');
@@ -194,7 +155,7 @@ export default function expensesService() {
         body.approvedAt = new Date();
       }
 
-      if (body.status === 'rejected' && isPrivileged) {
+      if (body.status === 'rejected') {
         body.rejectedBy = userId;
         body.rejectedAt = new Date();
       }

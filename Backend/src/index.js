@@ -3,6 +3,7 @@ import http from "http";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
 import cors from "cors";
+import jwt from "jsonwebtoken";
 import AuthRouter from "./routes/authRoutes.js";
 import agentRoutes from "./routes/agentRoutes.js";
 import agentInviteRoutes from "./routes/agentInviteRoutes.js";
@@ -110,7 +111,7 @@ app.use("/api/auth", AuthRouter);
 app.use("/api/populate", moduleGateMiddleware, populateHelper);
 app.use("/api/files", authMiddleware, fileRoutes);
 app.use("/api", locationRoutes);
-app.use("/api/config", configRoutes);
+app.use("/api/config", authMiddleware, configRoutes);
 app.use("/api/admin", authMiddleware, requireGlobalAdmin, adminSystemRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/api/dashboard", authMiddleware, dashboardRoutes);
@@ -130,27 +131,62 @@ const io = new Server(server, {
   allowEIO3: true
 });
 
+// Socket.io Handshake Authentication Guard
+io.use((socket, next) => {
+  const token =
+    socket.handshake.auth?.token ||
+    socket.handshake.headers?.authorization?.split(' ')[1] ||
+    socket.handshake.query?.token;
+
+  if (!token) {
+    return next(new Error("Authentication required: token missing"));
+  }
+
+  try {
+    const JWT_SECRET = process.env.JWT_SECRET || "6c1a1fbc732be15f73752642194f0bf19812b2a9cfbdaa59d0f6cb981a208176";
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded?.id) {
+      return next(new Error("Invalid token payload"));
+    }
+    socket.user = decoded;
+    next();
+  } catch (err) {
+    return next(new Error(`Authentication failed: ${err.message}`));
+  }
+});
+
 const activeConnections = new Map();
 const userRooms = new Map();
 
 io.on("connection", (socket) => {
+  const authUserId = socket.user?.id?.toString();
+  if (authUserId) {
+    socket.join(authUserId);
+    userRooms.set(socket.id, [authUserId]);
+  }
+
   activeConnections.set(socket.id, {
-    userId: null,
+    userId: authUserId || null,
     connectedAt: Date.now(),
     lastActivity: Date.now()
   });
 
-  socket.on("join", (userId) => {
-    if (!userId) return;
-    const connection = activeConnections.get(socket.id);
-    if (connection) {
-      connection.userId = userId;
-      connection.lastActivity = Date.now();
+  socket.on("join", (targetUserId) => {
+    if (!targetUserId) return;
+    const requested = targetUserId.toString();
+    const isOwner = requested === authUserId;
+    const isSuperAdmin = socket.user?.isSuperAdmin === true;
+
+    // Disallow joining another user's room unless caller has Super Admin authority
+    if (!isOwner && !isSuperAdmin) {
+      console.warn(`[Socket.IO] Blocked unauthorized room join attempt from user ${authUserId} to room ${requested}`);
+      return;
     }
+
     const previousRooms = userRooms.get(socket.id) || [];
     previousRooms.forEach(room => socket.leave(room));
-    socket.join(userId);
-    userRooms.set(socket.id, [userId]);
+    socket.join(requested);
+    userRooms.set(socket.id, [requested]);
   });
 
   socket.on("ticket_typing", async ({ ticketId, isTyping }) => {

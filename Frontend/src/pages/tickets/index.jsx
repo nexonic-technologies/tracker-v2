@@ -67,12 +67,19 @@ const TypeChip = ({ value }) => {
   );
 };
 
-// ── Stat pill ─────────────────────────────────────────────────────────────────
+// ── Stat pill (Context-Carrying 2026 Standard) ─────────────────────────────────
 
-const StatPill = ({ label, value, cls }) => (
-  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold ${cls}`}>
+const StatPill = ({ label, value, cls, pulseColor, trend }) => (
+  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold transition-all hover:scale-[1.02] shadow-xs ${cls}`}>
+    {pulseColor && (
+      <span className="relative flex h-2 w-2 shrink-0">
+        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${pulseColor}`} />
+        <span className={`relative inline-flex rounded-full h-2 w-2 ${pulseColor}`} />
+      </span>
+    )}
     <span className="font-bold">{value}</span>
-    <span className="opacity-75">{label}</span>
+    <span className="opacity-80">{label}</span>
+    {trend && <span className="text-[10px] font-bold opacity-90 ml-0.5">{trend}</span>}
   </span>
 );
 
@@ -341,12 +348,12 @@ const TicketsPage = () => {
           {/* Vertical divider on larger screens */}
           <div className="hidden md:block w-px h-5 bg-hairline-soft self-center mt-2" />
 
-          {/* Stat pills */}
+          {/* Stat pills (Context-Carrying Metric Ribbon) */}
           <div className="flex flex-wrap items-center gap-1.5 mt-1 md:mt-2">
-            <StatPill label="Open" value={openCount} cls="bg-[var(--tracker-info-light)]    text-[var(--tracker-info)]" />
-            <StatPill label="In Progress" value={inProgCount} cls="bg-[var(--tracker-warning-light)] text-[var(--tracker-warning)]" />
-            <StatPill label="Critical" value={criticalCount} cls="bg-[var(--tracker-danger-light)]  text-[var(--tracker-danger)]" />
-            <StatPill label="Resolved ↗" value={resolvedCount} cls="bg-[var(--tracker-success-light)] text-[var(--tracker-success)]" />
+            <StatPill label="Open" value={openCount} cls="bg-[var(--tracker-info-light)] text-[var(--tracker-info)]" />
+            <StatPill label="In Progress" value={inProgCount} cls="bg-[var(--tracker-warning-light)] text-[var(--tracker-warning)]" pulseColor="bg-amber-500" />
+            <StatPill label="Critical" value={criticalCount} cls="bg-[var(--tracker-danger-light)] text-[var(--tracker-danger)]" pulseColor="bg-red-500" />
+            <StatPill label="Resolved" value={resolvedCount} cls="bg-[var(--tracker-success-light)] text-[var(--tracker-success)]" trend="↑ 7d" />
             <span className="text-[11px] text-ink-subtle pl-1 self-center">{tickets.length} total</span>
             {activeFilters > 0 && (
               <span className="text-[11px] text-[var(--module-ticket)] font-semibold pl-2">

@@ -249,7 +249,7 @@ const TableGenerator = ({
           {/* Print */}
           <button
             onClick={() => printTable(visibleDataCols, sortedData, title, customExport)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] border border-hairline bg-surface text-[13px] font-medium text-ink-muted hover:bg-[#EDE9FE] hover:text-[#7C3AED] hover:border-[#7C3AED] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] border border-hairline bg-surface text-[13px] font-medium text-ink-muted hover:bg-[var(--module-ticket-light)] hover:text-[var(--module-ticket)] hover:border-[var(--module-ticket)] transition-colors cursor-pointer"
             title="Print"
           >
             <Printer size={15} />
@@ -259,7 +259,7 @@ const TableGenerator = ({
           {/* Export Excel */}
           <button
             onClick={() => exportToExcel(visibleDataCols, sortedData, title, customExport)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] border border-hairline bg-surface text-[13px] font-medium text-ink-muted hover:bg-[#D1FAE5] hover:text-[#059669] hover:border-[#059669] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] border border-hairline bg-surface text-[13px] font-medium text-ink-muted hover:bg-[var(--tracker-success-light)] hover:text-[var(--tracker-success)] hover:border-[var(--tracker-success)] transition-colors cursor-pointer"
             title="Export to Excel"
           >
             <FileSpreadsheet size={15} />
@@ -288,7 +288,7 @@ const TableGenerator = ({
 
       {paginatedData.length === 0 ? (
         <div className="text-center py-14">
-          <div className="w-12 h-12 rounded-[12px] bg-[#EDE9FE] flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 rounded-[12px] bg-[var(--module-ticket-light)] flex items-center justify-center mx-auto mb-3">
             <span className="text-[24px]">🔍</span>
           </div>
           <div className="text-ink text-[15px] font-medium mb-1">No records found</div>
@@ -304,14 +304,14 @@ const TableGenerator = ({
                     <th
                       key={col}
                       onClick={() => handleSort(col)}
-                      className="px-5 py-3 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-[0.4px] select-none cursor-pointer hover:bg-[#EDE9FE] hover:text-[#7C3AED] transition-colors"
+                      className="px-5 py-3 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-[0.4px] select-none cursor-pointer hover:bg-[var(--module-ticket-light)] hover:text-[var(--module-ticket)] transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
                         {col === "__actions" ? "Actions" : formatColumnName(col)}
                         {sortConfig.key === col &&
                           (sortConfig.direction === "asc"
-                            ? <ChevronUp size={13} className="text-[#7C3AED]" />
-                            : <ChevronDown size={13} className="text-[#7C3AED]" />)}
+                            ? <ChevronUp size={13} className="text-[var(--module-ticket)]" />
+                            : <ChevronDown size={13} className="text-[var(--module-ticket)]" />)}
                       </div>
                     </th>
                   ))}
@@ -333,7 +333,7 @@ const TableGenerator = ({
                               {onEdit && (
                                 <button
                                   onClick={() => onEdit(row)}
-                                  className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] bg-[#EDE9FE] text-[#7C3AED] hover:bg-[#7C3AED] hover:text-white transition-colors"
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] bg-[var(--module-ticket-light)] text-[var(--module-ticket)] hover:bg-[var(--module-ticket)] hover:text-white transition-colors cursor-pointer"
                                   title="Edit"
                                 >
                                   <Pencil size={13} />
@@ -342,7 +342,7 @@ const TableGenerator = ({
                               {onDelete && (
                                 <button
                                   onClick={() => onDelete(row)}
-                                  className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] bg-[#FEE2E2] text-[#EF4444] hover:bg-[#EF4444] hover:text-white transition-colors"
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] bg-[var(--tracker-danger-light)] text-[var(--tracker-danger)] hover:bg-[var(--tracker-danger)] hover:text-white transition-colors cursor-pointer"
                                   title="Delete"
                                 >
                                   <Trash2 size={13} />
