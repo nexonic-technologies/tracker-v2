@@ -1,7 +1,18 @@
 # Core Module Brain
 
 ## Overview
-This module contains the platform's core runtime: the Populate Engine, Policy Engine, CBAC system, cache layer, and authentication infrastructure.
+This module contains the platform's core runtime: the Populate Engine, Policy Engine, Multi-Tenant Database Connection Manager, CBAC system, cache layer, and authentication infrastructure.
+
+## Authentication & Performance Architecture (Login Latency Optimization)
+- **Zero Cold-Start Pre-Warming**: `Backend/src/index.js` (`initApp()`) pre-warms default and active tenant database connections, static model compilations, dynamic schema definitions, and indexes at server startup. This prevents cold-start delays on initial user logins.
+- **Stage Timing Telemetry**: `AuthController.login` measures and emits high-resolution timing breakdowns (`performance.now()`) for:
+  - `globalUserLookup`: Global DB identity query
+  - `bcryptCompare`: Password hash comparison
+  - `tenantResolve`: Tenant record and active module lookup
+  - `tenantConnection`: `TenantConnectionManager.getTenantConnection` (instant RAM cache hit after pre-warm)
+  - `empLookup`: Tenant Employee and populated Role query (`.lean()`)
+  - `tokenSign`: JWT access/refresh secret token generation
+  - `sessionCreate`: Database Session record creation
 
 ## Backend Models
 | Model | File | Lines | References |
@@ -59,31 +70,3 @@ ETag = W/"${userId}-${roleId}-${permissionVersion}-${cacheVersion}"
 Client sends If-None-Match → if matches → 304 (no body)
 Role update → permissionVersion++ → ETag changes → next request gets fresh context
 ```
-
-## Populate Engine Critical Fixes (2026-07-05)
-
-### Path Collision Fix (`buildReadQuery.js`)
-**Problem**: Mongoose "Path collision at professionalInfo" error when populating nested refs.
-
-**Root Cause**: The old tree-based populate builder split `professionalInfo.designation` into a tree where `professionalInfo` was the parent node. `Model.schema.path('professionalInfo')` returns `undefined` for nested subdocument parents, so the fallback incorrectly treated it as a ref (`isRef = true`). Mongoose then tried `.populate({ path: 'professionalInfo', populate: [...] })` — but `professionalInfo` is NOT a ref.
-
-**Fix**: Replaced tree-based approach with **flat populate**. Each full dot-notation path (e.g., `professionalInfo.designation`) is checked directly against the schema. Non-ref paths are skipped.
-
-### sanitizeRead Path Collision Guard
-Added deduplication in `sanitizeRead.js` to automatically collapse parent/child field selections:
-- `['professionalInfo', 'professionalInfo.designation']` → `['professionalInfo']`
-- Prevents Mongoose projection conflicts globally (main queries AND populated sub-queries)
-
-### Validator.js Bug Fix
-Found and fixed `if (fields) // console.log(...)` pattern that was swallowing the next statement. This caused `bodyValidator` to be skipped for create/update actions when `fields` was falsy — a security-impacting bug.
-
-## Dynamic API Usage
-| File | Method | URL | Target Model |
-|---|---|---|---|
-| Teams.jsx | POST | /populate/read/employees | employees |
-| useGenericAPI.js | POST | /populate/create/${model} | ${model} |
-| useGenericAPI.js | PUT | /populate/update/${model}/${id} | ${model} |
-| useGenericAPI.js | DELETE | /populate/delete/${model}/${id} | ${model} |
-| useGenericAPI.js | POST | /populate/bulk-create/${model} | ${model} |
-| useGenericAPI.js | PUT | /populate/bulk-update/${model} | ${model} |
-| useGenericAPI.js | DELETE | /populate/bulk-delete/${model} | ${model} |

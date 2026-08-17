@@ -25,10 +25,14 @@ export default async function workHours(state) {
   // Apply break duration deduction if available on shift
   const breakMins = state.shift?.breakDuration || 0;
   if (breakMins > 0 && workHours > (breakMins / 60)) {
-    // Break deduction is applied only if total span exceeds break threshold
+    // Break deduction is applied only if total span exceeds break deduction threshold from policy
+    const minHoursForBreakDeduction = state.policy?.attendanceRules?.breakDeductionMinHours !== undefined 
+      ? state.policy.attendanceRules.breakDeductionMinHours 
+      : 5.0;
+
     const breakHours = breakMins / 60;
     // Don't deduct break if explicitly logged as multiple punches
-    if (punches.length <= 1 && workHours > 5) { 
+    if (punches.length <= 1 && workHours > minHoursForBreakDeduction) { 
       workHours = Math.max(0, workHours - breakHours);
     }
   }

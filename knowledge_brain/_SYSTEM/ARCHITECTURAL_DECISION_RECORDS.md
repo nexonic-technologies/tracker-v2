@@ -133,6 +133,33 @@ Maintain a centralized JSON configuration matrix (`access_policies.json`) and ru
 
 ---
 
+## [ADR-005] Strict Policy Authority, Configuration Readiness Gates & Traceable Reports
+
+### Category
+Business Logic Architecture & Financial Integrity
+
+### Status
+`IMPLEMENTED`
+
+### Context
+Previous calculation engines silently fell back to arbitrary hardcoded numbers (e.g. 8-hour days, 15-minute grace, 480-minute OT thresholds, default shifts, and hardcoded statutory rates) when persisted configuration was missing. This created policy leakage, violated multi-tenant SaaS isolation, and made historical payroll calculations non-reproducible if policies were later modified.
+
+### Decision
+1. **Zero Manufactured Defaults**: No attendance or payroll calculation engine may supply fallback business rules in code. If an employee lacks an active policy or shift, the system fails explicitly with `ATTENDANCE_POLICY_REQUIRED` or `PAYROLL_CONFIGURATION_REQUIRED`.
+2. **Policy Precedence Hierarchy**:
+   - **Attendance**: `AttendancePolicy` → `Shift` → `GeneralSettings` → `REJECT`.
+   - **Payroll**: `SalaryStructure` → `GeneralSettings.payroll` → `REJECT`.
+3. **Immutable Policy Versioning**: Updates to active policies archive the old document and generate a new version increment with updated `effectiveFrom`. Historical attendance snapshots retain the exact policy ID and version that produced them.
+4. **Configuration Readiness Gate**: In `payrollruns.js`, any employee lacking a mandatory salary structure triggers a `CONFIGURATION_ERROR` note on the run and **blocks final approval** until resolved. Missing employees are never silently skipped.
+5. **Authoritative Report Projection**: The Monthly Payroll Submission Register consumes frozen `Attendance.snapshot` objects and authoritative `Payroll` records. The report never derives or recalculates values independently.
+6. **Zero Cold-Start Pre-Warming**: Tenant connections, static model compilations, and indexes are pre-warmed at server startup in `index.js` (`initApp()`), eliminating first-login cold-start latency.
+
+### Consequences
+- **Benefits**: Complete mathematical traceability for accountants and auditors; reproducible payroll history; total multi-tenant policy isolation; sub-second warm logins.
+- **Trade-offs**: Requires organization administrators to configure valid policies and salary structures before attendance or payroll runs can be processed.
+
+---
+
 ## [ADR-014] Decouple Payroll Calculation from Persistence
 
 ### Category

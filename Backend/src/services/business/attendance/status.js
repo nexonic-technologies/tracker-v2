@@ -7,11 +7,16 @@
  */
 export default async function status(state) {
   const policyRules = state.policy?.attendanceRules || {};
+  const shiftConfig = state.policy?.shiftConfig || {};
   const shift = state.shift || {};
   
-  const fullDayMin = policyRules.fullDayMinHours || 8.0;
-  const halfDayMin = policyRules.halfDayMinHours || 4.0;
-  const absentMin = policyRules.absentMinHours || 2.0;
+  const fullDayMin = policyRules.fullDayMinHours !== undefined ? policyRules.fullDayMinHours : shift.workingHours;
+  const halfDayMin = policyRules.halfDayMinHours !== undefined ? policyRules.halfDayMinHours : (fullDayMin ? fullDayMin / 2 : undefined);
+  const absentMin = policyRules.absentMinHours !== undefined ? policyRules.absentMinHours : (fullDayMin ? fullDayMin / 4 : undefined);
+
+  if (fullDayMin === undefined || halfDayMin === undefined || absentMin === undefined) {
+    throw new Error('ATTENDANCE_POLICY_REQUIRED: Missing fullDayMinHours, halfDayMinHours, or absentMinHours in policy configuration');
+  }
 
   const workedHours = state.workHours || 0;
   const checkIn = state.checkIn || (state.punches && state.punches[0]?.checkIn);
@@ -27,7 +32,7 @@ export default async function status(state) {
     const checkInMinsPastMidnight = checkInDate.getUTCHours() * 60 + checkInDate.getUTCMinutes();
     const shiftStartMinsPastMidnight = startH * 60 + startM;
 
-    const baseGraceMins = state.policy?.shiftConfig?.graceMinutesCheckIn || 15;
+    const baseGraceMins = shiftConfig.graceMinutesCheckIn !== undefined ? shiftConfig.graceMinutesCheckIn : (shift.graceMinutesCheckIn !== undefined ? shift.graceMinutesCheckIn : 0);
     const permissionMins = (state.permissionHoursApplied || 0) * 60;
     
     // Total allowable window = Shift Start + Grace + Approved Permission
@@ -46,7 +51,7 @@ export default async function status(state) {
     const checkOutMinsPastMidnight = checkOutDate.getUTCHours() * 60 + checkOutDate.getUTCMinutes();
     const shiftEndMinsPastMidnight = endH * 60 + endM;
 
-    const graceOutMins = state.policy?.shiftConfig?.graceMinutesCheckOut || 15;
+    const graceOutMins = shiftConfig.graceMinutesCheckOut !== undefined ? shiftConfig.graceMinutesCheckOut : (shift.graceMinutesCheckOut !== undefined ? shift.graceMinutesCheckOut : 0);
 
     if (checkOutMinsPastMidnight < (shiftEndMinsPastMidnight - graceOutMins)) {
       earlyExitMinutes = shiftEndMinsPastMidnight - checkOutMinsPastMidnight;

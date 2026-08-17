@@ -1,14 +1,6 @@
 import React from 'react';
-import ReportPageLayout from '../reports/report-page-layout';
+import MonthlyPayrollSubmissionReport from '../reports/payroll-submission';
 
 export default function MonthlyPayrollReportPage() {
-  return (
-    <ReportPageLayout
-      title="Monthly Payroll Register & Variance Audit"
-      description="Gross-to-net salary breakdown, deductions, and variance."
-      endpoint="/populate/report/payrolls"
-      reportCode="H-15"
-      activeTab="payroll"
-    />
-  );
+  return <MonthlyPayrollSubmissionReport />;
 }

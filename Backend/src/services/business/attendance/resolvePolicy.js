@@ -74,17 +74,12 @@ export default async function resolvePolicy(state) {
     }
   }
 
-  // Default hardcoded fallback shift object if none exists in DB
+  if (!resolvedPolicy) {
+    throw new Error('ATTENDANCE_POLICY_REQUIRED: No active attendance policy configured for employee or department.');
+  }
+
   if (!resolvedShift) {
-    resolvedShift = {
-      name: 'Default Shift',
-      startTime: '09:30',
-      endTime: '18:00',
-      breakDuration: 60,
-      workingHours: 8.0,
-      weeklyOff: ['Sunday'],
-      alternateWeeklyOff: 'None'
-    };
+    throw new Error('ATTENDANCE_POLICY_REQUIRED: No active shift configured for employee attendance calculation.');
   }
 
   return {

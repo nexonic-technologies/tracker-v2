@@ -7,20 +7,30 @@
  */
 export default async function overtime(state) {
   const policyOt = state.policy?.overtimeRules || {};
-  const shiftOtThreshold = state.shift?.overtimeThreshold || policyOt.overtimeThresholdMins || 480; // 8 hrs
   
-  if (!policyOt.enabled && !state.shift?.overtimeThreshold) {
+  const isOtEnabled = policyOt.enabled || !!state.shift?.overtimeThreshold;
+  if (!isOtEnabled) {
     return { ...state, overtimeHours: 0, overtimeMinutes: 0 };
   }
 
+  // Precedence: AttendancePolicy.overtimeRules.overtimeThresholdMins -> Shift.overtimeThreshold -> Shift.workingHours * 60
+  let thresholdMins = policyOt.overtimeThresholdMins !== undefined 
+    ? policyOt.overtimeThresholdMins 
+    : (state.shift?.overtimeThreshold !== undefined 
+        ? state.shift.overtimeThreshold 
+        : (state.shift?.workingHours ? state.shift.workingHours * 60 : undefined));
+
+  if (thresholdMins === undefined) {
+    throw new Error('ATTENDANCE_POLICY_REQUIRED: Missing overtime threshold in policy or shift configuration');
+  }
+
   const workedMins = (state.workHours || 0) * 60;
-  const thresholdMins = shiftOtThreshold;
   
   let otMins = 0;
   if (workedMins > thresholdMins) {
     otMins = workedMins - thresholdMins;
 
-    // Apply minimum overtime window check
+    // Apply minimum overtime window check from policy
     const minOtMins = policyOt.minOvertimeMins || 0;
     if (otMins < minOtMins) {
       otMins = 0;
@@ -33,8 +43,9 @@ export default async function overtime(state) {
     }
 
     // Apply daily overtime cap if configured
-    const maxOtMins = policyOt.maxOvertimeMinsPerDay || 1440;
-    otMins = Math.min(otMins, maxOtMins);
+    if (policyOt.maxOvertimeMinsPerDay !== undefined && policyOt.maxOvertimeMinsPerDay > 0) {
+      otMins = Math.min(otMins, policyOt.maxOvertimeMinsPerDay);
+    }
   }
 
   const otHours = Math.round((otMins / 60) * 100) / 100;

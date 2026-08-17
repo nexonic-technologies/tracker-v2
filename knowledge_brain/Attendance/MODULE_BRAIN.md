@@ -1,43 +1,41 @@
 # Attendance Module Brain
 
 ## Overview
-This module contains 7 models, 3 services, and 9 frontend files.
+This module governs daily attendance tracking, shift scheduling, punctuality rules, overtime derivation, leave transactions, regularizations, and immutable policy snapshotting.
+
+## Core Architectural Invariant
+**Strict Policy-Driven Execution**: Zero hardcoded business thresholds (hours, grace periods, OT caps, LOP multipliers) exist in business handlers. If no valid policy or shift is resolved for an employee on a target date, the engine fails explicitly with `ATTENDANCE_POLICY_REQUIRED` rather than manufacturing fallback values.
+
+### Resolution Precedence
+```
+AttendancePolicy → Shift → GeneralSettings → REJECT
+```
 
 ## Backend Models
-| Model | File | Lines | Key Fields | Notes |
-|---|---|---|---|---|
-| Attendance | Attendance.js | 46 | status | Refs: employees, leave_types |
-| DailyActivity | DailyActivity.js | 26 | `status` (String, no enum), `metaStatus` (String, default: active) | Status driven by status_configs. Refs: clients, project_types, employees, task_types |
-| Leave | Leave.js | 33 | `status` (String, no enum), `metaStatus` (String, default: active) | Status driven by status_configs. Refs: employees, departments, leave_types |
-| LeavePolicy | LeavePolicy.js | ~25 | `status`, `effectiveFrom`, `effectiveTo`, `version` | Refs: leave_types, roles, departments, designations |
-| leave_types | leave_types.js | 23 | — | |
-| Regularization | Regularization.js | 46 | `status` (String, no enum), `metaStatus` (String, default: active) | Status driven by status_configs. Refs: employees, departments, attendances |
-| Shift | Shift.js | 43 | — | Refs: Employee, Shift |
-
-> **Dynamic status (as of 2026-06-10)**: Leave, Regularization, DailyActivity — all had hardcoded `enum: ['Pending','Approved','Rejected']` removed. Status values now come from `status_configss` collection. `metaStatus` (default: `'active'`) added for record lifecycle tracking.
-
-## Backend Services (Business Logic Hooks)
-| Service File | Lines | Exported Functions | Notes |
+| Model | File | Key Fields | Notes |
 |---|---|---|---|
-| attendances.js | 141 | — | |
-| leaves.js | 221 | `beforeCreate`, `afterCreate`, `beforeUpdate`, `afterUpdate` | Handles request validation and balance adjustments |
-| regularizations.js | 141 | — | |
-| leavepolicy.js | ~180 | `beforeUpdate`, `afterUpdate` | Immutability checks + balance propagation to employees |
+| `Attendance` | `Attendance.js` | `employee`, `date`, `checkIn`, `checkOut`, `punches[]`, `workHours`, `lateMinutes`, `earlyExitMinutes`, `status`, `snapshot` | Stores frozen `snapshot` capturing exact policy ID, version, shift times, and calculated results. |
+| `AttendancePolicy` | `AttendancePolicy.js` | `version`, `status` (Draft/Active/Archived), `effectiveFrom`, `effectiveTo`, `shiftConfig`, `attendanceRules`, `permissionRules`, `lateEscalationRules`, `holidayWorkRules`, `overtimeRules`, `fineAndLopRules` | Immutable versioning: modifying an active policy archives the old document and generates a new version increment. |
+| `Shift` | `Shift.js` | `name`, `startTime`, `endTime`, `workingHours`, `breakDuration`, `weeklyOff[]`, `alternateWeeklyOff`, `overtimeThreshold` | Governs scheduled work windows and shift rules. |
+| `ShiftAssignment` | `Shift.js` | `employeeId`, `shiftId`, `startDate`, `endDate`, `isActive` | Date-ranged employee shift allocation. |
+| `DailyActivity` | `DailyActivity.js` | `status`, `metaStatus` | Activity and timesheet entries. |
+| `Leave` | `Leave.js` | `status`, `metaStatus`, `startDate`, `endDate`, `leaveType` | Approved leaves consumed by payroll calculation. |
+| `Regularization` | `Regularization.js` | `status`, `metaStatus`, `attendanceId`, `reason` | Clock-in/out regularization workflow. |
+
+## Calculation Pipeline Handlers (`Backend/src/services/business/attendance/`)
+| Handler | File | Responsibility | Business Rule Authority |
+|---|---|---|---|
+| `resolvePolicy` | `resolvePolicy.js` | Resolves effective `AttendancePolicy` and `Shift` | `Employee.professionalInfo.policyAssignments` → `Department.attendancePolicy` → Active Policy. Fails if missing. |
+| `status` | `status.js` | Full/half/absent and punctuality evaluation | `AttendancePolicy.attendanceRules` (`fullDayMinHours`, `halfDayMinHours`, `absentMinHours`, grace minutes). |
+| `overtime` | `time/overtime.js` | Computes eligible overtime duration | `AttendancePolicy.overtimeRules` → `Shift.overtimeThreshold`. |
+| `workHours` | `time/workHours.js` | Total net worked duration & break deduction | `AttendancePolicy.attendanceRules.breakDeductionMinHours` + `Shift.breakDuration`. |
+| `fine` | `fine.js` | Computes late fines and LOP day factors | `AttendancePolicy.fineAndLopRules` (`absentLopDays`, `halfDayLopDays`). |
+| `permission` | `permission.js` | Offsets lateness with approved permissions | `AttendancePolicy.permissionRules`. |
+| `snapshot` | `snapshot.js` | Builds frozen immutable snapshot on Attendance doc | Pure snapshot builder recording policy version and calculation timestamp. |
 
 ## Dynamic API Usage
 | File | Method | URL | Target Model |
 |---|---|---|---|
-| [id].jsx | POST | /populate/read/daily_activities/${id} | daily_activities |
-| add-daily-activity.jsx | POST | /populate/create/daily_activities | daily_activities |
-| index.jsx | POST | /populate/read/daily_activities | daily_activities |
-| index.jsx | GET | /populate/read/attendances?filter=${encodeURIComponent(filter)} | attendances?filter=${encodeURIComponent(filter)} |
-| index.jsx | POST | /populate/create/attendances | attendances |
-| index.jsx | PUT | /populate/update/attendances/${todayRec._id} | attendances |
-| leave-regularization.jsx | POST | /populate/read/employees/${user.id} | employees |
-| leave-regularization.jsx | POST | /populate/read/attendances | attendances |
-| leave-regularization.jsx | POST | /populate/read/employees/${user.id} | employees |
-| leave-regularization.jsx | POST | /populate/create/leaves | leaves |
-| leave-regularization.jsx | POST | /populate/create/regularizations | regularizations |
-| model.jsx | GET | /populate/read/leaves/${id} | leaves |
-| pending-approvals.jsx | GET | /populate/read/leaves | leaves |
-| pending-approvals.jsx | GET | /populate/read/regularizations | regularizations |
+| `index.jsx` | GET/POST/PUT | `/populate/:action/attendances` | `attendances` |
+| `leave-regularization.jsx` | POST | `/populate/:action/leaves`, `/populate/:action/regularizations` | `leaves`, `regularizations` |
+| `pending-approvals.jsx` | GET | `/populate/read/leaves`, `/populate/read/regularizations` | `leaves`, `regularizations` |

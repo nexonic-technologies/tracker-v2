@@ -198,10 +198,14 @@ class ReportService {
 
     return payrolls.map(p => {
       const emp = p.employeeId || {};
-      const basic = p.earnings?.find(e => e.name?.toLowerCase().includes('basic'))?.amount || p.grossSalary * 0.5;
-      const pfEE = p.deductions?.find(d => d.name?.toLowerCase().includes('pf'))?.amount || 0;
-      const esiEE = p.deductions?.find(d => d.name?.toLowerCase().includes('esi'))?.amount || 0;
-      const tds = p.deductions?.find(d => d.name?.toLowerCase().includes('tds') || d.name?.toLowerCase().includes('tax'))?.amount || 0;
+      const earned = p.earnedBreakdown || {};
+      const deducted = p.deductionBreakdown || {};
+
+      const basic = earned['Basic'] || 0;
+      const pfEE = deducted['PF Employee'] || deducted['PF'] || 0;
+      const esiEE = deducted['ESI Employee'] || deducted['ESI'] || 0;
+      const tds = deducted['TDS'] || 0;
+      const totalDeductions = Object.values(deducted).reduce((s, v) => s + (Number(v) || 0), 0);
 
       return {
         empId: emp.professionalInfo?.empId || '-',
@@ -214,15 +218,14 @@ class ReportService {
         pfEmployee: Math.round(pfEE),
         esiEmployee: Math.round(esiEE),
         tdsDeduction: Math.round(tds),
-        totalDeductions: Math.round(p.totalDeductions || 0),
-        netPayable: Math.round(p.netPay || 0),
+        totalDeductions: Math.round(totalDeductions),
+        netPayable: Math.round(p.netSalary || 0),
         paymentStatus: p.status || 'Pending'
       };
     });
   }
 
   async getBankAdviceExport(month, year) {
-    const data = await this.getMonthlyPayrollRegister(month, year);
     const payrolls = await Payroll.find({ month: parseInt(month, 10), year: parseInt(year, 10) })
       .populate('employeeId', 'basicInfo professionalInfo accountDetails')
       .lean();
@@ -237,7 +240,7 @@ class ReportService {
         accountNumber: acc.accountNo || '-',
         ifscCode: acc.ifscCode || '-',
         branch: acc.branch || '-',
-        netAmount: Math.round(p.netPay || 0),
+        netAmount: Math.round(p.netSalary || 0),
         currency: 'INR',
         narration: `Salary payout for ${month}/${year}`
       };
@@ -252,22 +255,23 @@ class ReportService {
     return payrolls.map(p => {
       const emp = p.employeeId || {};
       const gross = Math.round(p.grossSalary || 0);
-      const epfWages = Math.min(gross, 15000);
-      const eePF = Math.round(epfWages * 0.12);
-      const epsER = Math.round(epfWages * 0.0833);
-      const epfER = eePF - epsER;
+      const basic = Math.round(p.earnedBreakdown?.['Basic'] || 0);
+      const eePF = Math.round(p.deductionBreakdown?.['PF Employee'] || p.deductionBreakdown?.['PF'] || 0);
+      const erPF = Math.round(p.pfEmployerContribution || eePF);
+      const epsER = Math.round(erPF * 0.7); // Statutory pension allocation split
+      const epfER = erPF - epsER;
 
       return {
         uan: emp.personalDocuments?.pf || '100000000000',
         employeeName: `${emp.basicInfo?.firstName || ''} ${emp.basicInfo?.lastName || ''}`.trim(),
         grossWages: gross,
-        epfWages,
-        epsWages: epfWages,
-        edliWages: epfWages,
+        epfWages: basic,
+        epsWages: basic,
+        edliWages: basic,
         epfEEAmount: eePF,
         epsERAmount: epsER,
         epfERAmount: epfER,
-        ncpDays: p.unpaidLeaveDays || 0,
+        ncpDays: p.lopDays || 0,
         refundOfAdv: 0
       };
     });
@@ -281,13 +285,13 @@ class ReportService {
     return payrolls.map(p => {
       const emp = p.employeeId || {};
       const gross = Math.round(p.grossSalary || 0);
-      const eeESI = Math.round(gross * 0.0075);
-      const erESI = Math.round(gross * 0.0325);
+      const eeESI = Math.round(p.deductionBreakdown?.['ESI Employee'] || p.deductionBreakdown?.['ESI'] || 0);
+      const erESI = Math.round(p.esiEmployerContribution || 0);
 
       return {
         ipNumber: emp.personalDocuments?.esi || '3100000000',
         ipName: `${emp.basicInfo?.firstName || ''} ${emp.basicInfo?.lastName || ''}`.trim(),
-        daysWorked: p.payableDays || 26,
+        daysWorked: p.presentDays || 0,
         totalWages: gross,
         employeeESIContribution: eeESI,
         employerESIContribution: erESI,

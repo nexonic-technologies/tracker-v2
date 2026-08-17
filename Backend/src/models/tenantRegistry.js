@@ -56,6 +56,7 @@ import time_tracker_sessions from "./TimeTrackerSession.js";
 import workflows from "./Workflow.js";
 import wfh_requests from "./WFHRequest.js";
 import comp_off_requests from "./CompOffRequest.js";
+import user_overrides from "./UserOverride.js";
 import resources from "./Resource.js";
 import capabilities from "./Capability.js";
 import grants from "./Grant.js";
@@ -121,7 +122,7 @@ export const MODULE_METADATA = {
 export const MODULE_DEFINITIONS = {
   core: [
     'general_settings', 'access_policies', 'roles', 'session', 'audit_log', 'error_log',
-    'sidebars', 'api_hit_logs', 'capabilities', 'grants', 'status_configs', 'status_mappings', 'activity_logs',
+    'sidebars', 'api_hit_logs', 'capabilities', 'grants', 'user_overrides', 'useroverrides', 'status_configs', 'status_mappings', 'activity_logs',
     'notifications', 'notification_receptionists', 'notification_preferences', 'notification_rules', 'notification_deliveries',
     'employees', 'departments', 'designations', 'company', 'clients', 'contacts', 'service_providers',
     'products', 'project_types',
@@ -242,6 +243,8 @@ const staticModelMap = {
   assets_stock_ledgers,
   capabilities,
   grants,
+  user_overrides,
+  useroverrides: user_overrides,
   attendance_policies,
   leave_transactions,
   payments,

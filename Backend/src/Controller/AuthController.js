@@ -14,6 +14,8 @@ import { getGlobalModels } from "../models/global/index.js";
 /* -------------------------------- LOGIN -------------------------------- */
 
 export const login = async (req, res, next) => {
+  const t0 = performance.now();
+  const timings = {};
   try {
     const { workEmail, email, password, platform = "web" } = req.body;
     const deviceUUID = req.headers['x-device-uuid'] || req.headers['deviceuuid'];
@@ -33,12 +35,17 @@ export const login = async (req, res, next) => {
     let userType = "employee";
 
     // 1. Try Global UserLogin central auth first
+    const tGlobalStart = performance.now();
     try {
       const { UserLogin, Tenant } = getGlobalModels();
       const globalUser = await UserLogin.findOne({ email: emailToUse.toLowerCase() });
+      timings.globalUserLookup = +(performance.now() - tGlobalStart).toFixed(2);
 
       if (globalUser) {
+        const tBcrypt = performance.now();
         const isValidGlobal = await globalUser.comparePassword(password);
+        timings.bcryptCompare = +(performance.now() - tBcrypt).toFixed(2);
+
         if (!isValidGlobal) {
           return res.status(401).json({ message: "Invalid credentials" });
         }
@@ -47,6 +54,8 @@ export const login = async (req, res, next) => {
         let tenantSlug = tenantId;
         let tenantRec = null;
         let tenantModules = ['*'];
+
+        const tTenantRes = performance.now();
         try {
           tenantRec = await Tenant.findOne({ tenantId: globalUser.tenantId }).populate('enabledModules').lean();
           if (tenantRec?.slug) tenantSlug = tenantRec.slug;
@@ -59,6 +68,7 @@ export const login = async (req, res, next) => {
             }).filter(Boolean);
           }
         } catch (_) { }
+        timings.tenantResolve = +(performance.now() - tTenantRes).toFixed(2);
 
         let resolvedName = globalUser.name;
         let resolvedRole = globalUser.role || 'Employee';
@@ -68,14 +78,19 @@ export const login = async (req, res, next) => {
         let resolvedManager = null;
 
         if (globalUser.employeeId && dbName) {
+          const tTenantConn = performance.now();
           try {
             const { default: TenantConnectionManager } = await import("../tenant/TenantConnectionManager.js");
-            const { conn, models: tenantModels } = await TenantConnectionManager.getTenantConnection(dbName);
+            const { conn, models: tenantModels } = await TenantConnectionManager.getTenantConnection(dbName, tenantModules);
+            timings.tenantConnection = +(performance.now() - tTenantConn).toFixed(2);
+
+            const tEmpLookup = performance.now();
             const EmpModel = tenantModels?.employees || conn.models.employees || conn.model('employees', Employee.schema);
             const RoleModel = tenantModels?.roles || conn.models.roles || conn.model('roles', models.roles.schema);
             const empDoc = await EmpModel.findById(globalUser.employeeId)
               .populate('professionalInfo.role')
               .lean();
+            timings.empLookup = +(performance.now() - tEmpLookup).toFixed(2);
 
             if (empDoc?.basicInfo) {
               resolvedName = [empDoc.basicInfo.firstName, empDoc.basicInfo.lastName].filter(Boolean).join(' ');
@@ -148,6 +163,7 @@ export const login = async (req, res, next) => {
 
     // 2. Fallback: Validate against legacy local models if not authenticated via Global UserLogin
     if (!user) {
+      const tLegacy = performance.now();
       user = await Employee.findOne({
         "authInfo.workEmail": emailToUse,
       });
@@ -173,6 +189,8 @@ export const login = async (req, res, next) => {
           isValid = password === user.password;
         }
       }
+
+      timings.legacyAuth = +(performance.now() - tLegacy).toFixed(2);
 
       if (!isValid) {
         return res.status(401).json({ message: "Invalid credentials" });
@@ -205,6 +223,7 @@ export const login = async (req, res, next) => {
     }
 
     // 3. Generate secrets + jti
+    const tToken = performance.now();
     const accessSecret = generateSecret();
     const refreshSecret = generateSecret();
     const jti = generateJti();
@@ -219,8 +238,10 @@ export const login = async (req, res, next) => {
       refreshSecret,
       { expiresIn: platform === "mobile" ? "36500d" : "7d" }
     );
+    timings.tokenSign = +(performance.now() - tToken).toFixed(2);
 
     // 5. Create session
+    const tSession = performance.now();
     const userSession = await session.create({
       userId: payload.id,
       userModel: userType === "employee" ? "employees" : "agents",
@@ -240,6 +261,7 @@ export const login = async (req, res, next) => {
       deviceInfo: getDeviceInfo(req, platform),
       status: "Active",
     });
+    timings.sessionCreate = +(performance.now() - tSession).toFixed(2);
 
     // 6. Set cookies (web)
     if (platform === "web") {
@@ -256,12 +278,17 @@ export const login = async (req, res, next) => {
       });
     }
 
+    const totalTimeMs = +(performance.now() - t0).toFixed(2);
+    timings.total = totalTimeMs;
+    console.log(`[LOGIN_TIMING] User: ${emailToUse} | Total: ${totalTimeMs}ms | Breakdown:`, JSON.stringify(timings));
+
     return res.json({
       message: "Login successful",
       accessToken,
       refreshToken,
       sessionId: userSession._id,
       platform,
+      _timings: process.env.NODE_ENV === 'development' ? timings : undefined
     });
   } catch (err) {
     next(err);

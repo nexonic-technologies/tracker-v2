@@ -34,6 +34,7 @@ export async function buildUserContext(userId, roleId) {
   const EmpModel = tenantContext?.getModel ? tenantContext.getModel('employees') : Employee;
   const ResourceModel = tenantContext?.getModel ? tenantContext.getModel('resources') : Resource;
   const SideBarModel = tenantContext?.getModel ? tenantContext.getModel('sidebars') : SideBar;
+  const CapabilityModel = tenantContext?.getModel ? tenantContext.getModel('capabilities') : Capability;
 
   let roleStr = roleId?.toString();
 

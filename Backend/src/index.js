@@ -523,6 +523,31 @@ export async function initApp() {
   } catch (error) {
     // Silenced — CBAC cache failure is non-fatal
   }
+
+  // 4. Pre-warm default & active tenant connections (Zero cold-start login latency)
+  try {
+    console.log("[initApp] Pre-warming tenant connections for instant login readiness...");
+    const { default: TenantConnectionManager } = await import('./tenant/TenantConnectionManager.js');
+    const defaultDb = process.env.DEFAULT_TENANT_DB || 'tracker_tenant_admin';
+    await TenantConnectionManager.getTenantConnection(defaultDb);
+
+    try {
+      const { getGlobalModels } = await import('./models/global/index.js');
+      const { Tenant } = getGlobalModels();
+      if (Tenant) {
+        const activeTenants = await Tenant.find({ status: { $in: ['active', 'Active'] } }).lean();
+        for (const t of activeTenants) {
+          const db = t.dbName || (t.tenantId ? `tracker_tenant_${t.tenantId}` : null);
+          if (db && db !== defaultDb) {
+            await TenantConnectionManager.getTenantConnection(db, t.enabledModules);
+          }
+        }
+      }
+    } catch (_) { }
+    console.log("[initApp] Tenant pre-warming completed successfully.");
+  } catch (preWarmErr) {
+    console.warn("[initApp] Non-fatal: Tenant pre-warming encountered an error:", preWarmErr.message);
+  }
 }
 
 export { app, server, io, activeConnections };

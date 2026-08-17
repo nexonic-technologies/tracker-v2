@@ -11,14 +11,14 @@ export function buildAttendanceSnapshot(state) {
   return {
     policy: {
       id: state.policy?._id || null,
-      name: state.policy?.name || 'Default Policy',
+      name: state.policy?.name || null,
       version: state.policy?.version || 1
     },
     shift: {
       id: state.shift?._id || null,
-      name: state.shift?.name || 'Default Shift',
-      startTime: state.shift?.startTime || '09:30',
-      endTime: state.shift?.endTime || '18:00'
+      name: state.shift?.name || null,
+      startTime: state.shift?.startTime || null,
+      endTime: state.shift?.endTime || null
     },
     result: {
       status: state.status || 'Present',

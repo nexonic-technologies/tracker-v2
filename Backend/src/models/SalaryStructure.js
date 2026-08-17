@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const earningSchema = new mongoose.Schema({
+  code: { type: String, trim: true },
   name: { type: String, required: true },
   type: { type: String, enum: ['fixed', 'variable', 'percentage_of_basic'], required: true },
   amount: { type: Number, required: true, min: 0 },
@@ -9,6 +10,7 @@ const earningSchema = new mongoose.Schema({
 }, { _id: false });
 
 const deductionSchema = new mongoose.Schema({
+  code: { type: String, trim: true },
   name: { type: String, required: true },
   type: { type: String, enum: ['fixed', 'percentage_of_basic', 'percentage_of_gross', 'statutory'], required: true },
   amount: { type: Number, required: true, min: 0 },

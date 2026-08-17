@@ -37,48 +37,49 @@ export default function payroll_runs() {
         employeeIds = active.map(e => e._id);
       }
 
-      // Filter out employees with no valid salary structure for this month
+      // Configuration Readiness Gate: Audit every employee for valid SalaryStructure & Policy
       const validIds = [];
-      const skipped = [];
+      const configErrors = [];
+
       for (const eid of employeeIds) {
+        const emp = await Employee.findById(eid).select('basicInfo professionalInfo').lean();
+        const empName = [emp?.basicInfo?.firstName, emp?.basicInfo?.lastName].filter(Boolean).join(' ') || eid.toString();
+        const empCode = emp?.professionalInfo?.empId || eid.toString();
+
         const struct = await SalaryStructure.findOne({
           employeeId: eid,
           effectiveFrom: { $lte: payrollDate },
           $or: [{ effectiveTo: null }, { effectiveTo: { $gte: payrollDate } }]
         }).lean();
+
         if (struct) {
           validIds.push(eid);
         } else {
-          // Fallback check: check if the employee profile has basic salary details populated
-          const emp = await Employee.findById(eid).select('salaryDetails').lean();
-          if (emp?.salaryDetails?.basic) {
-            validIds.push(eid);
-          } else {
-            skipped.push(eid.toString());
-          }
+          configErrors.push(`${empName} (${empCode}): Missing active Salary Structure`);
         }
       }
 
-      const skipNote = skipped.length > 0
-        ? `Skipped ${skipped.length} employee(s) — no salary structure: ${skipped.slice(0, 5).join(', ')}${skipped.length > 5 ? '…' : ''}`
+      const hasErrors = configErrors.length > 0;
+      const errorNote = hasErrors
+        ? `CONFIGURATION_ERROR: ${configErrors.length} employee(s) missing mandatory configuration:\n${configErrors.join('\n')}`
         : null;
 
       // Update run with resolved employees and move to Processing
       await PayrollRun.findByIdAndUpdate(docId, {
         $set: {
           employeeIds: validIds,
-          totalEmployees: validIds.length,
-          status: 'Processing'
+          totalEmployees: employeeIds.length,
+          status: 'Processing',
+          ...(errorNote ? { notes: errorNote } : {})
         },
         $push: {
           payrollAuditEvents: {
-            event: 'processing_started',
+            event: 'configuration_audit',
             performedBy: userId,
             timestamp: new Date(),
-            note: skipNote
+            note: errorNote || 'All employees passed configuration readiness gate.'
           }
-        },
-        ...(skipNote ? { $set: { notes: skipNote } } : {})
+        }
       });
 
       if (validIds.length === 0) {
@@ -111,6 +112,11 @@ export default function payroll_runs() {
         }
 
         if (body.status === 'Approved') {
+          // Block approval if any configuration errors were flagged
+          if (existingDoc.notes?.includes('CONFIGURATION_ERROR')) {
+            throw new Error(`Cannot approve PayrollRun: Unresolved configuration errors exist. Resolve missing employee salary structures before final approval.`);
+          }
+
           // Validate all linked payrolls are Processed
           const { default: Payroll } = await import('../models/Payroll.js');
           const unready = await Payroll.countDocuments({

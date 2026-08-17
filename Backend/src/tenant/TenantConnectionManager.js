@@ -31,6 +31,7 @@ class TenantConnectionManager {
    * @returns {Object} { conn, models }
    */
   async getTenantConnection(dbName, enabledModules = ['*']) {
+    const t0 = performance.now();
     if (!dbName) {
       throw new Error('[TenantConnectionManager] dbName is required');
     }
@@ -38,11 +39,15 @@ class TenantConnectionManager {
 
     const modulesKey = JSON.stringify((enabledModules || ['*']).sort());
 
-    // Check RAM LRU cache
+    // Check RAM LRU cache - instant hit if models already compiled for this database
     if (this.connectionCache.has(dbName)) {
       const cached = this.connectionCache.get(dbName);
-      if (cached.modulesKey === modulesKey) {
+      if (cached.conn && cached.models && (cached.modulesKey === modulesKey || modulesKey === '["*"]' || !enabledModules || enabledModules.length === 0)) {
         cached.lastAccessed = Date.now();
+        const hitDuration = +(performance.now() - t0).toFixed(2);
+        if (hitDuration > 50) {
+          console.log(`[TENANT_CONN_CACHE_HIT] db: ${dbName} | took: ${hitDuration}ms`);
+        }
         return { conn: cached.conn, models: cached.models };
       }
     }
@@ -53,14 +58,31 @@ class TenantConnectionManager {
     }
 
     // High performance useDb with socket pool reuse
+    const tUseDb = performance.now();
     const tenantConn = baseConn.useDb(dbName, { useCache: true });
+    const useDbDuration = +(performance.now() - tUseDb).toFixed(2);
 
     // Compile tenant models (static baseline + dynamic ModelDefinition from Global DB)
+    const tCompile = performance.now();
     const models = await compileTenantModels(tenantConn, enabledModules);
+    const compileDuration = +(performance.now() - tCompile).toFixed(2);
 
-    // Asynchronously trigger non-destructive schema migrations and index sync
-    runTenantMigrations(tenantConn).catch((err) => console.warn(`[TenantConnectionManager] Migration error on ${dbName}:`, err.message));
-    ensureTenantIndexes(tenantConn, models).catch((err) => console.warn(`[TenantConnectionManager] Indexing error on ${dbName}:`, err.message));
+    // Trigger non-destructive schema migrations and index sync
+    const tMigrate = performance.now();
+    runTenantMigrations(tenantConn)
+      .then(() => {
+        const dur = +(performance.now() - tMigrate).toFixed(2);
+        if (dur > 500) console.log(`[TENANT_MIGRATION_TIMING] db: ${dbName} | took: ${dur}ms`);
+      })
+      .catch((err) => console.warn(`[TenantConnectionManager] Migration error on ${dbName}:`, err.message));
+
+    const tIndex = performance.now();
+    ensureTenantIndexes(tenantConn, models)
+      .then(() => {
+        const dur = +(performance.now() - tIndex).toFixed(2);
+        if (dur > 500) console.log(`[TENANT_INDEX_TIMING] db: ${dbName} | took: ${dur}ms`);
+      })
+      .catch((err) => console.warn(`[TenantConnectionManager] Indexing error on ${dbName}:`, err.message));
 
     // Evict oldest if cache exceeded limit
     if (this.connectionCache.size >= this.maxCacheSize) {
@@ -73,6 +95,9 @@ class TenantConnectionManager {
       modulesKey,
       lastAccessed: Date.now(),
     });
+
+    const totalInitDuration = +(performance.now() - t0).toFixed(2);
+    console.log(`[TENANT_CONN_COLD_INIT] db: ${dbName} | total: ${totalInitDuration}ms (useDb: ${useDbDuration}ms, compile: ${compileDuration}ms)`);
 
     return { conn: tenantConn, models };
   }

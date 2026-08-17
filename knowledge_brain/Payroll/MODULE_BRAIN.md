@@ -1,115 +1,64 @@
 # Payroll Module Brain
 
+## Overview
+This module governs monthly compensation calculation, versioned salary structures, bulk payroll processing runs, statutory compliance derivations, accounting exports, and the Authoritative Monthly Payroll Submission Register.
+
+## Core Architectural Invariants
+1. **Zero Manufactured Defaults**: The payroll engine never invents salary structures or statutory rates. Precedence is strictly:
+   ```
+   SalaryStructure → GeneralSettings.payroll → REJECT
+   ```
+2. **Configuration Readiness Gate**: In `payrollruns.js`, any employee lacking a mandatory `SalaryStructure` triggers a `CONFIGURATION_ERROR` note and **blocks final approval** until resolved. Missing employees are never silently omitted.
+3. **Accountant Report Projection**: Reports consume frozen `Attendance.snapshot` records and authoritative `Payroll` documents. Reports never recalculate attendance or payroll independently.
+
+---
+
 ## Models
 
-| Model | Collection | Key fields |
+| Model | Collection | Key Fields |
 |---|---|---|
-| `Payroll` | `payrolls` | employeeId, month, year, salaryStructureId, payrollRunId, earnedBreakdown (Map), deductionBreakdown (Map), grossSalary, netSalary, workingDays, presentDays, lopDays, overtimePay, status (Draft/Processing/Processed/Approved/Paid), frozenAt, payslipUrl |
-| `SalaryStructure` | `salary_structures` | employeeId, version, effectiveFrom, effectiveTo (null=open), ctc, earnings[], deductions[], pfEmployeePercent, pfCeiling, esiApplicable, overtimeRate |
-| `PayrollRun` | `payroll_runs` | month, year, status (Draft/Processing/Computed/Approved/Paid), employeeIds[], payrollIds[], totalEmployees, processedCount (atomic), failedCount (atomic), totalGross (atomic), totalNet (atomic), payrollAuditEvents[] |
-| `Holiday` | `holidays` | date (unique), name, type (national/regional/optional/company), year |
+| `Payroll` | `payrolls` | `employeeId`, `month`, `year`, `salaryStructureId`, `payrollRunId`, `earnedBreakdown` (Map), `deductionBreakdown` (Map), `grossSalary`, `netSalary`, `workingDays`, `presentDays`, `lopDays`, `overtimeHours`, `overtimePay`, `pfEmployerContribution`, `esiEmployerContribution`, `status` (Draft/Processing/Processed/Approved/Paid), `frozenAt` |
+| `SalaryStructure` | `salary_structures` | `employeeId`, `version`, `effectiveFrom`, `effectiveTo`, `ctc`, `earnings[code, name, type, amount, isProratable]`, `deductions[code, name, type, amount, ceiling]`, `pfEmployeePercent`, `pfCeiling`, `esiApplicable`, `overtimeRate` |
+| `PayrollRun` | `payroll_runs` | `month`, `year`, `status` (Draft/Processing/Computed/Approved/Paid), `employeeIds[]`, `payrollIds[]`, `totalEmployees`, `processedCount`, `failedCount`, `totalGross`, `totalNet`, `payrollAuditEvents[]`, `notes` |
+| `Holiday` | `holidays` | `date` (unique), `name`, `type` (national/regional/optional/company), `year` |
 
-## Services
+---
+
+## Services & Engines
 
 | Service | File | Purpose |
 |---|---|---|
-| `payrollEngine` | `services/payrollEngine.js` | Pure computation — no Express |
-| `payrolls` | `services/payrolls.js` | Lifecycle hooks for Payroll CRUD |
-| `payroll_runs` | `services/payroll_runs.js` | Lifecycle hooks — bulk run trigger, state machine |
-| `salary_structures` | `services/salary_structures.js` | Versioning logic — close previous, auto-increment version |
+| `payrollEngine` | `Backend/src/services/business/payrollEngine.js` | Pure payroll computation engine: resolves structure, working days, attendance summaries, and statutory deductions. |
+| `payrollSubmissionReport` | `Backend/src/services/business/payrollSubmissionReport.js` | Authoritative Monthly Payroll Submission Register: batched queries, dynamic 1..31 daily attendance grid from frozen snapshots, dynamic earnings/deductions, and column-level ABAC security. |
+| `payrolls` | `Backend/src/services/payrolls.js` | Lifecycle CRUD hooks for individual Payroll records. |
+| `payrollruns` | `Backend/src/services/payrollruns.js` | Bulk payroll lifecycle, Configuration Readiness Gate, and state machine enforcement. |
+| `reportService` | `Backend/src/services/business/reportService.js` | Aggregation service for bank advice, PF ECR, and ESI monthly returns. |
 
-## Engine Functions
+---
 
-| Function | Reads | Returns |
-|---|---|---|
-| `resolveStructure(employeeId, payrollDate)` | `salary_structures` | Active structure for that date |
-| `computeWorkingDays(month, year, weeklyOff)` | `holidays` | `{ workingDays, holidayDates[] }` |
-| `computeAttendanceSummary(employeeId, month, year)` | `attendances`, `leaves`, `shifts` | `{ workingDays, presentDays, leaveDays, lopDays, overtimeHours }` |
-| `computeSalary(summary, structure)` | — (pure) | `{ earnedBreakdown, deductionBreakdown, grossSalary, netSalary, lopDays, overtimePay }` |
-| `runPayrollForEmployee(empId, month, year, processedBy, runId)` | All above + `payrolls` (upsert) | `{ payrollId, grossSalary, netSalary }` |
-| `runBulkPayroll(empIds, month, year, userId, runId)` | — | Queues Bull jobs |
-| `finalizeRun(runId, gross, net, payrollId)` | — | Atomic `$inc`; promotes run to Computed when all done |
-| `finalizeRunOnFailure(runId)` | — | Atomic `$inc failedCount`; same completion check |
+## Endpoints & Export Routes
 
-## Data Flow
-
-```
-POST /populate/create/payroll_runs
-  → payroll_runs.js afterCreate
-  → resolve employees (Active, valid structure)
-  → PayrollRun status = Processing
-  → runBulkPayroll() → N Bull jobs (payroll-compute)
-    → runPayrollForEmployee() per employee
-       → resolveStructure → computeWorkingDays → computeAttendanceSummary → computeSalary
-       → upsert Payroll (status: Processed, earnedBreakdown snapshotted)
-    → finalizeRun() atomic → Computed when all done
-
-PUT /populate/update/payroll_runs/:id { status: "Approved" }
-  → payroll_runs.js beforeUpdate → validate, stamp approvedBy/approvedAt
-
-PUT /populate/update/payroll_runs/:id { status: "Paid" }
-  → payroll_runs.js beforeUpdate → bulk Payroll.updateMany → Paid, stamp paidAt
-
-POST /populate/read/payrolls (employee)
-  → isSelf policy → scopes to own employeeId
-```
-
-## State Machines
-
-**Payroll:** `Draft → Processing → Processed → Approved → Paid`
-- Fields frozen after `Approved` (frozenAt stamped)
-- Only `Approved → Paid` allowed after freeze
-
-**PayrollRun:** `Draft → Processing → Computed → Approved → Paid`
-- `Processing` and `Computed` set internally by engine — blocked from client updates
-- Atomic `$inc` on processedCount/failedCount prevents race conditions
-
-## SalaryStructure Versioning
-
-- No `isActive` flag
-- Lookup: `effectiveFrom ≤ payrollDate AND (effectiveTo IS NULL OR effectiveTo ≥ payrollDate)`
-- `beforeCreate` in `salary_structures.js` closes previous open version's `effectiveTo = effectiveFrom - 1 day` and auto-increments `version`
-- Immutable fields: `employeeId`, `version`, `effectiveFrom`
-
-## Access Policies
-
-| Model | superadmin / hr | manager | employee |
+| Method | Route | Output | Security / Role |
 |---|---|---|---|
-| payrolls | full (no delete) | none | self-read (isSelf) |
-| salary_structures | full (no delete, limited update) | none | none |
-| payroll_runs | full (no delete, limited update fields) | none | none |
-| holidays | full | read | read |
+| `GET` | `/api/export/payroll-submission` | Authoritative Excel XLSX download (`exceljs`) | Private (Finance / HR / Admin) |
+| `GET` | `/api/export/payroll-submission/json` | JSON dataset with daily grid & audit trail | Private (Column-gated by role) |
+| `POST` | `/api/populate/create/payroll_runs` | Initiates bulk calculation run | HR / Finance / Admin |
+| `PUT` | `/api/populate/update/payroll_runs/:id` | State transition: `Approved` or `Paid` | HR Admin / Finance (Blocked if configuration errors exist) |
 
-## Cross-Module Reads
+---
 
-| Source | Used by | Purpose |
+## Frontend Components
+
+| File | Purpose | UX & Design Standard |
 |---|---|---|
-| `attendances` | `computeAttendanceSummary` | presentDays, overtimeHours |
-| `leaves` | `computeAttendanceSummary` | leaveDays (Approved leaves in month) |
-| `shifts` (ShiftAssignment) | `computeAttendanceSummary` | weeklyOff config, shiftWorkingHours |
-| `holidays` | `computeWorkingDays` | mandatory offs (national + company) |
-| `employees` | `payroll_runs.afterCreate` | Active employee list for bulk run |
+| `Frontend/src/pages/reports/payroll-submission.jsx` | Monthly Payroll Submission Register | High-density ledger table with sticky frozen columns (Emp ID, Name, Dept), monospace numeric alignment, and interactive **Side Drill-Down Drawer** (Punches, Math, Policy Snapshots, Audit Hashes). |
+| `Frontend/src/pages/hrms/monthly-payroll.jsx` | Payroll Report Page route | Directly renders `MonthlyPayrollSubmissionReport`. |
+| `Frontend/src/pages/Payroll/payroll_runsTab.jsx` | HR Payroll Runs manager | Run list, creation modal, approval actions, and Configuration Error display. |
+| `Frontend/src/pages/Payroll/salary_structuresTab.jsx` | Salary Structures manager | Multi-component salary creator with versioning and component codes (`BASIC`, `HRA`, `PF_EE`). |
+| `Frontend/src/pages/Payroll/MyPayslipsTab.jsx` | Employee self-service | Payslip viewer for authenticated employees. |
 
-## TODO / Extension Points
+---
 
-- `statutory-compliance-engine` in `resolveStatutory()` — PF ECR export, ESI Return export, TDS projection implemented in `reportService.js` (`/api/reports/...`).
-- `payslipUrl` / `generatedAt` fields on Payroll — Phase 2 PDF generation
-- Professional Tax: add as `statutory` deduction in SalaryStructure.deductions[]
-- Arrears: `isProratable: false` earning with type `variable`
-- Full & Final: separate PayrollRun type
-
-## Frontend Files
-
-| File | Purpose |
-|---|---|
-| `pages/Payroll/index.jsx` | 3-tab shell + PayslipModal export |
-| `pages/Payroll/payroll_runsTab.jsx` | HR — run list, create modal, approve/pay, detail drawer |
-| `pages/Payroll/salary_structuresTab.jsx` | HR — structure list, form with dynamic rows, version history |
-| `pages/Payroll/MyPayslipsTab.jsx` | All roles — own payslips by year |
-
-## Seed Script
-
-`backend/seedPayrollPolicies.js` — run once to insert access_policies:
-```
-node seedPayrollPolicies.js
-```
+## State Machine & Freezing
+- **Payroll**: `Draft → Processing → Processed → Approved → Paid` (Fields frozen after `Approved`).
+- **PayrollRun**: `Draft → Processing → Computed → Approved → Paid`. Cannot transition to `Approved` if `notes` contains unresolved `CONFIGURATION_ERROR` flags.

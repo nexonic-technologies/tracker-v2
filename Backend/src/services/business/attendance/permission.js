@@ -16,10 +16,14 @@ export default async function permission(state) {
   const approvedPermissionHours = state.approvedPermissionHours || 0;
   if (approvedPermissionHours > 0) {
     const extraGraceMins = approvedPermissionHours * 60;
+    const baseGrace = state.policy?.shiftConfig?.graceMinutesCheckIn !== undefined 
+      ? state.policy.shiftConfig.graceMinutesCheckIn 
+      : (state.shift?.graceMinutesCheckIn !== undefined ? state.shift.graceMinutesCheckIn : 0);
+
     return {
       ...state,
       permissionHoursApplied: approvedPermissionHours,
-      effectiveGraceCheckIn: (state.policy?.shiftConfig?.graceMinutesCheckIn || 15) + extraGraceMins
+      effectiveGraceCheckIn: baseGrace + extraGraceMins
     };
   }
 

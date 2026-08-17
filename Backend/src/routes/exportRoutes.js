@@ -84,4 +84,59 @@ router.get("/oa/:id", authMiddleware, async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/export/payroll-submission
+ * @desc    Export Authoritative Monthly Payroll Submission Register to XLSX (Excel)
+ * @access  Private (Finance / HR / Admin)
+ */
+router.get("/payroll-submission", authMiddleware, async (req, res) => {
+  try {
+    const { month, year, departmentId } = req.query;
+    const m = month || (new Date().getMonth() + 1);
+    const y = year || new Date().getFullYear();
+
+    const { default: payrollSubmissionService } = await import("../services/business/payrollSubmissionReport.js");
+    const buffer = await payrollSubmissionService.generateXLSXBuffer({
+      month: m,
+      year: y,
+      departmentId,
+      user: req.user
+    });
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="Monthly_Payroll_Submission_${m}_${y}.xlsx"`);
+
+    return res.status(200).send(buffer);
+  } catch (error) {
+    console.error("Export Payroll Submission XLSX Error:", error);
+    res.status(500).json({ success: false, message: error.message || "Failed to export payroll submission register" });
+  }
+});
+
+/**
+ * @route   GET /api/export/payroll-submission/json
+ * @desc    Fetch Authoritative Monthly Payroll Submission Register JSON dataset with daily grid and audit trail
+ * @access  Private
+ */
+router.get("/payroll-submission/json", authMiddleware, async (req, res) => {
+  try {
+    const { month, year, departmentId } = req.query;
+    const m = month || (new Date().getMonth() + 1);
+    const y = year || new Date().getFullYear();
+
+    const { default: payrollSubmissionService } = await import("../services/business/payrollSubmissionReport.js");
+    const reportData = await payrollSubmissionService.getMonthlySubmissionReport({
+      month: m,
+      year: y,
+      departmentId,
+      user: req.user
+    });
+
+    return res.status(200).json({ success: true, data: reportData });
+  } catch (error) {
+    console.error("Get Payroll Submission JSON Error:", error);
+    res.status(500).json({ success: false, message: error.message || "Failed to compile payroll submission dataset" });
+  }
+});
+
 export default router;

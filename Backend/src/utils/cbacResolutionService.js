@@ -1,14 +1,5 @@
-// services/cbacResolutionService.js
-// Resolves UI capabilities for frontend visibility decisions
-// This does NOT replace access_policies - it only controls UI display
-
+import { getTenantStore } from '../tenant/tenantContext.js';
 import models from '../models/Collection.js';
-
-const Grant = models.grants;
-const UserOverride = models.user_overrides;
-const Capability = models.capabilities;
-const Role = models.roles;
-
 
 /**
  * Resolves effective UI capabilities for a user
@@ -32,6 +23,10 @@ export async function resolveUserCapabilities(user) {
   const capabilities = new Set();
   const deniedCapabilities = new Set();
 
+  const tenantContext = getTenantStore();
+  const RoleModel = tenantContext?.getModel ? tenantContext.getModel('roles') : models.roles;
+  const UserOverrideModel = tenantContext?.getModel ? (tenantContext.getModel('user_overrides') || tenantContext.getModel('useroverrides')) : (models.user_overrides || models.useroverrides);
+
   // Extract user identifiers
   const userId = user._id || user.id;
   const roleId = user.professionalInfo?.role || user.role;
@@ -52,29 +47,35 @@ export async function resolveUserCapabilities(user) {
   }
 
   // Step 1: Apply role capabilities directly from the Role document
-  if (roleId) {
-    const roleDoc = await Role.findById(roleId).populate('capabilities').lean();
-    if (roleDoc && Array.isArray(roleDoc.capabilities)) {
-      for (const cap of roleDoc.capabilities) {
-        if (cap && cap.status === 'active' && cap.key) {
-          capabilities.add(cap.key);
+  if (roleId && RoleModel && typeof RoleModel.findById === 'function') {
+    try {
+      const roleDoc = await RoleModel.findById(roleId).populate('capabilities').lean();
+      if (roleDoc && Array.isArray(roleDoc.capabilities)) {
+        for (const cap of roleDoc.capabilities) {
+          if (cap && cap.status === 'active' && cap.key) {
+            capabilities.add(cap.key);
+          }
         }
       }
-    }
+    } catch (_) {}
   }
 
   // Step 2: Apply user overrides (always wins)
-  const userOverride = await UserOverride.findOne({ userId }).lean();
-  if (userOverride?.overrides) {
-    for (const override of userOverride.overrides) {
-      if (override.effect === 'allow') {
-        capabilities.add(override.capabilityKey);
-        deniedCapabilities.delete(override.capabilityKey);
-      } else {
-        capabilities.delete(override.capabilityKey);
-        deniedCapabilities.add(override.capabilityKey);
+  if (UserOverrideModel && typeof UserOverrideModel.findOne === 'function') {
+    try {
+      const userOverride = await UserOverrideModel.findOne({ userId }).lean();
+      if (userOverride?.overrides) {
+        for (const override of userOverride.overrides) {
+          if (override.effect === 'allow') {
+            capabilities.add(override.capabilityKey);
+            deniedCapabilities.delete(override.capabilityKey);
+          } else {
+            capabilities.delete(override.capabilityKey);
+            deniedCapabilities.add(override.capabilityKey);
+          }
+        }
       }
-    }
+    } catch (_) {}
   }
 
   // Remove denied capabilities from allowed set
@@ -90,7 +91,10 @@ export async function resolveUserCapabilities(user) {
  * @returns {Promise<string[]>}
  */
 async function getActiveCapabilityKeys() {
-  const keys = await Capability.distinct('key', { status: 'active' });
+  const tenantContext = getTenantStore();
+  const CapabilityModel = tenantContext?.getModel ? tenantContext.getModel('capabilities') : models.capabilities;
+  if (!CapabilityModel || typeof CapabilityModel.distinct !== 'function') return [];
+  const keys = await CapabilityModel.distinct('key', { status: 'active' });
   return keys;
 }
 

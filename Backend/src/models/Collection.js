@@ -54,6 +54,7 @@ import time_tracker_sessions from "./TimeTrackerSession.js";
 import workflows from "./Workflow.js";
 import wfh_requests from "./WFHRequest.js";
 import comp_off_requests from "./CompOffRequest.js";
+import user_overrides from "./UserOverride.js";
 import resources from "./Resource.js";
 import capabilities from "./Capability.js";
 import grants from "./Grant.js";
@@ -198,6 +199,8 @@ const models = {
   assets_stock_ledgers,
   capabilities,
   grants,
+  user_overrides,
+  useroverrides: user_overrides,
   attendance_policies,
   leave_transactions,
   payments,

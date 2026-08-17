@@ -10,10 +10,13 @@ export default async function fine(state) {
   let fineAmount = 0;
   let lopDays = 0;
 
+  const absentLopFactor = fineRules.absentLopDays !== undefined ? fineRules.absentLopDays : 1.0;
+  const halfDayLopFactor = fineRules.halfDayLopDays !== undefined ? fineRules.halfDayLopDays : 0.5;
+
   if (state.status === 'Absent' || state.status === 'LOP') {
-    lopDays = 1.0;
+    lopDays = absentLopFactor;
   } else if (state.status === 'Half Day') {
-    lopDays = 0.5;
+    lopDays = halfDayLopFactor;
   }
 
   if (fineRules.enableLateFines && state.lateMinutes > 0) {

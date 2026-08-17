@@ -11,13 +11,7 @@
 import mongoose from 'mongoose';
 import { getTenantModel } from '../../tenant/tenantContext.js';
 
-const PRIVILEGED_ROLES = ['superadmin', 'hr', 'hr admin', 'admin', 'super admin'];
-
 // ─── helpers ──────────────────────────────────────────────────────────────────
-
-function isPrivileged(role) {
-  return PRIVILEGED_ROLES.includes((role || '').toLowerCase());
-}
 
 function lastDayOfMonth(month, year) {
   return new Date(year, month, 0); // month is 1-based; Date(year, month, 0) = last day
@@ -25,6 +19,20 @@ function lastDayOfMonth(month, year) {
 
 function getDayName(date) {
   return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.getDay()];
+}
+
+/**
+ * Resolves active organization statutory settings from GeneralSettings.
+ */
+async function getOrgPayrollSettings() {
+  try {
+    const GeneralSettings = getTenantModel('GeneralSettings');
+    if (GeneralSettings) {
+      const settings = await GeneralSettings.findOne().lean();
+      return settings?.payroll || {};
+    }
+  } catch (_) { }
+  return {};
 }
 
 /**
@@ -65,29 +73,21 @@ export function calculateHourlyRate({
 
 export async function resolveStructure(employeeId, payrollDate) {
   const SalaryStructure = getTenantModel('SalaryStructure');
-  let structure = await SalaryStructure.findOne({
+  const structure = await SalaryStructure.findOne({
     employeeId,
     effectiveFrom: { $lte: payrollDate },
     $or: [{ effectiveTo: null }, { effectiveTo: { $gte: payrollDate } }]
   }).sort({ effectiveFrom: -1 }).lean();
 
   if (!structure) {
-    const Employee = getTenantModel('Employee');
-    const emp = await Employee.findById(employeeId).populate('salaryStructure').lean();
-    if (emp?.salaryStructure) {
-      structure = emp.salaryStructure;
-    }
-  }
-
-  if (!structure) {
-    throw new Error(`No salary structure found for employee ${employeeId} on ${payrollDate.toISOString().slice(0, 10)}`);
+    throw new Error(`PAYROLL_CONFIGURATION_REQUIRED: No valid salary structure configured for employee ${employeeId} on ${payrollDate.toISOString().slice(0, 10)}`);
   }
   return structure;
 }
 
 // ─── computeWorkingDays ───────────────────────────────────────────────────────
 
-export async function computeWorkingDays(month, year, weeklyOff = ['Saturday', 'Sunday']) {
+export async function computeWorkingDays(month, year, weeklyOff = []) {
   const Holiday = getTenantModel('Holiday');
 
   const start = new Date(year, month - 1, 1);
@@ -99,7 +99,8 @@ export async function computeWorkingDays(month, year, weeklyOff = ['Saturday', '
   for (let d = 1; d <= totalDays; d++) allDates.push(new Date(year, month - 1, d));
 
   // Remove weekoffs
-  const workDates = allDates.filter(d => !weeklyOff.includes(getDayName(d)));
+  const effectiveWeeklyOff = Array.isArray(weeklyOff) && weeklyOff.length > 0 ? weeklyOff : ['Sunday'];
+  const workDates = allDates.filter(d => !effectiveWeeklyOff.includes(getDayName(d)));
 
   // Remove mandatory holidays (national + company) — silently skip if none exist
   const holidays = await Holiday.find({
@@ -120,15 +121,23 @@ export async function computeAttendanceSummary(employeeId, month, year) {
   const Attendance = getTenantModel('Attendance');
   const Leave = getTenantModel('Leave');
   const ShiftAssignment = getTenantModel('ShiftAssignment');
+  const Employee = getTenantModel('Employee');
 
   // Get employee's shift for weeklyOff config
-  const shiftAssignment = await ShiftAssignment
+  let shiftAssignment = await ShiftAssignment
     .findOne({ employeeId, isActive: true })
     .populate('shiftId')
     .lean();
 
-  const weeklyOff = shiftAssignment?.shiftId?.weeklyOff || ['Saturday', 'Sunday'];
-  const shiftWorkingHours = shiftAssignment?.shiftId?.workingHours || 8;
+  let shift = shiftAssignment?.shiftId;
+  if (!shift) {
+    // Try employee professionalInfo policy/shift assignment
+    const emp = await Employee.findById(employeeId).populate('professionalInfo.policyAssignments.shift').lean();
+    shift = emp?.professionalInfo?.policyAssignments?.[0]?.shift;
+  }
+
+  const weeklyOff = shift?.weeklyOff || ['Sunday'];
+  const shiftWorkingHours = shift?.workingHours || 8;
 
   const { workingDays } = await computeWorkingDays(month, year, weeklyOff);
 
@@ -212,18 +221,23 @@ function resolveBasicAmount(structure) {
 
 // ─── resolveStatutory ─────────────────────────────────────────────────────────
 
-function resolveStatutory(name, grossSalary, basicEarned, structure) {
+function resolveStatutory(name, grossSalary, basicEarned, structure, orgSettings = {}) {
   const n = name.toLowerCase();
   if (n === 'pf employee' || n === 'pf') {
-    const pfBase = Math.min(basicEarned, structure.pfCeiling || 15000);
-    return pfBase * ((structure.pfEmployeePercent || 12) / 100);
+    const ceiling = structure.pfCeiling !== undefined ? structure.pfCeiling : (orgSettings.pfCeiling !== undefined ? orgSettings.pfCeiling : 15000);
+    const percent = structure.pfEmployeePercent !== undefined ? structure.pfEmployeePercent : (orgSettings.pfPercent !== undefined ? orgSettings.pfPercent : 12);
+    const pfBase = ceiling ? Math.min(basicEarned, ceiling) : basicEarned;
+    return pfBase * (percent / 100);
   }
   if (n === 'esi employee' || n === 'esi') {
-    if (structure.esiApplicable && grossSalary <= 21000) return grossSalary * 0.0075;
+    const threshold = orgSettings.esiThreshold !== undefined ? orgSettings.esiThreshold : 21000;
+    const percent = orgSettings.esiPercent !== undefined ? orgSettings.esiPercent : 0.75;
+    if (structure.esiApplicable && grossSalary <= threshold) {
+      return grossSalary * (percent / 100);
+    }
     return 0;
   }
   if (n === 'tds') {
-    // TODO: statutory-compliance-engine — projected annual + 80C/80D/HRA exemptions + regime selection
     const tdsEntry = structure.deductions.find(d => d.name.toLowerCase() === 'tds');
     return tdsEntry?.amount || 0;
   }
@@ -233,17 +247,20 @@ function resolveStatutory(name, grossSalary, basicEarned, structure) {
 /**
  * Compute employer-side statutory contributions.
  * These are NOT deducted from the employee — they are the company's cost.
- * PF employer: same % as employee, on same ceiling.
- * ESI employer: 3.25% (configurable via general_settings.payroll.esiEmployerPercent)
  */
-function computeEmployerContributions(grossSalary, basicEarned, structure) {
-  const pfBase = Math.min(basicEarned, structure.pfCeiling || 15000);
-  const pfEmployerContribution = Math.round(
-    pfBase * ((structure.pfEmployeePercent || 12) / 100) * 100
-  ) / 100;
+function computeEmployerContributions(grossSalary, basicEarned, structure, orgSettings = {}) {
+  const ceiling = structure.pfCeiling !== undefined ? structure.pfCeiling : (orgSettings.pfCeiling !== undefined ? orgSettings.pfCeiling : 15000);
+  const pfPercent = structure.pfEmployeePercent !== undefined ? structure.pfEmployeePercent : (orgSettings.pfPercent !== undefined ? orgSettings.pfPercent : 12);
+  const pfBase = ceiling ? Math.min(basicEarned, ceiling) : basicEarned;
+  const pfEmployerContribution = Math.round(pfBase * (pfPercent / 100) * 100) / 100;
 
-  const esiEmployerContribution = (structure.esiApplicable && grossSalary <= 21000)
-    ? Math.round(grossSalary * ((structure.esiEmployerPercent || 3.25) / 100) * 100) / 100
+  const esiThreshold = orgSettings.esiThreshold !== undefined ? orgSettings.esiThreshold : 21000;
+  const esiEmployerPercent = structure.esiEmployerPercent !== undefined 
+    ? structure.esiEmployerPercent 
+    : (orgSettings.esiEmployerPercent !== undefined ? orgSettings.esiEmployerPercent : 3.25);
+
+  const esiEmployerContribution = (structure.esiApplicable && grossSalary <= esiThreshold)
+    ? Math.round(grossSalary * (esiEmployerPercent / 100) * 100) / 100
     : 0;
 
   return { pfEmployerContribution, esiEmployerContribution };
@@ -251,7 +268,7 @@ function computeEmployerContributions(grossSalary, basicEarned, structure) {
 
 // ─── computeSalary ────────────────────────────────────────────────────────────
 
-export function computeSalary(attendanceSummary, structure, clEncashmentAmount = 0) {
+export function computeSalary(attendanceSummary, structure, clEncashmentAmount = 0, shiftWorkingHours = 8, orgSettings = {}) {
   const { workingDays, presentDays, lopDays, overtimeHours } = attendanceSummary;
   const earnedRatio = workingDays > 0 ? presentDays / workingDays : 0;
 
@@ -279,7 +296,12 @@ export function computeSalary(attendanceSummary, structure, clEncashmentAmount =
     earnedBreakdown['Unused CL Encashment'] = Math.round(clEncashmentAmount * 100) / 100;
   }
 
-  const hourlyRate = (basicMonthly > 0 && workingDays > 0) ? (basicMonthly / (workingDays * 8)) : 0;
+  // Overtime rate: Use configured overtimeRate from structure if available, otherwise compute from basic & working hours
+  const effectiveWorkingHours = shiftWorkingHours > 0 ? shiftWorkingHours : 8;
+  const hourlyRate = structure.overtimeRate > 0 
+    ? structure.overtimeRate 
+    : ((basicMonthly > 0 && workingDays > 0) ? (basicMonthly / (workingDays * effectiveWorkingHours)) : 0);
+
   const overtimePay = Math.round((overtimeHours * hourlyRate) * 100) / 100;
   const grossSalary = Math.round(
     (Object.values(earnedBreakdown).reduce((s, v) => s + v, 0) + overtimePay) * 100
@@ -299,7 +321,7 @@ export function computeSalary(attendanceSummary, structure, clEncashmentAmount =
       const base = entry.ceiling ? Math.min(grossSalary, entry.ceiling) : grossSalary;
       deducted = base * (entry.amount / 100);
     } else if (entry.type === 'statutory') {
-      deducted = resolveStatutory(entry.name, grossSalary, basicEarned, structure);
+      deducted = resolveStatutory(entry.name, grossSalary, basicEarned, structure, orgSettings);
     }
     deductionBreakdown[entry.name] = Math.round(deducted * 100) / 100;
   }
@@ -312,7 +334,7 @@ export function computeSalary(attendanceSummary, structure, clEncashmentAmount =
   const netSalary = Math.round((grossSalary - totalDeductions) * 100) / 100;
 
   const { pfEmployerContribution, esiEmployerContribution } = computeEmployerContributions(
-    grossSalary, basicEarned, structure
+    grossSalary, basicEarned, structure, orgSettings
   );
 
   return {
@@ -328,7 +350,13 @@ export async function computePayrollPayload(employeeId, month, year, processedBy
   const payrollDate = lastDayOfMonth(month, year);
   const structure = await resolveStructure(employeeId, payrollDate);
   const summary = await computeAttendanceSummary(employeeId, month, year);
-  const computed = computeSalary(summary, structure);
+  const orgSettings = await getOrgPayrollSettings();
+
+  const ShiftAssignment = getTenantModel('ShiftAssignment');
+  const shiftAssignment = await ShiftAssignment.findOne({ employeeId, isActive: true }).populate('shiftId').lean();
+  const shiftWorkingHours = shiftAssignment?.shiftId?.workingHours || 8;
+
+  const computed = computeSalary(summary, structure, 0, shiftWorkingHours, orgSettings);
 
   // Resolve departmentId from Employee — stamped once at compute time
   // so department-level payroll reports never require a join

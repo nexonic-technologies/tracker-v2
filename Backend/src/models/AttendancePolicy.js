@@ -36,6 +36,7 @@ const AttendancePolicySchema = new Schema({
     lateMarkCutoffMins: { type: Number, default: 15 },
     earlyExitCutoffMins: { type: Number, default: 15 },
     lateMarksForHalfDay: { type: Number, default: 3 },
+    breakDeductionMinHours: { type: Number, default: 5.0 },
     missingPunchAction: {
       type: String,
       enum: ['AutoAbsent', 'AutoHalfDay', 'RegularizationRequired'],
@@ -94,6 +95,8 @@ const AttendancePolicySchema = new Schema({
     enableLateFines: { type: Boolean, default: false },
     lateFineType: { type: String, enum: ['Fixed', 'PerMinute'], default: 'Fixed' },
     lateFineAmount: { type: Number, default: 0 },
+    absentLopDays: { type: Number, default: 1.0 },
+    halfDayLopDays: { type: Number, default: 0.5 },
     sandwichRuleEnabled: { type: Boolean, default: false }
   },
 
