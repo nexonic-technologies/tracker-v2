@@ -4,7 +4,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import PolicyGuard from "../../../components/Common/PolicyGuard";
 import { useUserRole } from "../../../hooks/useUserRole";
 import { entityFormPath } from "../../../utils/formRoutes";
-import { clientsConfig } from "./config.jsx";
+import { clientsConfig } from "../../../components/MasterData/configs/clients";
 
 // ── Helpers ──────────────────────────────────────────────────
 const initials = (name = "") =>

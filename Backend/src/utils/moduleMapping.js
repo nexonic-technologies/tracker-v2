@@ -1,82 +1,78 @@
 // src/utils/moduleMapping.js
+import { MODULE_DEFINITIONS } from '../models/tenantRegistry.js';
 
-export const ROUTE_MODULE_MAP = {
-  '/dashboard': 'core',
-  '/settings': 'core',
-  '/profile': 'core',
-  '/search': 'core',
-  '/policies': 'core',
-  '/feed': 'feed',
-  '/hrms': 'hrms',
-  '/employees': 'hrms',
-  '/departments': 'hrms',
-  '/designations': 'hrms',
-  '/teams': 'hrms',
-  '/attendance': 'attendance',
-  '/leaves': 'attendance',
-  '/payroll': 'payroll',
-  '/accounts': 'payroll',
-  '/travel-expenses': 'payroll',
-  '/tasks': 'tasks',
-  '/tickets': 'tickets',
-  '/crm': 'crm',
-  '/assets': 'assets',
-  '/recruitment': 'recruitment',
-  '/candidates': 'recruitment',
+// Dynamically build reverse index: collection/model -> moduleKey from MODULE_DEFINITIONS
+const MODEL_TO_MODULE = new Map();
+for (const [modKey, collections] of Object.entries(MODULE_DEFINITIONS)) {
+  if (Array.isArray(collections)) {
+    for (const col of collections) {
+      const normalized = col.toLowerCase();
+      MODEL_TO_MODULE.set(normalized, modKey.toLowerCase());
+      
+      const kebab = normalized.replace(/_/g, '-');
+      MODEL_TO_MODULE.set(kebab, modKey.toLowerCase());
 
-  // Master Data explicit sub-route mappings
-  '/master-data/departments': 'hrms',
-  '/master-data/designations': 'hrms',
-  '/master-data/employees': 'hrms',
-  '/master-data/hr-policies': 'hrms',
-  '/master-data/attendance-policies': 'attendance',
-  '/master-data/leave-policies': 'attendance',
-  '/master-data/leave-types': 'attendance',
-  '/master-data/leave-transactions': 'attendance',
-  '/master-data/shifts': 'attendance',
-  '/master-data/holidays': 'attendance',
-  '/master-data/task-types': 'tasks',
-  '/master-data/project-types': 'tasks',
-  '/master-data/milestones': 'tasks',
-  '/master-data/job-types': 'core',
-  '/master-data/job-categories': 'core',
-  '/master-data/clients': 'crm',
-  '/master-data/contacts': 'crm',
-  '/master-data/service-providers': 'core',
-  '/master-data/reference-types': 'core',
-  '/master-data/lead-types': 'crm',
-  '/master-data/products': 'core',
-  '/master-data/agents': 'core',
-  '/master-data/assets': 'assets',
-  '/master-data/roles': 'core',
-  '/master-data/workflows': 'core',
-  '/master-data/status-master': 'core'
-};
+      // Morphological policy/policies mapping
+      if (normalized.endsWith('_policy')) {
+        MODEL_TO_MODULE.set(normalized.replace(/_policy$/, '_policies'), modKey.toLowerCase());
+        MODEL_TO_MODULE.set(kebab.replace(/-policy$/, '-policies'), modKey.toLowerCase());
+      }
+      if (normalized.endsWith('_policies')) {
+        MODEL_TO_MODULE.set(normalized.replace(/_policies$/, '_policy'), modKey.toLowerCase());
+        MODEL_TO_MODULE.set(kebab.replace(/-policies$/, '-policy'), modKey.toLowerCase());
+      }
+    }
+  }
+}
+
+// All active module keys declared in the tenant registry
+const REGISTERED_MODULES = new Set(Object.keys(MODULE_DEFINITIONS).map(k => k.toLowerCase()));
 
 /**
- * Resolves standard module key ('core', 'hrms', 'attendance', 'payroll', 'tasks', 'tickets', 'crm', 'assets', 'recruitment', 'feed')
- * based on mainRoute or title.
+ * Resolves standard module key derived strictly from tenantRegistry.js (MODULE_DEFINITIONS) as the single source of truth.
+ * @param {string} mainRoute - The route path (e.g. '/master-data/departments', '/attendance/shift-roster')
+ * @param {string} title - Optional title of the sidebar/entity
+ * @returns {string} Standard moduleKey ('core', 'hrms', 'attendance', 'tasks', 'tickets', 'crm', 'assets', 'recruitment', 'feed')
  */
 export function resolveModuleKey(mainRoute = '', title = '') {
-  const routeLower = (mainRoute || '').trim().toLowerCase();
+  const routeClean = (mainRoute || '').trim().toLowerCase().replace(/^\/+|\/+$/g, '');
   const titleLower = (title || '').trim().toLowerCase();
 
-  for (const [routePrefix, modKey] of Object.entries(ROUTE_MODULE_MAP)) {
-    if (routeLower === routePrefix || routeLower.startsWith(routePrefix + '/')) {
+  if (!routeClean && !titleLower) return 'core';
+
+  const segments = routeClean.split('/');
+
+  // 1. Direct segment check against MODULE_DEFINITIONS collections (from specific to broad)
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const seg = segments[i];
+    if (MODEL_TO_MODULE.has(seg)) {
+      return MODEL_TO_MODULE.get(seg);
+    }
+    // Check plural / singular variations
+    if (seg.endsWith('s') && MODEL_TO_MODULE.has(seg.slice(0, -1))) {
+      return MODEL_TO_MODULE.get(seg.slice(0, -1));
+    }
+    if (!seg.endsWith('s') && MODEL_TO_MODULE.has(seg + 's')) {
+      return MODEL_TO_MODULE.get(seg + 's');
+    }
+  }
+
+  // 2. Direct segment check against registered module keys (e.g. '/attendance', '/crm', '/tasks')
+  for (const seg of segments) {
+    if (REGISTERED_MODULES.has(seg)) {
+      return seg;
+    }
+  }
+
+  // 3. Fallback matching against title / keywords matching registered modules
+  for (const modKey of REGISTERED_MODULES) {
+    if (titleLower.includes(modKey)) {
       return modKey;
     }
   }
 
-  if (titleLower.includes('dashboard') || titleLower.includes('setting')) return 'core';
-  if (titleLower.includes('employee') || titleLower.includes('hrms') || titleLower.includes('department')) return 'hrms';
-  if (titleLower.includes('attendance') || titleLower.includes('shift') || titleLower.includes('leave')) return 'attendance';
-  if (titleLower.includes('payroll') || titleLower.includes('salary') || titleLower.includes('expense')) return 'payroll';
-  if (titleLower.includes('task') || titleLower.includes('sprint') || titleLower.includes('project') || titleLower.includes('milestone')) return 'tasks';
-  if (titleLower.includes('ticket')) return 'tickets';
-  if (titleLower.includes('crm') || titleLower.includes('client')) return 'crm';
-  if (titleLower.includes('asset')) return 'assets';
-  if (titleLower.includes('recruitment') || titleLower.includes('candidate') || titleLower.includes('job')) return 'recruitment';
-  if (titleLower.includes('feed')) return 'feed';
-
+  // 4. Default to 'core'
   return 'core';
 }
+
+export { MODULE_DEFINITIONS };

@@ -1,5 +1,5 @@
 import MasterDataListView from "../../../components/MasterData/MasterDataListView";
-import { departmentsConfig } from "./config";
+import { departmentsConfig } from "../../../components/MasterData/configs/departments";
 
 const Departments = () => <MasterDataListView config={departmentsConfig} />;
 

@@ -245,7 +245,7 @@ async function syncEmployeeUserLogin(employeeDoc, tenantStore) {
     const { UserLogin } = globalModels;
     const cleanEmail = workEmail.toLowerCase().trim();
     const tenantId = tenantStore?.tenantId || tenantStore?.tenant?.tenantId || 'admin';
-    const dbName = tenantStore?.dbName || tenantStore?.tenant?.dbName || process.env.DEFAULT_TENANT_DB || 'tracker_tenant_admin';
+    const dbName = tenantStore?.dbName || tenantStore?.tenant?.dbName || process.env.DEFAULT_TENANT_DB || 'tenant_admin';
 
     const empName = [employeeDoc.basicInfo?.firstName, employeeDoc.basicInfo?.lastName].filter(Boolean).join(' ') || cleanEmail.split('@')[0];
 

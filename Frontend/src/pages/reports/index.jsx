@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../api/axiosInstance';
-import MISReportCockpit from './MISReportCockpit';
-import DepartmentAllocation from './department-allocation';
-import ReportCatalogSidebar from './report-catalog-sidebar';
-import ReportDataGrid from './report-data-grid';
-import { fetchDepartments, DYNAMIC_REPORT_CATALOG } from './reportCatalog';
-import { 
-  Download, Calendar, Users, DollarSign, ShieldCheck, 
+import MISReportCockpit from '../../components/reports/MISReportCockpit';
+import DepartmentAllocation from '../../components/reports/DepartmentAllocation';
+import ReportCatalogSidebar from '../../components/reports/ReportCatalogSidebar';
+import ReportDataGrid from '../../components/reports/ReportDataGrid';
+import { fetchDepartments, DYNAMIC_REPORT_CATALOG } from '../../components/reports/reportCatalog';
+import {
+  Download, Calendar, Users, DollarSign, ShieldCheck,
   CheckCircle2, BarChart3, Briefcase, Search, Award
 } from 'lucide-react';
 
@@ -98,8 +98,8 @@ export default function ReportsHub() {
   const filteredCatalog = DYNAMIC_REPORT_CATALOG.filter(r => {
     const matchesTab = activeTab === 'all' || r.category === activeTab;
     const matchesDept = selectedDepartment === 'all' || r.dept === selectedDepartment || r.dept === 'all';
-    const matchesSearch = r.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          r.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = r.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.description.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesTab && matchesDept && matchesSearch;
   });
 
@@ -180,11 +180,10 @@ export default function ReportsHub() {
                 const firstOption = DYNAMIC_REPORT_CATALOG.find(r => r.category === tab.id);
                 if (firstOption) setActiveReport(firstOption.id);
               }}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                activeTab === tab.id
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${activeTab === tab.id
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-              }`}
+                }`}
             >
               <Icon className="w-3.5 h-3.5" />
               {tab.label}

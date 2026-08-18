@@ -7,10 +7,11 @@ import { usePermission } from "../context/permissionProvider";
 const getIconifyName = (iconName) => {
   if (!iconName) return "ic:baseline-help-outline";
   if (iconName.includes(":")) return iconName;
-  
+
   if (iconName.startsWith("Md")) {
     const kebabCase = iconName.substring(2)
       .replace(/([A-Z])/g, "-$1")
+      .replace(/([0-9]+)/g, "-$1")
       .toLowerCase()
       .replace(/^-/, "");
     return `ic:baseline-${kebabCase}`;
@@ -35,13 +36,16 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
 
   const tenantSlug = localStorage.getItem("x-tenant-slug") || "admin";
 
-  const getCleanRoute = (route) => {
-    if (!route) return "/dashboard";
-    if (route.startsWith(`/${tenantSlug}/`)) {
-      return route.substring(tenantSlug.length + 1);
+  const getTenantRoute = (route) => {
+    if (!route || route === '#') return '#';
+    const clean = route.startsWith('/') ? route : `/${route}`;
+    if (tenantSlug) {
+      if (clean.startsWith(`/${tenantSlug}/`) || clean === `/${tenantSlug}`) {
+        return clean;
+      }
+      return `/${tenantSlug}${clean}`;
     }
-    if (route === `/${tenantSlug}`) return "/dashboard";
-    return route;
+    return clean;
   };
 
   // Auto-expand parent items when location changes to a child route
@@ -52,8 +56,10 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
     const idsToExpand = new Set();
 
     const checkNode = (node) => {
-      const cleanRoute = getCleanRoute(node.mainRoute);
-      let isMatch = node.mainRoute === currentPath || cleanRoute === currentPath;
+      const tenantRoute = getTenantRoute(node.mainRoute);
+      let isMatch = node.mainRoute === currentPath ||
+        tenantRoute === currentPath ||
+        (tenantSlug && currentPath.replace(`/${tenantSlug}`, '') === node.mainRoute);
       if (node.children && node.children.length > 0) {
         for (const child of node.children) {
           if (checkNode(child)) {
@@ -76,12 +82,12 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
         return updated;
       });
     }
-  }, [location.pathname, navItems]);
+  }, [location.pathname, navItems, tenantSlug]);
 
   const toggleExpanded = (itemId) => {
     // Only allow toggling if sidebar is expanded
     if (!isExpandedView) return;
-    
+
     const newExpanded = new Set(expandedItems);
     if (newExpanded.has(itemId)) {
       newExpanded.delete(itemId);
@@ -101,7 +107,7 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
       }
     } else {
       window.__navStartTime = performance.now();
-      const targetRoute = getCleanRoute(item.mainRoute);
+      const targetRoute = getTenantRoute(item.mainRoute);
       window.__targetRoute = targetRoute || item.title || 'Page';
       navigate(targetRoute);
     }
@@ -110,8 +116,10 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
   const renderNavItem = (item, level = 0) => {
     const isChild = level > 0;
     const iconName = getIconifyName(item.icon?.iconName);
-    const cleanRoute = getCleanRoute(item.mainRoute);
-    const isActive = location.pathname === item.mainRoute || location.pathname === cleanRoute;
+    const tenantRoute = getTenantRoute(item.mainRoute);
+    const isActive = location.pathname === item.mainRoute ||
+      location.pathname === tenantRoute ||
+      (tenantSlug && location.pathname.replace(`/${tenantSlug}`, '') === item.mainRoute);
     const isExpanded = expandedItems.has(item._id);
     const hasChildren = item.children && item.children.length > 0;
 
@@ -131,7 +139,7 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
           className={`flex-shrink-0 ${isChild ? "text-sm" : "text-lg"}`}
           style={{ color: isActive ? "var(--module-accent)" : "var(--tracker-ink-subtle)" }}
         />
-        
+
         {/* Text and chevron only visible when expanded */}
         <div className={`flex items-center flex-1 overflow-hidden transition-all duration-300 ${isExpandedView ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
           <span className="flex-1 truncate whitespace-nowrap">{item.title}</span>
@@ -197,23 +205,21 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
     >
       {/* Brand */}
       <div
-        className={`flex items-center px-4 h-[60px] border-b border-hairline-soft flex-shrink-0 ${
-          isExpandedView ? "justify-between" : "justify-center"
-        }`}
+        className={`flex items-center px-4 h-[60px] border-b border-hairline-soft flex-shrink-0 ${isExpandedView ? "justify-between" : "justify-center"
+          }`}
       >
         <div className="flex items-center gap-2.5 overflow-hidden">
           <div className="h-8 w-8 rounded-tracker-md lmx-gradient-hero flex items-center justify-center flex-shrink-0">
             <span className="text-white font-bold text-xs">W</span>
           </div>
           <span
-            className={`font-semibold text-sm text-ink tracking-tight whitespace-nowrap transition-opacity duration-300 ${
-              isExpandedView ? "opacity-100" : "opacity-0 hidden"
-            }`}
+            className={`font-semibold text-sm text-ink tracking-tight whitespace-nowrap transition-opacity duration-300 ${isExpandedView ? "opacity-100" : "opacity-0 hidden"
+              }`}
           >
             WorkHub
           </span>
         </div>
-        
+
         {isExpandedView && (
           <button
             onClick={onClose}
@@ -237,35 +243,24 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
             <p className="text-xs text-ink-subtle text-center">No menu items configured</p>
           </div>
         ) : (
-          <>
-            {navItems.map(item => renderNavItem(item))}
-            <div className="my-2 border-t border-hairline-soft mx-2 opacity-50" />
-            {renderNavItem({
-              _id: "api-docs-static",
-              title: "API Docs",
-              mainRoute: "/documentations",
-              icon: { iconName: "MdCode" }
-            })}
-          </>
+          navItems.map(item => renderNavItem(item))
         )}
       </nav>
 
       {/* Footer */}
       <div
-        className={`h-12 flex items-center border-t border-hairline-soft flex-shrink-0 ${
-          isExpandedView ? "px-4 justify-between" : "justify-center"
-        }`}
+        className={`h-12 flex items-center border-t border-hairline-soft flex-shrink-0 ${isExpandedView ? "px-4 justify-between" : "justify-center"
+          }`}
       >
         <span
-          className={`text-[11px] text-ink-subtle whitespace-nowrap transition-opacity duration-300 ${
-            isExpandedView ? "opacity-100" : "opacity-0 hidden"
-          }`}
+          className={`text-[11px] text-ink-subtle whitespace-nowrap transition-opacity duration-300 ${isExpandedView ? "opacity-100" : "opacity-0 hidden"
+            }`}
         >
           © {new Date().getFullYear()} Portal
         </span>
 
       </div>
-    </aside>  );
+    </aside>);
 };
 
 export default Sidebar;

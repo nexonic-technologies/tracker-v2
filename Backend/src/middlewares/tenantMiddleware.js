@@ -47,14 +47,14 @@ export const tenantMiddleware = async (req, res, next) => {
     }
 
     let tenantSlug = req.params?.tenantSlug || tenantId;
-    let dbName = req.user?.dbName || tokenDecoded?.dbName || req.headers['x-tenant-dbname'] || `tracker_tenant_${tenantId}`;
+    let dbName = req.user?.dbName || tokenDecoded?.dbName || req.headers['x-tenant-dbname'] || (tenantId.startsWith('tenant_') || tenantId.startsWith('tracker_tenant_') ? tenantId : `tenant_${tenantId}`);
     let enabledModules = req.user?.enabledModules || tokenDecoded?.enabledModules || null;
     let tenantRecord = null;
     let subscription = null;
 
     // Standardize default DB fallback if base connection is used
-    if (dbName === 'tracker_tenant_default' || tenantId === 'default' || tenantId === 'admin') {
-      dbName = process.env.DEFAULT_TENANT_DB || 'tracker_tenant_admin';
+    if (dbName === 'tracker_tenant_default' || dbName === 'tenant_default' || tenantId === 'default' || tenantId === 'admin') {
+      dbName = process.env.DEFAULT_TENANT_DB || 'tenant_admin';
     }
 
     // If dbName and tenantId are already validated in JWT session token, use cached connection directly

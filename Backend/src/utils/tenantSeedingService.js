@@ -6,6 +6,7 @@ import { setCache } from '../utils/cache.js';
 import PlatformSideBar from '../models/SideBar.js';
 import TenantConnectionManager from '../tenant/TenantConnectionManager.js';
 import { getGlobalModels } from '../models/global/index.js';
+import { seedNavigationAndCapabilities } from '../scripts/seedMasterNavigationAndCapabilities.js';
 
 /**
  * Pure single-tenant provisioning function used by both development seed and live Platform Admin.
@@ -30,7 +31,7 @@ export async function provisionTenant({
 }) {
   const runId = crypto.randomBytes(8).toString('hex');
   const cleanSlug = (slug || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const dbName = `tracker_tenant_${cleanSlug}`;
+  const dbName = `tenant_${cleanSlug}`;
   const tenantId = `t_${cleanSlug}_${Date.now().toString(36)}`;
   const cleanEmail = (ownerEmail || '').toLowerCase().trim();
 
@@ -251,92 +252,17 @@ export async function provisionTenant({
         policyCount++;
       }
     }
-    const capIdMap = new Map();
-    if (pageCapabilityMappingHelper && Array.isArray(pageCapabilityMappingHelper.PAGE_CAPABILITY_MAPPING)) {
-      for (const mapping of pageCapabilityMappingHelper.PAGE_CAPABILITY_MAPPING) {
-        const key = mapping.capability;
-        const parts = key.split(':');
-        const module = parts[0].toLowerCase();
-        const action = parts[1] || 'view';
-        let capDoc = await models.capabilities.findOne({ key });
-        if (!capDoc) {
-          capDoc = await models.capabilities.create({
-            key,
-            module,
-            action,
-            label: mapping.description || `Access to ${parts[0]} ${action}`,
-            description: mapping.description || `Access to ${parts[0]} ${action}`,
-            status: 'active',
-            type: 'ui',
-          });
-        }
-        capIdMap.set(key, capDoc._id);
-      }
-    }
-    await updateStage(6, 'completed', `Seeded ${policyCount} access policies and ${capIdMap.size} capabilities.`);
+    // ── Stage 6: Seed Policies & Capabilities ──
+    const seedRes = await seedNavigationAndCapabilities(conn, {
+      enabledModuleKeys,
+      allowAllModules,
+      clearExisting: true
+    });
+
+    await updateStage(6, 'completed', `Seeded ${policyCount} access policies and ${seedRes.capabilitiesCount} capabilities.`);
 
     // ── Stage 7: Seed Filtered Sidebars ──
-    await updateStage(7, 'running', `Copying platform sidebars filtered by [${enabledModuleKeys.join(', ')}]...`);
-    const platformSidebars = await PlatformSideBar.find({ isDeleted: { $ne: true } })
-      .populate('capabilities')
-      .sort({ order: 1 })
-      .lean();
-
-    const isSidebarAllowed = (sb) => {
-      if (allowAllModules) return true;
-      return enabledModuleKeys.includes(sb.moduleKey || 'core');
-    };
-    const allowedSidebars = platformSidebars.filter(isSidebarAllowed);
-    const allowedIdSet = new Set(allowedSidebars.map((s) => s._id.toString()));
-
-    const validSidebars = [];
-    const orphanedChildren = [];
-    for (const sb of allowedSidebars) {
-      if (sb.parentId && !allowedIdSet.has(sb.parentId.toString())) {
-        orphanedChildren.push(sb);
-      } else {
-        validSidebars.push(sb);
-      }
-    }
-
-    const sorted = [
-      ...validSidebars.filter((s) => !s.parentId),
-      ...validSidebars.filter((s) => !!s.parentId),
-    ];
-
-    const resolveCapIds = (platformCapabilities = []) => {
-      const ids = [];
-      for (const cap of platformCapabilities) {
-        const key = typeof cap === 'string' ? cap : cap?.key;
-        if (!key) continue;
-        const tenantCapId = capIdMap.get(key);
-        if (tenantCapId) ids.push(tenantCapId);
-      }
-      return ids;
-    };
-
-    const oldToNew = new Map();
-    for (const src of sorted) {
-      const oldId = src._id.toString();
-      let newParentId = src.parentId ? oldToNew.get(src.parentId.toString()) || null : null;
-      const created = await models.sidebars.create({
-        title: src.title,
-        icon: src.icon,
-        mainRoute: src.mainRoute,
-        visibility: src.visibility || 'protected',
-        capabilities: resolveCapIds(src.capabilities),
-        moduleId: null,
-        moduleKey: src.moduleKey || 'core',
-        parentId: newParentId,
-        hasChildren: src.hasChildren || false,
-        isParent: src.isParent || false,
-        order: src.order || 0,
-        isActive: src.isActive !== false,
-        isDeleted: false,
-      });
-      oldToNew.set(oldId, created._id);
-    }
-    await updateStage(7, 'completed', `Seeded ${oldToNew.size} sidebars. Rejected ${orphanedChildren.length} orphaned child sidebars.`);
+    await updateStage(7, 'completed', `Seeded ${seedRes.sidebarsCount} sidebars with mapped capabilities.`);
 
     // ── Stage 8: Create User ──
     await updateStage(8, 'running', 'Creating Super Admin Employee and Global UserLogin records...');
@@ -570,30 +496,12 @@ export async function seedTenantDatabase({
     }
   }
 
-  // 4. Seed Capabilities from pageCapabilityMapping
-  const capIdMap = new Map();
-  if (pageCapabilityMappingHelper && Array.isArray(pageCapabilityMappingHelper.PAGE_CAPABILITY_MAPPING)) {
-    for (const mapping of pageCapabilityMappingHelper.PAGE_CAPABILITY_MAPPING) {
-      const key = mapping.capability;
-      const parts = key.split(':');
-      const module = parts[0].toLowerCase();
-      const action = parts[1] || 'view';
-
-      let capDoc = await models.capabilities.findOne({ key });
-      if (!capDoc) {
-        capDoc = await models.capabilities.create({
-          key,
-          module,
-          action,
-          label: mapping.description || `Access to ${parts[0]} ${action}`,
-          description: mapping.description || `Access to ${parts[0]} ${action}`,
-          status: 'active',
-          type: 'ui',
-        });
-      }
-      capIdMap.set(key, capDoc._id);
-    }
-  }
+  // 4. Seed Capabilities and Sidebars with proper mapping
+  await seedNavigationAndCapabilities(conn, {
+    enabledModuleKeys,
+    allowAllModules,
+    clearExisting: true
+  });
 
   // 5. Hash Password if required
   let finalHash = passwordHash;
@@ -640,116 +548,7 @@ export async function seedTenantDatabase({
     await employee.save();
   }
 
-  // 7. Seed Sidebars — filtered by enabledModuleKeys to enforce module isolation.
-  //    The platform DB (tracker_global.sidebars) is the single source of truth.
-  //    Must run AFTER step 4 so capIdMap is populated for capability key → tenant ObjectId resolution.
-  const sidebarCount = await models.sidebars.countDocuments({});
-  let seededSidebarCount = 0;
-  let orphanedChildCount = 0;
-
-  if (sidebarCount === 0) {
-    // Load platform sidebar template from tracker_global (mongoose.connection = platform DB)
-    const platformSidebars = await PlatformSideBar.find({ isDeleted: { $ne: true } })
-      .populate('capabilities')
-      .sort({ order: 1 })
-      .lean();
-
-    if (platformSidebars.length === 0) {
-      console.warn('[tenantSeedingService] ⚠ tracker_global.sidebars is empty — no sidebars seeded for tenant.');
-    } else {
-      // ── Module Isolation Filter ──
-      // Only include sidebars whose moduleKey is in the tenant's enabledModuleKeys.
-      // This is the same proven rule used by seedSuperAdmin.js.
-      const isSidebarAllowed = (sb) => {
-        if (allowAllModules) return true;
-        return enabledModuleKeys.includes(sb.moduleKey || 'core');
-      };
-
-      const allowedSidebars = platformSidebars.filter(isSidebarAllowed);
-
-      // Build a Set of allowed platform sidebar _ids for parent-child orphan detection
-      const allowedIdSet = new Set(allowedSidebars.map(s => s._id.toString()));
-
-      // ── Parent-Child Orphan Detection ──
-      // A child sidebar whose parent was filtered out becomes orphaned.
-      // Reject orphaned children to maintain hierarchy integrity.
-      const validSidebars = [];
-      const orphanedChildren = [];
-
-      for (const sb of allowedSidebars) {
-        if (sb.parentId && !allowedIdSet.has(sb.parentId.toString())) {
-          // Parent was filtered out → this child is orphaned
-          orphanedChildren.push(sb);
-        } else {
-          validSidebars.push(sb);
-        }
-      }
-
-      if (orphanedChildren.length > 0) {
-        orphanedChildCount = orphanedChildren.length;
-        console.warn(`[tenantSeedingService] ⚠ Rejected ${orphanedChildren.length} orphaned child sidebar(s) whose parents were filtered out by module entitlement:`);
-        for (const oc of orphanedChildren) {
-          console.warn(`  - "${oc.title}" (${oc.mainRoute}) moduleKey=${oc.moduleKey} → parent not in allowed set`);
-        }
-      }
-
-      // Sort: parents (no parentId) first, children after — preserves creation order for parentId resolution
-      const sorted = [
-        ...validSidebars.filter(s => !s.parentId),
-        ...validSidebars.filter(s => !!s.parentId),
-      ];
-
-      // Resolve capability keys from populated platform docs to tenant-side ObjectIds
-      const resolveCapIds = (platformCapabilities = []) => {
-        const ids = [];
-        for (const cap of platformCapabilities) {
-          const key = typeof cap === 'string' ? cap : cap?.key;
-          if (!key) continue;
-          const tenantCapId = capIdMap.get(key);
-          if (tenantCapId) {
-            ids.push(tenantCapId);
-          }
-        }
-        return ids;
-      };
-
-      const oldToNew = new Map(); // platformDoc._id.toString() → tenant new _id
-
-      for (const src of sorted) {
-        const oldId = src._id.toString();
-
-        // Resolve parentId to the tenant's new ObjectId
-        let newParentId = null;
-        if (src.parentId) {
-          newParentId = oldToNew.get(src.parentId.toString()) || null;
-        }
-
-        const created = await models.sidebars.create({
-          title: src.title,
-          icon: src.icon,
-          mainRoute: src.mainRoute,
-          visibility: src.visibility || 'protected',
-          capabilities: resolveCapIds(src.capabilities),
-          moduleId: null, // moduleId is tenant-specific; moduleKey is enough for filtering
-          moduleKey: src.moduleKey || 'core',
-          parentId: newParentId,
-          hasChildren: src.hasChildren || false,
-          isParent: src.isParent || false,
-          order: src.order || 0,
-          isActive: src.isActive !== false,
-          isDeleted: false,
-        });
-
-        oldToNew.set(oldId, created._id);
-      }
-
-      seededSidebarCount = oldToNew.size;
-      const moduleFilter = allowAllModules ? 'ALL (allowAllModules)' : `[${enabledModuleKeys.join(', ')}]`;
-      console.log(`[tenantSeedingService] ✅ Copied ${seededSidebarCount} sidebar items (filtered by ${moduleFilter}) from tracker_global. ${orphanedChildCount > 0 ? `Rejected ${orphanedChildCount} orphaned children.` : 'Zero orphaned children.'}`);
-    }
-  }
-
-  // 8. Refresh Cache
+  // 7. Refresh Cache
   try {
     await setCache();
   } catch (_) {

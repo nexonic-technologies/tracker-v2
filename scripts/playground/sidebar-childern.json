@@ -1,686 +1,1871 @@
 [
-    {
-        "title": "Check IN",
-        "icon": {
-            "iconName": "MdCoPresent",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/attendance",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9b5c",
-            "6a67393351e2b55fc18f9b5d",
-            "6a67393351e2b55fc18f9b5e",
-            "6a67393351e2b55fc18f9b5f"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e1",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 0
+  {
+    "_id": "2a40bedb2b406883ba41315c",
+    "title": "Attendance",
+    "icon": {
+      "iconName": "MdCoPresent",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Leave Regularization",
-        "icon": {
-            "iconName": "MdOutlineUpdate",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/attendance/leave-regularization",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a74",
-            "6a67393351e2b55fc18f9a75",
-            "6a67393351e2b55fc18f9a76",
-            "6a67393351e2b55fc18f9a77"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e1",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 1
+    "mainRoute": "/attendance",
+    "visibility": "protected",
+    "capabilities": [
+      "b8972e245a4f0dae2bffa46a",
+      "fc7f6e769a57b29aca955f01",
+      "8ac72d0e51da63c44acf3853"
+    ],
+    "parentId": "138171aaade394d85d086858",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "attendance",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "5422995dbec74593d0be84d9",
+    "title": "Leave & Regularization",
+    "icon": {
+      "iconName": "MdOutlineUpdate",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Monthly Summary",
-        "icon": {
-            "iconName": "MdCalendarToday",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/attendance/monthly-summary",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a78",
-            "6a67393351e2b55fc18f9a79",
-            "6a67393351e2b55fc18f9a7a",
-            "6a67393351e2b55fc18f9a7b"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e1",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 2
+    "mainRoute": "/attendance/leave-regularization",
+    "visibility": "protected",
+    "capabilities": [
+      "97c0e94262a37de1fb97690e",
+      "36254ae9da84e0de7fe3559f",
+      "5a4bfc5bb4c98001ac348139",
+      "278f609bccb739bd739191d6"
+    ],
+    "parentId": "138171aaade394d85d086858",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "attendance",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "eed51e4ef39607b5f83d29c9",
+    "title": "Reports",
+    "icon": {
+      "iconName": "MdAssessment",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Pending Approvals",
-        "icon": {
-            "iconName": "MdOutlinePendingActions",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/attendance/pending-approvals",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a7c",
-            "6a67393351e2b55fc18f9a7d",
-            "6a67393351e2b55fc18f9a7e",
-            "6a67393351e2b55fc18f9a7f"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e1",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 3
+    "mainRoute": "/attendance/reports",
+    "visibility": "protected",
+    "capabilities": [
+      "eca1c903b13bd8c1df6dcfcc"
+    ],
+    "parentId": "138171aaade394d85d086858",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "moduleKey": "attendance",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "2d12e7f446ac6ba5b7df416f",
+    "title": "Policies",
+    "icon": {
+      "iconName": "MdPolicy",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Shift Roster",
-        "icon": {
-            "iconName": "MdSchedule",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/attendance/shift-roster",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a80",
-            "6a67393351e2b55fc18f9a81",
-            "6a67393351e2b55fc18f9a82",
-            "6a67393351e2b55fc18f9a83"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e1",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 4
+    "mainRoute": "/attendance/policies",
+    "visibility": "protected",
+    "capabilities": [
+      "7a25debd9ce4177181e52ef1",
+      "a692865c0877a522e8224d66",
+      "940343b983ed24fef2030b43",
+      "1cee27a7d51defce1ca0cd38"
+    ],
+    "parentId": "138171aaade394d85d086858",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "moduleKey": "attendance",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "446d683b2ca4028f59e60c01",
+    "title": "Shift Roster",
+    "icon": {
+      "iconName": "MdCalendarMonth",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Attendance Reports",
-        "icon": {
-            "iconName": "MdInsertDriveFile",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/attendance/reports",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9b60",
-            "6a67393351e2b55fc18f9b61",
-            "6a67393351e2b55fc18f9b62",
-            "6a67393351e2b55fc18f9b63"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e1",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 5
+    "mainRoute": "/attendance/shift-roster",
+    "visibility": "protected",
+    "capabilities": [
+      "5113cd70598f4238b22df916",
+      "20bfe2021a7acc224df12df3",
+      "41f9eef6f2668e9b159ccffc",
+      "728b1bcc90bf1e42b1fb47ef"
+    ],
+    "parentId": "138171aaade394d85d086858",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "moduleKey": "attendance",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "241283d13a338bbb465966e3",
+    "title": "Approvals",
+    "icon": {
+      "iconName": "MdApproval",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "All Tasks",
-        "icon": {
-            "iconName": "MdTask",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/tasks",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9ad4",
-            "6a67393351e2b55fc18f9ad5",
-            "6a67393351e2b55fc18f9ad6",
-            "6a67393351e2b55fc18f9ad7"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e2",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 0
+    "mainRoute": "/attendance/pending-approvals",
+    "visibility": "protected",
+    "capabilities": [
+      "ba3ed2dba5ad857d8a2b5564",
+      "571d60a0d95da9438b2b752b"
+    ],
+    "parentId": "138171aaade394d85d086858",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "moduleKey": "attendance",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "6b08dda73be23b3dbb845b82",
+    "title": "Monthly Summary",
+    "icon": {
+      "iconName": "MdCalendarToday",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "My Tasks",
-        "icon": {
-            "iconName": "MdOutlinePlaylistAdd",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/tasks/my-tasks",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9ae8",
-            "6a67393351e2b55fc18f9ae9",
-            "6a67393351e2b55fc18f9aea",
-            "6a67393351e2b55fc18f9aeb"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e2",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 1
+    "mainRoute": "/attendance/monthly-summary",
+    "visibility": "protected",
+    "capabilities": [
+      "7f1fe47ec63211f24b451735"
+    ],
+    "parentId": "138171aaade394d85d086858",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 6,
+    "moduleKey": "attendance",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "267af5763d21a330721dd2ba",
+    "title": "Activities",
+    "icon": {
+      "iconName": "MdListAlt",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Activity Timeline",
-        "icon": {
-            "iconName": "MdTimeline",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/tasks/activity-timeline",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9ad8",
-            "6a67393351e2b55fc18f9ad9",
-            "6a67393351e2b55fc18f9ada",
-            "6a67393351e2b55fc18f9adb"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e2",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 2
+    "mainRoute": "/attendance/daily-tracker",
+    "visibility": "protected",
+    "capabilities": [
+      "eec2951788657cf366e18911",
+      "ad5ec73943e26760c5050336",
+      "fefbcbe7b8ccb98590bd28a2",
+      "7c3576a9d2e4ce1ec7387334"
+    ],
+    "parentId": "138171aaade394d85d086858",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 7,
+    "moduleKey": "attendance",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "fc184ce1ac5eab0e95e15353",
+    "title": "Travel Expenses",
+    "icon": {
+      "iconName": "MdCardTravel",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Task Reports",
-        "icon": {
-            "iconName": "MdBarChart",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/tasks/reports",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9b68",
-            "6a67393351e2b55fc18f9b69",
-            "6a67393351e2b55fc18f9b6a",
-            "6a67393351e2b55fc18f9b6b"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e2",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 5
+    "mainRoute": "/attendance/travel-expenses",
+    "visibility": "protected",
+    "capabilities": [
+      "f65fcd2b571154b20567bd2f",
+      "e3e0001ef3219e985dbc22ed",
+      "c7d200318223b0d38ee1e70f",
+      "fdd743a47edb548578ea14cf"
+    ],
+    "parentId": "138171aaade394d85d086858",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 8,
+    "moduleKey": "attendance",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "c9f258f8a740d9eec39f75c1",
+    "title": "HR Management",
+    "icon": {
+      "iconName": "MdGroup",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "All Tickets",
-        "icon": {
-            "iconName": "MdConfirmationNumber",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/tickets",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a34",
-            "6a67393351e2b55fc18f9a35",
-            "6a67393351e2b55fc18f9a36",
-            "6a67393351e2b55fc18f9a37"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e3",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 0
+    "mainRoute": "/hrms",
+    "visibility": "protected",
+    "capabilities": [
+      "bed864d8072f07a9abedbbca",
+      "2df1d79994befa9a3f0935f1",
+      "06d43888654518d36b605df2",
+      "7c0501fbd10a0fa34288e6af"
+    ],
+    "parentId": "b29a83660dfb311e92f38e27",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "hrms",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "3880ef6e568b69de07cd7d90",
+    "title": "Bank Advice",
+    "icon": {
+      "iconName": "MdAccountBalance",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "My Tickets",
-        "icon": {
-            "iconName": "MdAssignmentInd",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/tickets/my-tickets",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9af0",
-            "6a67393351e2b55fc18f9af1",
-            "6a67393351e2b55fc18f9af2",
-            "6a67393351e2b55fc18f9af3"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e3",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 1
+    "mainRoute": "/hrms/bank-advice",
+    "visibility": "protected",
+    "capabilities": [
+      "1eedd0a22b569be3eeeb1cfa"
+    ],
+    "parentId": "b29a83660dfb311e92f38e27",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "hrms",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "cc3f9d3b9c5e851fd630c50e",
+    "title": "Daily Attendance",
+    "icon": {
+      "iconName": "MdEventAvailable",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Ticket Reports",
-        "icon": {
-            "iconName": "MdAssessment",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/tickets/reports",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9b70",
-            "6a67393351e2b55fc18f9b71",
-            "6a67393351e2b55fc18f9b72",
-            "6a67393351e2b55fc18f9b73"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e3",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 3
+    "mainRoute": "/hrms/daily-attendance",
+    "visibility": "protected",
+    "capabilities": [
+      "2a9fcf713b758261aaa5ab40"
+    ],
+    "parentId": "b29a83660dfb311e92f38e27",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "moduleKey": "hrms",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "32eded97d53f663842c6b2ad",
+    "title": "ESI Returns",
+    "icon": {
+      "iconName": "MdHealthAndSafety",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "CRM Dashboard",
-        "icon": {
-            "iconName": "MdPeople",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/crm",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a84",
-            "6a67393351e2b55fc18f9a85",
-            "6a67393351e2b55fc18f9a86",
-            "6a67393351e2b55fc18f9a87"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e4",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 0
+    "mainRoute": "/hrms/esi-return",
+    "visibility": "protected",
+    "capabilities": [
+      "4176dc46a5985630fe389209"
+    ],
+    "parentId": "b29a83660dfb311e92f38e27",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "moduleKey": "hrms",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "5472879d094c7cf5e740b013",
+    "title": "Headcount Analytics",
+    "icon": {
+      "iconName": "MdTrendingUp",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Calendar",
-        "icon": {
-            "iconName": "MdCalendarToday",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/crm/calendar",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a88",
-            "6a67393351e2b55fc18f9a89",
-            "6a67393351e2b55fc18f9a8a",
-            "6a67393351e2b55fc18f9a8b"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e4",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 1
+    "mainRoute": "/hrms/headcount-analytics",
+    "visibility": "protected",
+    "capabilities": [
+      "3f7b7159d160a0aa729fb885"
+    ],
+    "parentId": "b29a83660dfb311e92f38e27",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "moduleKey": "hrms",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "054da8f790a1f35da6527219",
+    "title": "Lifecycle",
+    "icon": {
+      "iconName": "MdTimeline",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Ledger",
-        "icon": {
-            "iconName": "MdReceiptLong",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/accounts/ledger",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a40",
-            "6a67393351e2b55fc18f9a41",
-            "6a67393351e2b55fc18f9a42",
-            "6a67393351e2b55fc18f9a43"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e5",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 0
+    "mainRoute": "/hrms/lifecycle-audit",
+    "visibility": "protected",
+    "capabilities": [
+      "1b47037315d1f027170856f0"
+    ],
+    "parentId": "b29a83660dfb311e92f38e27",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "moduleKey": "hrms",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "22f9a48e0151877ca28253d7",
+    "title": "Monthly Payroll",
+    "icon": {
+      "iconName": "MdReceiptLong",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Payments",
-        "icon": {
-            "iconName": "MdPayments",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/accounts/payments",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a44",
-            "6a67393351e2b55fc18f9a45",
-            "6a67393351e2b55fc18f9a46",
-            "6a67393351e2b55fc18f9a47"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e5",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 1
+    "mainRoute": "/hrms/monthly-payroll",
+    "visibility": "protected",
+    "capabilities": [
+      "63f5e436b058f8a40d7d2786",
+      "f843ccf2a4e7558cca7b8c72",
+      "d6be0dca4f85876c963b61c5"
+    ],
+    "parentId": "b29a83660dfb311e92f38e27",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 6,
+    "moduleKey": "hrms",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "9dd6d9c3a134d4be0a36aed2",
+    "title": "Onboarding SLA",
+    "icon": {
+      "iconName": "MdSpeed",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Accounts Reports",
-        "icon": {
-            "iconName": "MdAnalytics",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/accounts/reports",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9b78",
-            "6a67393351e2b55fc18f9b79",
-            "6a67393351e2b55fc18f9b7a",
-            "6a67393351e2b55fc18f9b7b"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e5",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 2
+    "mainRoute": "/hrms/onboarding-sla",
+    "visibility": "protected",
+    "capabilities": [
+      "19ef2732daafc1b1d9617b08"
+    ],
+    "parentId": "b29a83660dfb311e92f38e27",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 7,
+    "moduleKey": "hrms",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "bc1fdcc574725994e601469b",
+    "title": "PF ECR",
+    "icon": {
+      "iconName": "MdSecurity",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Allocations",
-        "icon": {
-            "iconName": "MdAssignmentTurnedIn",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/assets/allocations",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a50",
-            "6a67393351e2b55fc18f9a51",
-            "6a67393351e2b55fc18f9a52",
-            "6a67393351e2b55fc18f9a53"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e6",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 0
+    "mainRoute": "/hrms/pf-ecr",
+    "visibility": "protected",
+    "capabilities": [
+      "977a0e93350f0aac032ee0f3"
+    ],
+    "parentId": "b29a83660dfb311e92f38e27",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 8,
+    "moduleKey": "hrms",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "75231ad98c6423c95ec8aae5",
+    "title": "Reports",
+    "icon": {
+      "iconName": "MdBarChart",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Categories",
-        "icon": {
-            "iconName": "MdCategory",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/assets/categories",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a54",
-            "6a67393351e2b55fc18f9a55",
-            "6a67393351e2b55fc18f9a56",
-            "6a67393351e2b55fc18f9a57"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e6",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 1
+    "mainRoute": "/hrms/reports",
+    "visibility": "protected",
+    "capabilities": [
+      "3762c0098e247d718d079926"
+    ],
+    "parentId": "b29a83660dfb311e92f38e27",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 9,
+    "moduleKey": "hrms",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "cca1a8177e5feaf77d92b511",
+    "title": "Tickets",
+    "icon": {
+      "iconName": "MdConfirmationNumber",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "GRN",
-        "icon": {
-            "iconName": "MdLocalShipping",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/assets/grn",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a58",
-            "6a67393351e2b55fc18f9a59",
-            "6a67393351e2b55fc18f9a5a",
-            "6a67393351e2b55fc18f9a5b"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e6",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 2
+    "mainRoute": "/tickets",
+    "visibility": "protected",
+    "capabilities": [
+      "2b9e31ee704420cd873fefe0",
+      "bffebe382e22dc9acf268c02",
+      "ac6e4ac43a5522ed913552f3",
+      "5ab7558ccca2d81bf64747d2"
+    ],
+    "parentId": "dce86ca630592964ac189790",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "tickets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "68494ae183b34f054d83f2e6",
+    "title": "My Tickets",
+    "icon": {
+      "iconName": "MdAssignmentInd",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Incidents",
-        "icon": {
-            "iconName": "MdReportProblem",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/assets/incidents",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a5c",
-            "6a67393351e2b55fc18f9a5d",
-            "6a67393351e2b55fc18f9a5e",
-            "6a67393351e2b55fc18f9a5f"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e6",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 3
+    "mainRoute": "/tickets/my-tickets",
+    "visibility": "protected",
+    "capabilities": [
+      "3cc0ec5d86cdda7f3b911771",
+      "5edb04f8f18651261573ef65",
+      "cddfa4106d99414abe7caebc"
+    ],
+    "parentId": "dce86ca630592964ac189790",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "tickets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "03786affd9dbc394d67d0489",
+    "title": "Reports",
+    "icon": {
+      "iconName": "MdPieChart",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Invoices",
-        "icon": {
-            "iconName": "MdDescription",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/assets/invoices",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a60",
-            "6a67393351e2b55fc18f9a61",
-            "6a67393351e2b55fc18f9a62",
-            "6a67393351e2b55fc18f9a63"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e6",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 4
+    "mainRoute": "/tickets/reports",
+    "visibility": "protected",
+    "capabilities": [
+      "43a1c8d6186e88edc5880c5f"
+    ],
+    "parentId": "dce86ca630592964ac189790",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "moduleKey": "tickets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "caeba8a18ab3424723f45fba",
+    "title": "Project Management",
+    "icon": {
+      "iconName": "MdAccountTree",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Supplier Payments",
-        "icon": {
-            "iconName": "MdAttachMoney",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/assets/payments",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9b7c",
-            "6a67393351e2b55fc18f9b7d",
-            "6a67393351e2b55fc18f9b7e",
-            "6a67393351e2b55fc18f9b7f"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e6",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 5
+    "mainRoute": "/tasks",
+    "visibility": "protected",
+    "capabilities": [
+      "8d3f84d60dcb8ec5f2439a10",
+      "10cd81a12c93fe657a39819e",
+      "6d590fc57ed26b487bafbe95",
+      "c3ac9f9e2235e33125b8ff88"
+    ],
+    "parentId": "fe62e589d144763e7e57c6de",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "tasks",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "debd61e7cf484c09049a6bb6",
+    "title": "My Tasks",
+    "icon": {
+      "iconName": "MdTask",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Register",
-        "icon": {
-            "iconName": "MdAppRegistration",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/assets/register",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a64",
-            "6a67393351e2b55fc18f9a65",
-            "6a67393351e2b55fc18f9a66",
-            "6a67393351e2b55fc18f9a67"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e6",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 6
+    "mainRoute": "/tasks/my-tasks",
+    "visibility": "protected",
+    "capabilities": [
+      "b6c404ffb6147ec41f04aed7",
+      "7463e92733a83cbf5965194f",
+      "abd8072ac154c529a2860764"
+    ],
+    "parentId": "fe62e589d144763e7e57c6de",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "tasks",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "d28af6b2dfaa3bfe667414ba",
+    "title": "Client Tasks",
+    "icon": {
+      "iconName": "MdBusinessCenter",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Repairs",
-        "icon": {
-            "iconName": "MdBuild",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/assets/repairs",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a68",
-            "6a67393351e2b55fc18f9a69",
-            "6a67393351e2b55fc18f9a6a",
-            "6a67393351e2b55fc18f9a6b"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e6",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 7
+    "mainRoute": "/tasks/client-tasks",
+    "visibility": "protected",
+    "capabilities": [
+      "e6d3deb22bbdce8b63416017",
+      "2e76c829e10e61a4ef127659",
+      "0612111b7651bff00e3b7cb1"
+    ],
+    "parentId": "fe62e589d144763e7e57c6de",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "moduleKey": "tasks",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "d23c4eb238eb49e6a2dd972e",
+    "title": "Activity Timeline",
+    "icon": {
+      "iconName": "MdHistory",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Asset Reports",
-        "icon": {
-            "iconName": "MdAssessment",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/assets/reports",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9b80",
-            "6a67393351e2b55fc18f9b81",
-            "6a67393351e2b55fc18f9b82",
-            "6a67393351e2b55fc18f9b83"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e6",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 8
+    "mainRoute": "/tasks/activity-timeline",
+    "visibility": "protected",
+    "capabilities": [
+      "70bbf61952b5e4bada9a42e9"
+    ],
+    "parentId": "fe62e589d144763e7e57c6de",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "moduleKey": "tasks",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "69264df6774c67bf16556520",
+    "title": "Reports",
+    "icon": {
+      "iconName": "MdAnalytics",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Vendors",
-        "icon": {
-            "iconName": "MdStore",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/assets/vendors",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a6c",
-            "6a67393351e2b55fc18f9a6d",
-            "6a67393351e2b55fc18f9a6e",
-            "6a67393351e2b55fc18f9a6f"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e6",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 9
+    "mainRoute": "/tasks/reports",
+    "visibility": "protected",
+    "capabilities": [
+      "26aecfb4501f4a5346f6281a"
+    ],
+    "parentId": "fe62e589d144763e7e57c6de",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "moduleKey": "tasks",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "14779a99427aabf6c5214c19",
+    "title": "CRM Dashboard",
+    "icon": {
+      "iconName": "MdDashboardCustomize",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Payroll Dashboard",
-        "icon": {
-            "iconName": "MdDashboard",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/payroll/dashboard",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a9c",
-            "6a67393351e2b55fc18f9a9d",
-            "6a67393351e2b55fc18f9a9e",
-            "6a67393351e2b55fc18f9a9f"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e8",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 0
+    "mainRoute": "/crm",
+    "visibility": "protected",
+    "capabilities": [
+      "4f6c7ebfdfbc5d3478cd4da0"
+    ],
+    "parentId": "7201f2741ff5a6aabf84e405",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "crm",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "0a37d07a6ecb05d1f30a8e6c",
+    "title": "Contacts",
+    "icon": {
+      "iconName": "MdContactPage",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "My Payslips",
-        "icon": {
-            "iconName": "MdReceipt",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/payroll/mypayslipstab",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9b88",
-            "6a67393351e2b55fc18f9b89",
-            "6a67393351e2b55fc18f9b8a",
-            "6a67393351e2b55fc18f9b8b"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5e8",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 1
+    "mainRoute": "/crm/contacts",
+    "visibility": "protected",
+    "capabilities": [
+      "ed081143dacd00ffc2c1ac41",
+      "91ac5d2fb4ad512f22ead1a3",
+      "fd079f7ab9a8c8c59cab7639",
+      "fb12fcee3f219d974f3a55b3"
+    ],
+    "parentId": "7201f2741ff5a6aabf84e405",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "crm",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "da3ae334502a42487e16dcea",
+    "title": "Ledger",
+    "icon": {
+      "iconName": "MdMenuBook",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Capabilities",
-        "icon": {
-            "iconName": "MdKey",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/settings/capabilities",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9ac0",
-            "6a67393351e2b55fc18f9ac1",
-            "6a67393351e2b55fc18f9ac2",
-            "6a67393351e2b55fc18f9ac3"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5eb",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 0
+    "mainRoute": "/crm/ledger",
+    "visibility": "protected",
+    "capabilities": [
+      "d6f9376e23089ab5827ea628"
+    ],
+    "parentId": "7201f2741ff5a6aabf84e405",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "moduleKey": "crm",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "018c8ef517ef518f4c2301a4",
+    "title": "Order Acknowledgment",
+    "icon": {
+      "iconName": "MdFactCheck",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Designation Permissions",
-        "icon": {
-            "iconName": "MdAdminPanelSettings",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/settings/designation-permissions",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9ac4",
-            "6a67393351e2b55fc18f9ac5",
-            "6a67393351e2b55fc18f9ac6",
-            "6a67393351e2b55fc18f9ac7"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5eb",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 1
+    "mainRoute": "/crm/order-acknowledgement",
+    "visibility": "protected",
+    "capabilities": [
+      "574321941cf4551cd11f6a56",
+      "dda3837ec50577146c8a2350",
+      "eff3ccbeefcad97681647d7d",
+      "d4219c24e09ac5fb4820d440"
+    ],
+    "parentId": "7201f2741ff5a6aabf84e405",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "moduleKey": "crm",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "47882a181ef13ef10fe54492",
+    "title": "Orders",
+    "icon": {
+      "iconName": "MdShoppingCart",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "General",
-        "icon": {
-            "iconName": "MdTune",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/settings/general",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9ac8",
-            "6a67393351e2b55fc18f9ac9",
-            "6a67393351e2b55fc18f9aca",
-            "6a67393351e2b55fc18f9acb"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5eb",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 2
+    "mainRoute": "/crm/orders",
+    "visibility": "protected",
+    "capabilities": [
+      "6560d43d93639d61a5e25a36",
+      "48e700bd7ad828e75911115d",
+      "1847add7d9ba97d84df19009",
+      "eb53848c4e19125ca8e64d47"
+    ],
+    "parentId": "7201f2741ff5a6aabf84e405",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "moduleKey": "crm",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "aecc05093d1685f6374b5b11",
+    "title": "Payments",
+    "icon": {
+      "iconName": "MdPayment",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Role Permissions",
-        "icon": {
-            "iconName": "MdSecurity",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/settings/role-permissions",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9acc",
-            "6a67393351e2b55fc18f9acd",
-            "6a67393351e2b55fc18f9ace",
-            "6a67393351e2b55fc18f9acf"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5eb",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 3
+    "mainRoute": "/crm/payments",
+    "visibility": "protected",
+    "capabilities": [
+      "b582df8c8b9a743b3c23a41a",
+      "36f8b5f5c6d4a264db5ee2f7",
+      "10c2883a7cd3373a562d0a51",
+      "60f062b64115d910e1136f52"
+    ],
+    "parentId": "7201f2741ff5a6aabf84e405",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "moduleKey": "crm",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "5723c7caef990d18a70ab988",
+    "title": "Quotations",
+    "icon": {
+      "iconName": "MdRequestQuote",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Sidebar Policy",
-        "icon": {
-            "iconName": "MdPolicy",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/settings/sidebar-policy",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9ad0",
-            "6a67393351e2b55fc18f9ad1",
-            "6a67393351e2b55fc18f9ad2",
-            "6a67393351e2b55fc18f9ad3"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5eb",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 4
+    "mainRoute": "/crm/quotations",
+    "visibility": "protected",
+    "capabilities": [
+      "da21e5d47e1061f93019ab6c",
+      "d39225968aac6055a8ec04c5",
+      "2589753b1d9ef281138baa06",
+      "a4fdfff9bfe234d3dbe6f1b6"
+    ],
+    "parentId": "7201f2741ff5a6aabf84e405",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 6,
+    "moduleKey": "crm",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "acf6fde18d8417b3454d5d7b",
+    "title": "Category",
+    "icon": {
+      "iconName": "MdCategory",
+      "iconPackage": "react-icons/md"
     },
-    {
-        "title": "Menu",
-        "icon": {
-            "iconName": "MdMenu",
-            "iconPackage": "react-icons/md"
-        },
-        "mainRoute": "/settings/menu",
-        "visibility": "protected",
-        "capabilities": [
-            "6a67393351e2b55fc18f9a38",
-            "6a67393351e2b55fc18f9a39",
-            "6a67393351e2b55fc18f9a3a",
-            "6a67393351e2b55fc18f9a3b"
-        ],
-        "parentId": "6a659f888d8a0317a6a4b5eb",
-        "hasChildren": false,
-        "isParent": false,
-        "order": 5
-    }
+    "mainRoute": "/assets/categories",
+    "visibility": "protected",
+    "capabilities": [
+      "057eac4f2b3fb118d49771a8",
+      "97f34d4f520a414e28a3a0f5",
+      "c78cd0fc0b2652c73a2ceb29",
+      "f2b31381849e9e118f32b5e9"
+    ],
+    "parentId": "e62f064c6120cfbf691ca242",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "assets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "c0792da0b5481f7467cf1b56",
+    "title": "GRN",
+    "icon": {
+      "iconName": "MdInventory",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/grn",
+    "visibility": "protected",
+    "capabilities": [
+      "d57613b9655eb61474494ad5",
+      "2c7b175d24a2e51cd0831e19",
+      "938d7d84cbe38ac5b6b73d63",
+      "fdfd1a247d0897500876bcd3"
+    ],
+    "parentId": "e62f064c6120cfbf691ca242",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "assets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "68240abfffb20e52db923dfd",
+    "title": "Register",
+    "icon": {
+      "iconName": "MdAppRegistration",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/register",
+    "visibility": "protected",
+    "capabilities": [
+      "4a93b77382456aa3fd888cc9",
+      "e4fe3cc3a5a28f4a211feca3",
+      "aeefb4d9f0727cb485b87462",
+      "a4f0251d0b27931523a70490"
+    ],
+    "parentId": "e62f064c6120cfbf691ca242",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "moduleKey": "assets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "ae1e7c4db0867319542dc455",
+    "title": "Allocations",
+    "icon": {
+      "iconName": "MdAssignmentTurnedIn",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/allocations",
+    "visibility": "protected",
+    "capabilities": [
+      "0627dbf11fcdb78a5cf3ab8e",
+      "b255ea2c2de3e4af1235e07e",
+      "e375288aec1136b8a9e6ae76",
+      "8775c024896c62d7051ebbc5"
+    ],
+    "parentId": "e62f064c6120cfbf691ca242",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "moduleKey": "assets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "1b9b4f59c58f11e563066f6e",
+    "title": "Incidents",
+    "icon": {
+      "iconName": "MdReportProblem",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/incidents",
+    "visibility": "protected",
+    "capabilities": [
+      "49e2bb33744323ede5ee53f7",
+      "1a3ce255365aee9a71d1ad00",
+      "d66909818721c1441e12ceca",
+      "927bc2b403a471182615f35a"
+    ],
+    "parentId": "e62f064c6120cfbf691ca242",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "moduleKey": "assets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "770937bf952ddb774c6631a9",
+    "title": "Invoices",
+    "icon": {
+      "iconName": "MdReceipt",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/invoices",
+    "visibility": "protected",
+    "capabilities": [
+      "d932f042cce43a61e95976ab",
+      "e43ae1390e1290d5dc68b8cd",
+      "1ab920150b49092083b099c1",
+      "ed8424d4dba83597a2250401"
+    ],
+    "parentId": "e62f064c6120cfbf691ca242",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "moduleKey": "assets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "07a79b5961d8dc23fb948154",
+    "title": "Payments",
+    "icon": {
+      "iconName": "MdPayments",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/payments",
+    "visibility": "protected",
+    "capabilities": [
+      "a7098096404fc71086fbe1eb",
+      "2896ec737ae8a9104490fa94",
+      "f20795aba4f16576345e1ee3",
+      "9665da01fd3f9ee3bab3cdde"
+    ],
+    "parentId": "e62f064c6120cfbf691ca242",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 6,
+    "moduleKey": "assets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "a355aee432b7146d5adbe19d",
+    "title": "Repair",
+    "icon": {
+      "iconName": "MdBuild",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/repairs",
+    "visibility": "protected",
+    "capabilities": [
+      "3a1117130588efd01eb56fa8",
+      "714adab1efb8ac282466ab9e",
+      "27e8d4eadf36b270092d3f17",
+      "9872723faf2c2268ab26ff31"
+    ],
+    "parentId": "e62f064c6120cfbf691ca242",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 7,
+    "moduleKey": "assets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "2c0e64ff0758a757811f4516",
+    "title": "Vendor Registration",
+    "icon": {
+      "iconName": "MdStore",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/vendors",
+    "visibility": "protected",
+    "capabilities": [
+      "8e53f859eb74c19e30c589c8",
+      "991bf1b51d90351ad8204ac4",
+      "684a0143e0ea5dcc36263acd",
+      "ab1f69952d4cb4dd81215906"
+    ],
+    "parentId": "e62f064c6120cfbf691ca242",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 8,
+    "moduleKey": "assets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "dce9a96edf18fd6d7086beb1",
+    "title": "Reports",
+    "icon": {
+      "iconName": "MdShowChart",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/assets/reports",
+    "visibility": "protected",
+    "capabilities": [
+      "d8e2111595f041c1581c6416"
+    ],
+    "parentId": "e62f064c6120cfbf691ca242",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 9,
+    "moduleKey": "assets",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "4898ea7eb20d02d7c21cdd6f",
+    "title": "Payroll Overview",
+    "icon": {
+      "iconName": "MdAttachMoney",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/payroll",
+    "visibility": "protected",
+    "capabilities": [
+      "92b14c7ec5d8fae7f09d8bdb",
+      "eb75986025dffd8c74faf021",
+      "e4f7b92014147da7a4951c43",
+      "d52cee682131ef260a88d47f"
+    ],
+    "parentId": "0d41538408a335bbd5727d39",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "attendance",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "c92b44500616cbb7a4fda397",
+    "title": "Payroll Analytics",
+    "icon": {
+      "iconName": "MdInsights",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/payroll/dashboard",
+    "visibility": "protected",
+    "capabilities": [
+      "e92e8aca209911cd52edb11d"
+    ],
+    "parentId": "0d41538408a335bbd5727d39",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "attendance",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "f8f7f4174ebc6a390fc122ae",
+    "title": "Accounts Analytics",
+    "icon": {
+      "iconName": "MdAutoGraph",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/accounts",
+    "visibility": "protected",
+    "capabilities": [
+      "266a88ca2952a96a1649b166"
+    ],
+    "parentId": "5b02a2b478e0a49c864c5e6b",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "accounts",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "8ce7d61580b32e89550a6c3a",
+    "title": "Ledger",
+    "icon": {
+      "iconName": "MdAccountBalanceWallet",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/accounts/ledger",
+    "visibility": "protected",
+    "capabilities": [
+      "4f5ed5401bbdf5fe599908c4"
+    ],
+    "parentId": "5b02a2b478e0a49c864c5e6b",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "accounts",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "1c61627454d752a27310e2e2",
+    "title": "Payments",
+    "icon": {
+      "iconName": "MdPaid",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/accounts/payments",
+    "visibility": "protected",
+    "capabilities": [
+      "e4d181b420fd4370fab9b4e8",
+      "81f9dae2945ae48f80376bbd",
+      "6e0c7cdea853c18198d156a6",
+      "11b892398de2b73d7610d346"
+    ],
+    "parentId": "5b02a2b478e0a49c864c5e6b",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "moduleKey": "accounts",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "889177658fb79c147bafcf23",
+    "title": "Productivity",
+    "icon": {
+      "iconName": "MdQueryStats",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/accounts/productivity",
+    "visibility": "protected",
+    "capabilities": [
+      "0c65960a37b75b1456b066be"
+    ],
+    "parentId": "5b02a2b478e0a49c864c5e6b",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "moduleKey": "accounts",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "b2533fd94eee0f7727c8cb62",
+    "title": "Reports",
+    "icon": {
+      "iconName": "MdDescription",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/accounts/reports",
+    "visibility": "protected",
+    "capabilities": [
+      "670f1234fcc56ee89c9d172b"
+    ],
+    "parentId": "5b02a2b478e0a49c864c5e6b",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "moduleKey": "accounts",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "a0c68f3a8a6284439c3426f6",
+    "title": "MIS Report",
+    "icon": {
+      "iconName": "MdLeaderboard",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/reports/mis-report-cockpit",
+    "visibility": "protected",
+    "capabilities": [
+      "8cb3b7a09b742fd5ae9b47c6"
+    ],
+    "parentId": "9f09f0094fd4d8c5b077ad8a",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "d0b42f411fe6fd69e130a48e",
+    "title": "Payroll Records",
+    "icon": {
+      "iconName": "MdTableChart",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/reports/payroll-submission",
+    "visibility": "protected",
+    "capabilities": [
+      "f560691e0dd84be4f49629ee"
+    ],
+    "parentId": "9f09f0094fd4d8c5b077ad8a",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "5479151fd765007cba5b30f2",
+    "title": "Client",
+    "icon": {
+      "iconName": "MdBusiness",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/clients",
+    "visibility": "protected",
+    "capabilities": [
+      "d8c0cf407d3f2c474ad4b21d",
+      "616d404c67de8ddc5867b3a8",
+      "6f9f381b528d348793c50cd0",
+      "2b0cab9477a2fa32e473b0c4"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "da111cce9a942c3cbc62b3fa",
+    "title": "Employee",
+    "icon": {
+      "iconName": "MdBadge",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/employees",
+    "visibility": "protected",
+    "capabilities": [
+      "bcf181d5316e779b1051ad37",
+      "995741d68f9fc018aef589e7",
+      "48dd2589c1d10edae0967b71",
+      "871b8a600075df5f58ddc058"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "dfe175501b8ffa01aac90685",
+    "title": "Agent",
+    "icon": {
+      "iconName": "MdSupportAgent",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/agents",
+    "visibility": "protected",
+    "capabilities": [
+      "b66ca8a8325454dbe46ea353",
+      "632971e7d8061d6ce8072479",
+      "9bf1aa938ca003712bb8cd7f",
+      "36c52f19f3d54e550fea832b"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "c6480f6f82e814c930666203",
+    "title": "Department",
+    "icon": {
+      "iconName": "MdDomain",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/departments",
+    "visibility": "protected",
+    "capabilities": [
+      "6e45faa8150bbd3e7838a1b1",
+      "d624b54d91807a680f969489",
+      "383398cfbba19c2743104b74",
+      "19c932e4991b150e948ce269"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "7874e8af5ef86101efee473a",
+    "title": "Designation",
+    "icon": {
+      "iconName": "MdWork",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/designations",
+    "visibility": "protected",
+    "capabilities": [
+      "f87c98a8dc27e58bf0085a9f",
+      "848dea40d4b6f8df01fdd94a",
+      "953603339a079d59fa9a991d",
+      "c20faa008f66409deaffe001"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "285e740eb2e114b4da17f50c",
+    "title": "Role",
+    "icon": {
+      "iconName": "MdAdminPanelSettings",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/roles",
+    "visibility": "protected",
+    "capabilities": [
+      "67748c893093314fe7853bf1",
+      "6cc7aafbb59258cdef18ee97",
+      "906693c13c443a1526b62d7a",
+      "ad1a3e89c7a94e94d7eba63e"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "e7b1e1b89fd97b002b7d79b3",
+    "title": "Leave Type",
+    "icon": {
+      "iconName": "MdFlightTakeoff",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/leave-types",
+    "visibility": "protected",
+    "capabilities": [
+      "ab2bafe5f8fdcd774a292f88",
+      "622c91eb34736827b7d9471c",
+      "221e21ee31f408b48d72cdf4",
+      "3d749a600a26e862ed1f1077"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 6,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "e8e41891cd8f03e4bf114f36",
+    "title": "Leave Policy",
+    "icon": {
+      "iconName": "MdRule",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/leave-policies",
+    "visibility": "protected",
+    "capabilities": [
+      "6e95f32567d7fe2f236b87b5",
+      "263400a05809f868917b480f",
+      "5bd0f1473e7420d4a4f62738",
+      "8d60ee6eac2861d7a2fd4d70"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 7,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "51dcbf8a3b6404f328b14f3c",
+    "title": "Leave Transaction",
+    "icon": {
+      "iconName": "MdSwapHoriz",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/leave-transactions",
+    "visibility": "protected",
+    "capabilities": [
+      "a7793d088f57c7250deccef2",
+      "ba6d61888221d9a04587cd98",
+      "33a80758824b401b1661e2a6",
+      "cd1dedaa25568cbe4036e6f0"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 8,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "cc2d27dd43df8006b61b9017",
+    "title": "Shift",
+    "icon": {
+      "iconName": "MdSchedule",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/shifts",
+    "visibility": "protected",
+    "capabilities": [
+      "61d9b25d2ca3fd17bdac0734",
+      "55885b28d048b760a3bc44ac",
+      "f7a110250391fd9798d64cf3",
+      "72f3be7e3004e0100be307ba"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 9,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "90f6ed80e1e302d3898428e1",
+    "title": "HR Policy",
+    "icon": {
+      "iconName": "MdVerifiedUser",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/hr-policies",
+    "visibility": "protected",
+    "capabilities": [
+      "3901fdddb74bdc6165e18484",
+      "3257e9dce8714c018a4e6ebe",
+      "592573eb776d4107db11465b",
+      "46427962044dee4e74720305"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 10,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "fbfe982348199315363ea9d7",
+    "title": "Workflow",
+    "icon": {
+      "iconName": "MdSchema",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/workflows",
+    "visibility": "protected",
+    "capabilities": [
+      "cd4c7c06754fc9894d8091e2",
+      "33764bab613ea0ea6dee3421",
+      "90e48bba054952b19901a78e",
+      "08e7ad07671aa3d0aa505a66"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 11,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "453253137d369bf3921bc9aa",
+    "title": "Attendance Policy",
+    "icon": {
+      "iconName": "MdFactCheck",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/attendance-policies",
+    "visibility": "protected",
+    "capabilities": [
+      "7a25debd9ce4177181e52ef1",
+      "a692865c0877a522e8224d66",
+      "940343b983ed24fef2030b43",
+      "1cee27a7d51defce1ca0cd38"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 12,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "33dcb66ee61f25b1994c9df5",
+    "title": "Holiday",
+    "icon": {
+      "iconName": "MdCelebration",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/holidays",
+    "visibility": "protected",
+    "capabilities": [
+      "55f4b1237d9a6df47d62d799",
+      "10cbfa9f364a59063cfa6fdb",
+      "e1c576184c40ca71fd95b095",
+      "49d4c4d85563d8f7bb31c689"
+    ],
+    "parentId": "be7f6810904678841c46e307",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 13,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "d22a11082fde166bd4c3bfde",
+    "title": "Product",
+    "icon": {
+      "iconName": "MdInventory2",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/products",
+    "visibility": "protected",
+    "capabilities": [
+      "9a685fa3dd55f71cf214f6f2",
+      "dcbd146e80b50bc9bc09d952",
+      "ade83665f308ff5cc1683926",
+      "2f3af65ef31b117d63046d72"
+    ],
+    "parentId": "d6c2e0f5b141518a66abe2ac",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "65a09bc862fc71516ec3456a",
+    "title": "Project Type",
+    "icon": {
+      "iconName": "MdFolder",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/project-types",
+    "visibility": "protected",
+    "capabilities": [
+      "4faf0fd719462b563a7c8096",
+      "c4c01eb88c02cf19e48cc3a0",
+      "24a0386ea18ba9b56eaed439",
+      "139ade1874f735b0e95c56b0"
+    ],
+    "parentId": "d6c2e0f5b141518a66abe2ac",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "f6d2fe851102eb0f87b68233",
+    "title": "Job Type",
+    "icon": {
+      "iconName": "MdWorkHistory",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/job-types",
+    "visibility": "protected",
+    "capabilities": [
+      "ed4d594fe9617e92a4629ee4",
+      "67371d263c8f6a7388e5820c",
+      "badbb5856fee10875efc4c58",
+      "1585a46622c8ca6023313e61"
+    ],
+    "parentId": "d6c2e0f5b141518a66abe2ac",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "f0ac83f08413414a455f6289",
+    "title": "Job Category",
+    "icon": {
+      "iconName": "MdCategory",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/job-categories",
+    "visibility": "protected",
+    "capabilities": [
+      "21653c7b5a996609eeb2406f",
+      "634133bf6e21cc7ef934e006",
+      "60d1f57a677f200d07f18976",
+      "d08fe13242fd10b9e115bbe2"
+    ],
+    "parentId": "d6c2e0f5b141518a66abe2ac",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "6ec4d58a3a9feee8fdbd0f69",
+    "title": "Lead Type",
+    "icon": {
+      "iconName": "MdLeaderboard",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/lead-types",
+    "visibility": "protected",
+    "capabilities": [
+      "b4f560cccd2a8cdd390782f2",
+      "d6751736e6e7ffcf452088bc",
+      "3dc1141ce211dcd53fe21850",
+      "8917185ea660121c01201d78"
+    ],
+    "parentId": "d6c2e0f5b141518a66abe2ac",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "1382156ce80aa8d56fd0032c",
+    "title": "Milestones",
+    "icon": {
+      "iconName": "MdFlag",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/milestones",
+    "visibility": "protected",
+    "capabilities": [
+      "0194d99442a84df73ba24833",
+      "2d9a55c02676e08ae6f251c4",
+      "37035ccb19945c3e47bfb269",
+      "803c97ab0fb32088b6453454"
+    ],
+    "parentId": "d6c2e0f5b141518a66abe2ac",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "167caa472c07c567925d965d",
+    "title": "Reference Type",
+    "icon": {
+      "iconName": "MdBookmark",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/reference-types",
+    "visibility": "protected",
+    "capabilities": [
+      "4c323eb84fec130af943c1a8",
+      "bff6850de40d67eaa462f880",
+      "17d1544e2dd56ca8ba5fee9f",
+      "0ea34836cbd45e8786652b94"
+    ],
+    "parentId": "d6c2e0f5b141518a66abe2ac",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 6,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "aa6b2f9dd785bc541418b256",
+    "title": "Service Provider",
+    "icon": {
+      "iconName": "MdHandshake",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/service-providers",
+    "visibility": "protected",
+    "capabilities": [
+      "904a5dc80e5a935337c9f55a",
+      "7469c52e9efb2db49e8ca1a9",
+      "eddb658d917ec737cff6edb2",
+      "074c105b1129a1071800fb53"
+    ],
+    "parentId": "d6c2e0f5b141518a66abe2ac",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 7,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "3d5a0ab69092c95847877950",
+    "title": "Status Master",
+    "icon": {
+      "iconName": "MdChecklist",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/status-master",
+    "visibility": "protected",
+    "capabilities": [
+      "53e164096d6125b656223330",
+      "f5d7b4aea44ddfb425441250",
+      "fb12f608e414d8de020520ee",
+      "af6097ca457268c6f381da95"
+    ],
+    "parentId": "d6c2e0f5b141518a66abe2ac",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 8,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "0cd65f46c9d98cd903176794",
+    "title": "Task Type",
+    "icon": {
+      "iconName": "MdFormatListBulleted",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/master-data/task-types",
+    "visibility": "protected",
+    "capabilities": [
+      "3856b985c04eec64d29adcab",
+      "eb2e08f77ba08a2c3cf0fa3c",
+      "8a0db663d0b363df5c2a8576",
+      "7c2a32288a531af2e65bbddb"
+    ],
+    "parentId": "d6c2e0f5b141518a66abe2ac",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 9,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "0952f4df981bcc14427beff6",
+    "title": "General Settings",
+    "icon": {
+      "iconName": "MdTune",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/general",
+    "visibility": "protected",
+    "capabilities": [
+      "db6c299e9619b0284144905c",
+      "5fb2ddd198eeb90220681911"
+    ],
+    "parentId": "7f6e9acd417632a0e1aaed76",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 0,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "ded3a78dd65d41fe36c8db62",
+    "title": "Dashboard Builder",
+    "icon": {
+      "iconName": "MdViewQuilt",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/dashboard-builder",
+    "visibility": "protected",
+    "capabilities": [
+      "dc412f803a4bc3992bfe9db0",
+      "5171212ae4ceaa732154b6f3"
+    ],
+    "parentId": "7f6e9acd417632a0e1aaed76",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 1,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "e50705c3175f55c44da1ee6b",
+    "title": "Designation Permission",
+    "icon": {
+      "iconName": "MdKey",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/designation-permissions",
+    "visibility": "protected",
+    "capabilities": [
+      "00ac7a08691f43bd924b0f6b",
+      "15fa4185504263183cc769a5"
+    ],
+    "parentId": "7f6e9acd417632a0e1aaed76",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 2,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "b5725f5ecba5a8272e7d17d4",
+    "title": "Role Permission",
+    "icon": {
+      "iconName": "MdLockPerson",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/role-permissions",
+    "visibility": "protected",
+    "capabilities": [
+      "14743fea6b1baa99dd81e305",
+      "1ef1f2cf425b13a4ec87c7d3"
+    ],
+    "parentId": "7f6e9acd417632a0e1aaed76",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 3,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "39c9194144d41f0d037c3910",
+    "title": "Menu",
+    "icon": {
+      "iconName": "MdMenu",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/menu",
+    "visibility": "protected",
+    "capabilities": [
+      "4f7d5fae2a15da920f9acf6a",
+      "8a3ad367cacecae7127b1377",
+      "6b62384a09bef107f1190b0a",
+      "3b94c306e180f9775c4a5b75"
+    ],
+    "parentId": "7f6e9acd417632a0e1aaed76",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 4,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "b7479e03d695babcbd423707",
+    "title": "Email Config",
+    "icon": {
+      "iconName": "MdEmail",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/email-config",
+    "visibility": "protected",
+    "capabilities": [
+      "65bb999778a65a6cf6e0ea4d",
+      "58b8b9031950c33afe1ae187",
+      "1db964644e0ce90df238a8b3",
+      "4ab269fbe49b08750b8f3e48"
+    ],
+    "parentId": "7f6e9acd417632a0e1aaed76",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 5,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "1e8bbd65e9c90bfd69054b4c",
+    "title": "Company",
+    "icon": {
+      "iconName": "MdCorporateFare",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/company",
+    "visibility": "protected",
+    "capabilities": [
+      "83a577e900109bb85b4512f7",
+      "ebff413b69e2bf6f672c26d6"
+    ],
+    "parentId": "7f6e9acd417632a0e1aaed76",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 6,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  },
+  {
+    "_id": "363fed52f0c3d2353e76c552",
+    "title": "Capability",
+    "icon": {
+      "iconName": "MdShield",
+      "iconPackage": "react-icons/md"
+    },
+    "mainRoute": "/settings/capabilities",
+    "visibility": "protected",
+    "capabilities": [
+      "f0f101f37eaec8a26a75b793",
+      "675d62a7361b0991d1a39e96",
+      "1235939fd11e885fbabf5509",
+      "52140db921ddf3b61ac1f7b4"
+    ],
+    "parentId": "7f6e9acd417632a0e1aaed76",
+    "hasChildren": false,
+    "isParent": false,
+    "order": 7,
+    "moduleKey": "core",
+    "isActive": true,
+    "isDeleted": false
+  }
 ]

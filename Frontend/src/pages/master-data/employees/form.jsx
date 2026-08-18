@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import axiosInstance from "../../../api/axiosInstance";
 import MasterDataFormView from "../../../components/MasterData/MasterDataFormView";
 import { buildEmployeeFormFields } from "../../../constants/employeeForm";
-import { employeesConfig } from "./config";
+import { employeesConfig } from "../../../components/MasterData/configs/employees";
 
 const EmployeeFormPage = () => {
   const [deps, setDeps] = useState({

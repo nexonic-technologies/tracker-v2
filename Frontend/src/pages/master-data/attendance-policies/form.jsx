@@ -1,4 +1,4 @@
-import { createFormPage } from "../_simpleModuleFactory";
-import { attendance_policiesConfig } from "./config";
+import { createFormPage } from "../../../components/MasterData/simpleModuleFactory";
+import { attendance_policiesConfig } from "../../../components/MasterData/configs/attendance-policies";
 
 export default createFormPage(attendance_policiesConfig);

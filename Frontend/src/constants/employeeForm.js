@@ -1,5 +1,5 @@
-import EmployeeDocumentVault from "../pages/master-data/employees/documents.jsx";
-import EmployeeCareerTimeline from "../pages/master-data/employees/timeline.jsx";
+import EmployeeDocumentVault from "../components/Employee/EmployeeDocumentVault.jsx";
+import EmployeeCareerTimeline from "../components/Employee/EmployeeCareerTimeline.jsx";
 
 export const EMPLOYEE_FORM_TABS = [
   { id: "basic",       label: "Personal",       fieldPrefixes: ["basicInfo"] },

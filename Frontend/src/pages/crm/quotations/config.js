@@ -1,5 +1,5 @@
 import { quotationFormFields, quotationSubmit } from "../../../constants/masterDataForms";
-import { buildSimpleModule } from "../../master-data/buildSimpleModule";
+import { buildSimpleModule } from "../../../components/MasterData/buildSimpleModule";
 
 export const quotationsConfig = buildSimpleModule({
   folder: "CRM/Quotations",

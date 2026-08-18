@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../api/axiosInstance';
-import DepartmentAllocation from '../reports/department-allocation';
-import ReportDataGrid from '../reports/report-data-grid';
-import { fetchDepartments } from '../reports/reportCatalog';
+import DepartmentAllocation from '../../components/reports/DepartmentAllocation';
+import ReportDataGrid from '../../components/reports/ReportDataGrid';
+import { fetchDepartments } from '../../components/reports/reportCatalog';
 import { 
   Briefcase, Download, Search, TrendingUp, DollarSign
 } from 'lucide-react';

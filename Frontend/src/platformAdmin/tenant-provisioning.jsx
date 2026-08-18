@@ -195,7 +195,10 @@ export default function TenantProvisioningPage() {
     try {
       const token = Cookies.get('auth_token') || localStorage.getItem('auth_token') || localStorage.getItem('token');
       const deviceUuid = getDeviceUUID();
-      const response = await axiosInstance('/api/admin/tenants/provision-stream', {
+      const baseUrl = (import.meta.env.VITE_APP_URL || "").trim().replace(/\/+$/, "");
+      const streamUrl = baseUrl ? `${baseUrl}/api/admin/tenants/provision-stream` : "/api/admin/tenants/provision-stream";
+
+      const response = await fetch(streamUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -505,8 +508,8 @@ export default function TenantProvisioningPage() {
                   <label
                     key={key}
                     className={`flex items-start justify-between px-3 py-2 rounded-[var(--tracker-radius-sm)] border cursor-pointer transition-all ${isChecked
-                        ? 'border-[var(--brand-solid)] bg-[var(--tracker-surface-1)]'
-                        : 'border-[var(--tracker-border)] hover:bg-[var(--tracker-surface-1)]'
+                      ? 'border-[var(--brand-solid)] bg-[var(--tracker-surface-1)]'
+                      : 'border-[var(--tracker-border)] hover:bg-[var(--tracker-surface-1)]'
                       }`}
                   >
                     <div className="min-w-0">

@@ -1,4 +1,4 @@
-import { createFormPage } from "../_simpleModuleFactory";
-import { serviceProvidersConfig } from "./config";
+import { createFormPage } from "../../../components/MasterData/simpleModuleFactory";
+import { serviceProvidersConfig } from "../../../components/MasterData/configs/service-providers";
 
 export default createFormPage(serviceProvidersConfig);

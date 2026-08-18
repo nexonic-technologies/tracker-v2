@@ -1,5 +1,5 @@
 import React from 'react';
-import ReportPageLayout from '../reports/report-page-layout';
+import ReportPageLayout from '../../components/reports/ReportPageLayout';
 
 export default function LifecycleAuditReportPage() {
   return (

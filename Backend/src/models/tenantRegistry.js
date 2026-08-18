@@ -109,8 +109,8 @@ import employee_task_queue_requests from "./EmployeeTaskQueueRequest.js";
 export const MODULE_METADATA = {
   core: { name: 'Core Platform & System Engine', description: 'Essential core settings, security policies, roles, sessions, and system audit logs', icon: 'Shield', isCore: true },
   hrms: { name: 'HRMS Core Personnel Suite', description: 'Unified personnel suite: employee lifecycle, onboardings, employee documents, and HR policies', icon: 'Users', isCore: false },
-  attendance: { name: 'Attendance & Leave Management', description: 'Daily attendance tracking, shift scheduling, leaves, regularizations, and WFH requests', icon: 'Clock', isCore: false },
-  payroll: { name: 'Payroll Engine & Compensation', description: 'Salary structures, monthly payroll runs, expenses, and payment journals', icon: 'DollarSign', isCore: false },
+  attendance: { name: 'Attendance, Leaves & Payroll Suite', description: 'Daily attendance tracking, shift scheduling, leaves, regularizations, WFH requests, salary structures, and monthly payroll runs', icon: 'Clock', isCore: false },
+  accounts: { name: 'Accounts & Financial Ledger', description: 'Financial ledger, payment journals, accounting reports, payment records, and financial analytics', icon: 'DollarSign', isCore: false },
   tasks: { name: 'Tasks & Agile Project Tracker', description: 'Sprint planning, tasks, task queues, and project types', icon: 'CheckSquare', isCore: false },
   tickets: { name: 'Helpdesk & Ticket System', description: 'Support tickets, internal comments, attachments, status history, and assignments', icon: 'LifeBuoy', isCore: false },
   crm: { name: 'CRM & Client Management', description: 'Client leads, meetings, quotations, order acknowledgements, and client ledgers', icon: 'Briefcase', isCore: false },
@@ -134,9 +134,7 @@ export const MODULE_DEFINITIONS = {
   ],
   attendance: [
     'attendances', 'shifts', 'shift_assignments', 'shiftassignments', 'attendance_policies', 'regularizations', 'wfh_requests', 'comp_off_requests', 'holidays',
-    'leaves', 'leave_types', 'leave_policy', 'leavepolicy', 'leave_transactions'
-  ],
-  payroll: [
+    'leaves', 'leave_types', 'leave_policy', 'leavepolicy', 'leave_transactions',
     'payrolls', 'payroll_runs', 'salary_structures', 'expenses', 'payments', 'payment_journals'
   ],
   tasks: [

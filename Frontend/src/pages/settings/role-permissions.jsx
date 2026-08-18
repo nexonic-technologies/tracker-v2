@@ -17,7 +17,7 @@ import {
     EyeSlashIcon,
     Bars3Icon,
 } from '@heroicons/react/24/solid';
-import { WIDGET_REGISTRY, WIDGET_GROUPS } from '@pages/dashboard/config/dashboardConfig';
+import { WIDGET_REGISTRY, WIDGET_GROUPS } from '@components/dashboard/config/dashboardConfig';
 import { usePermission } from '@context/permissionProvider';
 import { useTenant } from '@context/TenantContext';
 

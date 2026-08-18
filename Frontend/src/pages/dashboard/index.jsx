@@ -4,31 +4,31 @@ import { MODULES } from '../../constants/uiTokens';
 import { useAuth } from '../../context/authProvider';
 import { useUserRole } from '../../hooks/useUserRole';
 
-import { getRoleConfig } from './config/dashboardConfig';
-import { useWidgetPermissions } from './hooks/useWidgetPermissions';
-import { useDashboardData } from './hooks/useDashboardData';
+import { getRoleConfig } from '../../components/dashboard/config/dashboardConfig';
+import { useWidgetPermissions } from '../../components/dashboard/hooks/useWidgetPermissions';
+import { useDashboardData } from '../../components/dashboard/hooks/useDashboardData';
 import DashboardRenderer from '../../engine/dashboard/DashboardRenderer';
 import { useDashboardSchema } from '../../engine/dashboard/hooks/useDashboardSchema';
 
 // V1 components
-import DashboardLoader from './components/DashboardLoader';
-import DashboardHero from './components/DashboardHero';
-import QuickActions from './components/QuickActions';
-import PendingLeaves from './components/PendingLeaves';
+import DashboardLoader from '../../components/dashboard/DashboardLoader';
+import DashboardHero from '../../components/dashboard/DashboardHero';
+import QuickActions from '../../components/dashboard/QuickActions';
+import PendingLeaves from '../../components/dashboard/PendingLeaves';
 import StatCard from '../../components/Common/StatCard';
 import TableGenerator from '../../components/Common/TableGenerator';
 import PriorityTasks from '../../components/Common/PriorityTasks';
 import RecentActivity from '../../components/role/Employee/RecentActivity';
 
 // V2 components
-import V2AlertBanner from './components/V2AlertBanner';
-import V2WorkforcePulse from './components/V2WorkforcePulse';
-import V2StatsRow from './components/V2StatsRow';
-import V2ActionCenter from './components/V2ActionCenter';
-import V2TeamAttendanceGrid from './components/V2TeamAttendanceGrid';
-import V2EmployeeHeader from './components/V2EmployeeHeader';
-import V2EmployeeTasks from './components/V2EmployeeTasks';
-import V2EmployeeLeaveBalance from './components/V2EmployeeLeaveBalance';
+import V2AlertBanner from '../../components/dashboard/V2AlertBanner';
+import V2WorkforcePulse from '../../components/dashboard/V2WorkforcePulse';
+import V2StatsRow from '../../components/dashboard/V2StatsRow';
+import V2ActionCenter from '../../components/dashboard/V2ActionCenter';
+import V2TeamAttendanceGrid from '../../components/dashboard/V2TeamAttendanceGrid';
+import V2EmployeeHeader from '../../components/dashboard/V2EmployeeHeader';
+import V2EmployeeTasks from '../../components/dashboard/V2EmployeeTasks';
+import V2EmployeeLeaveBalance from '../../components/dashboard/V2EmployeeLeaveBalance';
 
 export default function Dashboard() {
   const { user } = useAuth();

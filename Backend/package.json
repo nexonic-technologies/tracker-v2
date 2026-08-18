@@ -9,6 +9,7 @@
     "start": "node --max-old-space-size=4096 server.js",
     "dev:monitor": "nodemon server.js",
     "seed": "node src/scripts/seedSuperAdmin.js --reset",
+    "seed:navigation": "node src/scripts/seedMasterNavigationAndCapabilities.js",
     "verify:seed": "node src/scripts/seedSuperAdmin.js --verify-only",
     "backup": "node -e \"import('./src/services/backupService.js').then(s => s.default.createFullBackup())\"",
     "cron:stats": "node -e \"import('./src/cron/AttendanceCron.js').then(m => // console.log(m.monitor.getStats()))\"",

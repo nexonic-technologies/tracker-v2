@@ -1,4 +1,4 @@
-import { createFormPage } from "../_simpleModuleFactory";
-import { hrPoliciesConfig } from "./config";
+import { createFormPage } from "../../../components/MasterData/simpleModuleFactory";
+import { hrPoliciesConfig } from "../../../components/MasterData/configs/hr-policies";
 
 export default createFormPage(hrPoliciesConfig);

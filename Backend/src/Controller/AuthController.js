@@ -30,7 +30,7 @@ export const login = async (req, res, next) => {
     }
 
     let tenantId = 'admin';
-    let dbName = process.env.DEFAULT_TENANT_DB || 'tracker_tenant_admin';
+    let dbName = process.env.DEFAULT_TENANT_DB || 'tenant_admin';
     let user = null;
     let userType = "employee";
 

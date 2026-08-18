@@ -662,9 +662,21 @@ const FormRenderer = ({
       ? fieldsByTab[activeTab] || fields
       : fields;
 
+  const prevDataKeyRef = useRef(null);
+
   useEffect(() => {
+    // Generate a lightweight fingerprint of data to avoid re-triggering when parent passes new object references
+    const dataFingerprint = data ? (data._id || data.id || JSON.stringify(data)) : "";
+    const fieldsFingerprint = Array.isArray(fields) ? fields.map(f => `${f.name}:${f.default}`).join('|') : "";
+    const currentSyncKey = `${dataFingerprint}___${fieldsFingerprint}`;
+
+    if (prevDataKeyRef.current === currentSyncKey) {
+      return;
+    }
+    prevDataKeyRef.current = currentSyncKey;
+
     const defaults = {};
-    fields.forEach((field) => {
+    (fields || []).forEach((field) => {
       if (field.default !== undefined) defaults[field.name] = field.default;
       if (field.hidden && field.value !== undefined) defaults[field.name] = field.value;
       if (field.type === "multiGroup" && !defaults[field.name]) {
@@ -681,11 +693,14 @@ const FormRenderer = ({
       setFormData(merged);
       setChangedFields({});
     } else {
-      setFormData((prev) => ({ ...defaults, ...prev }));
+      setFormData((prev) => {
+        const hasMissing = Object.keys(defaults).some(k => prev[k] === undefined);
+        return hasMissing ? { ...defaults, ...prev } : prev;
+      });
     }
 
     // Auto-fetch options for AutoComplete fields with pre-filled values on load
-    fields.forEach(f => {
+    (fields || []).forEach(f => {
       if (f.type === "AutoComplete" && f.source) {
         const val = getNestedValue(data, f.name);
         if (val) {

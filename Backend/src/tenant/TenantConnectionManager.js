@@ -108,10 +108,11 @@ class TenantConnectionManager {
    */
   invalidate(tenantIdOrDbName) {
     if (!tenantIdOrDbName) return;
-    const dbName = tenantIdOrDbName.startsWith('tracker_tenant_')
+    const dbName = (tenantIdOrDbName.startsWith('tenant_') || tenantIdOrDbName.startsWith('tracker_tenant_'))
       ? tenantIdOrDbName
-      : `tracker_tenant_${tenantIdOrDbName}`;
+      : `tenant_${tenantIdOrDbName}`;
     this.connectionCache.delete(dbName);
+    this.connectionCache.delete(`tracker_tenant_${tenantIdOrDbName}`);
     this.connectionCache.delete(tenantIdOrDbName);
   }
 

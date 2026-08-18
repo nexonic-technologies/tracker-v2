@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { entityFormPath } from "../../../utils/formRoutes";
-import { workflowsConfig } from "./config";
+import { workflowsConfig } from "../../../components/MasterData/configs/workflows";
 
 // ── Model display labels ──────────────────────────────────────
 const MODEL_LABELS = {

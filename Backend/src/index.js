@@ -528,7 +528,7 @@ export async function initApp() {
   try {
     console.log("[initApp] Pre-warming tenant connections for instant login readiness...");
     const { default: TenantConnectionManager } = await import('./tenant/TenantConnectionManager.js');
-    const defaultDb = process.env.DEFAULT_TENANT_DB || 'tracker_tenant_admin';
+    const defaultDb = process.env.DEFAULT_TENANT_DB || 'tenant_admin';
     await TenantConnectionManager.getTenantConnection(defaultDb);
 
     try {
@@ -537,7 +537,7 @@ export async function initApp() {
       if (Tenant) {
         const activeTenants = await Tenant.find({ status: { $in: ['active', 'Active'] } }).lean();
         for (const t of activeTenants) {
-          const db = t.dbName || (t.tenantId ? `tracker_tenant_${t.tenantId}` : null);
+          const db = t.dbName || (t.tenantId ? (t.tenantId.startsWith('tenant_') ? t.tenantId : `tenant_${t.tenantId}`) : null);
           if (db && db !== defaultDb) {
             await TenantConnectionManager.getTenantConnection(db, t.enabledModules);
           }

@@ -1,5 +1,5 @@
 import MasterDataFormView from "../../../components/MasterData/MasterDataFormView";
-import { departmentsConfig } from "./config";
+import { departmentsConfig } from "../../../components/MasterData/configs/departments";
 
 const DepartmentFormPage = () => <MasterDataFormView config={departmentsConfig} />;
 

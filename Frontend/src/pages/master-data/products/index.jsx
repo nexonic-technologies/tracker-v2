@@ -5,7 +5,7 @@ import TableGenerator from "../../../components/Common/TableGenerator";
 import PolicyGuard from "../../../components/Common/PolicyGuard";
 import { useUserRole } from "../../../hooks/useUserRole";
 import { entityFormPath } from "../../../utils/formRoutes";
-import { productsConfig } from "./config";
+import { productsConfig } from "../../../components/MasterData/configs/products";
 
 const Products = () => {
     const navigate = useNavigate();

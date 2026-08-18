@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { entityFormPath } from "../../../utils/formRoutes";
-import { leave_policiesConfig } from "./config";
+import { leave_policiesConfig } from "../../../components/MasterData/configs/leave-policies";
 import toast from "react-hot-toast";
 
 // ── Helpers ────────────────────────────────────────────────────────────────

@@ -20,7 +20,7 @@ const connectDB = async (retries = 5) => {
     maxIdleTimeMS: 30000,
     serverSelectionTimeoutMS: 30000, // increased for Atlas SRV resolution
     socketTimeoutMS: 45000,
-    bufferCommands: false,
+    bufferCommands: true,
     connectTimeoutMS: 30000,
     // family: 4 removed — forces IPv4 and breaks Node.js SRV DNS lookup
     compressors: ['zlib'],

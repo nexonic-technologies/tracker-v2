@@ -8,10 +8,9 @@ let cachedRules = null;
 export async function reloadRules() {
   try {
     const { getTenantModel } = await import('../tenant/tenantContext.js');
-    const NotificationRule = getTenantModel('NotificationRule');
+    const NotificationRule = getTenantModel('NotificationRule') || getTenantModel('notificationrules');
     
     if (!NotificationRule) {
-      console.warn('[RuleCache] notificationrules model not found in collection registry.');
       return;
     }
 
@@ -20,8 +19,8 @@ export async function reloadRules() {
       .lean();
 
     cachedRules = rules;
-  } catch (err) {
-    console.error('[RuleCache] Failed to load notification rules from database:', err.message);
+  } catch (_) {
+    // Non-blocking
   }
 }
 
