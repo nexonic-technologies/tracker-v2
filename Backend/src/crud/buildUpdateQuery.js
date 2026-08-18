@@ -1,6 +1,6 @@
 // src/crud/buildUpdateQuery.js
 import { getModel } from "../utils/appRegistry.js";
-import { getAllServices } from "../utils/servicesCache.js";
+import { getService } from "../utils/servicesCache.js";
 import { pathToFileURL } from "url";
 import sanitizeUpdate from "../utils/sanitizeUpdate.js";
 import runRegistry from "../utils/policy/registryExecutor.js";
@@ -55,8 +55,7 @@ export default async function buildUpdateQuery(ctx) {
   /** -----------------------------------------------
    * 5) Lifecycle injection — BEFORE UPDATE
    * ----------------------------------------------- */
-  const serviceCache = getAllServices();
-  const modelService = serviceCache?.[modelName];
+  const modelService = getService(modelName);
   let serviceInstance = null;
 
   if (modelService) {

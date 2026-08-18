@@ -1,6 +1,6 @@
 // src/crud/buildCreateQuery.js
 import { getModel } from "../utils/appRegistry.js";
-import { getAllServices } from "../utils/servicesCache.js";
+import { getService } from "../utils/servicesCache.js";
 import { pathToFileURL } from "url";
 import sanitizeWrite from "../utils/sanitizeWrite.js";
 import runRegistry from "../utils/policy/registryExecutor.js";
@@ -54,8 +54,7 @@ export default async function buildCreateQuery(ctx) {
   /** -----------------------------------------------
    * 4) Service Logic (Lifecycle Hooks)
    * ----------------------------------------------- */
-  const serviceCache = getAllServices();
-  const modelService = serviceCache?.[modelName];
+  const modelService = getService(modelName);
   let serviceInstance = null;
 
   if (modelService) {

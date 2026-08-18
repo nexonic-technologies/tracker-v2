@@ -1,6 +1,6 @@
 // src/crud/buildDeleteQuery.js
 import { getModel } from "../utils/appRegistry.js";
-import { getAllServices } from "../utils/servicesCache.js";
+import { getService } from "../utils/servicesCache.js";
 import { pathToFileURL } from "url";
 import runRegistry from "../utils/policy/registryExecutor.js";
 import {saveAuditLog } from "../utils/auditLogger.js"
@@ -46,8 +46,7 @@ export default async function buildDeleteQuery(ctx) {
   /** -----------------------------------------------
    * 3) Lifecycle service loading
    * ----------------------------------------------- */
-  const serviceCache = getAllServices();
-  const modelService = serviceCache?.[modelName];
+  const modelService = getService(modelName);
   let serviceInstance = null;
 
   if (modelService) {

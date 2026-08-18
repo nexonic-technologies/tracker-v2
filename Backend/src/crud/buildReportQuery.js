@@ -1,6 +1,6 @@
 // src/crud/buildReportQuery.js
 import { getModel } from "../utils/appRegistry.js";
-import { getAllServices } from "../utils/servicesCache.js";
+import { getService } from "../utils/servicesCache.js";
 import { pathToFileURL } from "url";
 import { cachedImport } from "../utils/importCache.js";
 import runRegistry from "../utils/policy/registryExecutor.js";
@@ -53,12 +53,7 @@ export default async function buildReportQuery(ctx) {
   /** -----------------------------------------------
    * 3) SERVICE DISCOVERY & beforeReport HOOK
    * ----------------------------------------------- */
-  const serviceCache = getAllServices();
-  const lowerName = modelName.toLowerCase();
-  const modelService = serviceCache?.[modelName]
-    || serviceCache?.[lowerName]
-    || serviceCache?.[`${lowerName}s`]
-    || (lowerName.endsWith('s') ? serviceCache?.[lowerName.slice(0, -1)] : null);
+  const modelService = getService(modelName);
 
   let serviceInstance = null;
 

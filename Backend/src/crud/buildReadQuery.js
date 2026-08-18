@@ -1,6 +1,6 @@
 // src/crud/buildReadQuery.js
 import { getModel } from "../utils/appRegistry.js";
-import { getAllServices } from "../utils/servicesCache.js";
+import { getService } from "../utils/servicesCache.js";
 import { resolvePolicy } from "../utils/policy/policyEngine.js";
 import { getRoleMeta } from "../utils/cache.js";
 import { pathToFileURL } from "url";
@@ -72,8 +72,7 @@ export default async function buildReadQuery(ctx) {
   /** ============================================================
    *  ⚙️ 4) LIFECYCLE SERVICE HOOK (BEFORE READ)
    * ============================================================ */
-  const serviceCache = getAllServices();
-  const modelService = serviceCache?.[modelName];
+  const modelService = getService(modelName);
   let serviceInstance = null;
 
   if (modelService) {
