@@ -3,6 +3,7 @@ import { useAuth } from '@context/authProvider';
 import { useGenericAPI } from '@components/useGenericAPI';
 import { Play, Square } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getBrowserLocation } from '@utils/geolocation';
 
 const formatTime = (isoString) => {
   if (!isoString) return '';
@@ -13,33 +14,18 @@ const formatTime = (isoString) => {
   });
 };
 
-const getBrowserLocation = () => {
-  return new Promise((resolve) => {
-    if (!navigator?.geolocation) {
-      resolve(null);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      (error) => {
-        console.warn("Geolocation permission denied or failed:", error.message);
-        resolve(null);
-      },
-      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
-    );
-  });
-};
-
-export default function V2EmployeeHeader({ attendance, refresh }) {
+export default function V2EmployeeHeader({ attendance: propAttendance, refresh }) {
   const { user } = useAuth();
   const { create, read, update } = useGenericAPI();
   const [busy, setBusy] = useState(false);
   const [liveDuration, setLiveDuration] = useState('');
+  const [localAttendance, setLocalAttendance] = useState(null);
+
+  const attendance = localAttendance || propAttendance;
+
+  useEffect(() => {
+    setLocalAttendance(propAttendance);
+  }, [propAttendance]);
 
   const isCheckedIn = !!(
     attendance?.checkIn &&
@@ -92,17 +78,20 @@ export default function V2EmployeeHeader({ attendance, refresh }) {
     if (busy || !user) return;
     setBusy(true);
     try {
-      const loc = await getBrowserLocation();
-      if (!loc) {
+      const locRes = await getBrowserLocation();
+      if (locRes.status === 'DENIED') {
         const actionName = isCheckedIn ? 'clock out' : 'clock in';
-        toast.error(`Location access is required to ${actionName}. Please enable location permissions in your browser to proceed.`);
+        toast.error(`Location permission is blocked. Please allow location access in your browser to ${actionName}.`);
         return;
       }
+
+      const loc = locRes.location || { latitude: 0, longitude: 0 };
 
       // Get the correct local calendar date (YYYY-MM-DD) for the employee's current timezone
       const tzOffset = new Date().getTimezoneOffset();
       const localTime = new Date(Date.now() - (tzOffset * 60 * 1000));
       const todayStr = localTime.toISOString().split('T')[0];
+      const nowIso = new Date().toISOString();
 
       // Retrieve today's record if it exists
       const checkRes = await read('attendances', {
@@ -121,7 +110,7 @@ export default function V2EmployeeHeader({ attendance, refresh }) {
             'attendances',
             todayDoc._id,
             {
-              checkIn: new Date().toISOString(),
+              checkIn: nowIso,
               location: loc,
             },
             'Clocked In!'
@@ -133,7 +122,7 @@ export default function V2EmployeeHeader({ attendance, refresh }) {
               employee: user.id || user._id,
               employeeName: user.name,
               date: todayStr,
-              checkIn: new Date().toISOString(),
+              checkIn: nowIso,
               status: 'Present',
               managerId: user.managerId,
               workType: 'fixed',
@@ -142,6 +131,16 @@ export default function V2EmployeeHeader({ attendance, refresh }) {
             'Clocked In!'
           );
         }
+        setLocalAttendance({
+          ...(todayDoc || {}),
+          checkIn: nowIso,
+          checkOut: null,
+          punches: [
+            ...(todayDoc?.punches || []),
+            { checkIn: nowIso, location: loc }
+          ],
+          status: 'Present'
+        });
       } else {
         // Clock Out
         if (todayDoc?._id) {
@@ -149,7 +148,7 @@ export default function V2EmployeeHeader({ attendance, refresh }) {
             'attendances',
             todayDoc._id,
             {
-              checkOut: new Date().toISOString(),
+              checkOut: nowIso,
               location: loc,
             },
             'Clocked Out!'
@@ -157,6 +156,13 @@ export default function V2EmployeeHeader({ attendance, refresh }) {
         } else {
           toast.error('Check-in record not found.');
         }
+        setLocalAttendance({
+          ...(todayDoc || attendance || {}),
+          checkOut: nowIso,
+          punches: (todayDoc?.punches || attendance?.punches || []).map((p, idx, arr) =>
+            idx === arr.length - 1 ? { ...p, checkOut: nowIso, checkOutLocation: loc } : p
+          )
+        });
       }
       if (refresh) refresh();
     } catch (err) {

@@ -3,6 +3,7 @@ import { useAuth } from '@context/authProvider';
 import { useGenericAPI } from '@components/useGenericAPI';
 import { Play, Square, Pause, Pin, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getBrowserLocation } from '@utils/geolocation';
 
 const formatTime = (isoString) => {
   if (!isoString) return '';
@@ -10,28 +11,6 @@ const formatTime = (isoString) => {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
-  });
-};
-
-const getBrowserLocation = () => {
-  return new Promise((resolve) => {
-    if (!navigator?.geolocation) {
-      resolve(null);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      (error) => {
-        console.warn('Geolocation permission denied or failed:', error.message);
-        resolve(null);
-      },
-      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
-    );
   });
 };
 
@@ -87,10 +66,18 @@ const ShiftProgressArc = ({ progress = 0, displayState = 'not_started', size = 9
   );
 };
 
-export default function V2ShiftArc({ attendance, refresh }) {
+export default function V2ShiftArc({ attendance: propAttendance, refresh }) {
   const { user } = useAuth();
   const { create, read, update } = useGenericAPI();
   const [busy, setBusy] = useState(false);
+  const [localAttendance, setLocalAttendance] = useState(null);
+
+  const attendance = localAttendance || propAttendance;
+
+  useEffect(() => {
+    setLocalAttendance(propAttendance);
+  }, [propAttendance]);
+
   const [liveWorkedMin, setLiveWorkedMin] = useState(attendance?.workedMinutes || 0);
 
   const isCheckedIn = !!(
@@ -157,16 +144,19 @@ export default function V2ShiftArc({ attendance, refresh }) {
     if (busy || !user) return;
     setBusy(true);
     try {
-      const loc = await getBrowserLocation();
-      if (!loc) {
+      const locRes = await getBrowserLocation();
+      if (locRes.status === 'DENIED') {
         const actionName = isCheckedIn ? 'clock out' : 'clock in';
-        toast.error(`Location access is required to ${actionName}. Enable location permissions to proceed.`);
+        toast.error(`Location permission is blocked. Please allow location access in your browser to ${actionName}.`);
         return;
       }
+
+      const loc = locRes.location || { latitude: 0, longitude: 0 };
 
       const tzOffset = new Date().getTimezoneOffset();
       const localTime = new Date(Date.now() - tzOffset * 60 * 1000);
       const todayStr = localTime.toISOString().split('T')[0];
+      const nowIso = new Date().toISOString();
 
       const checkRes = await read('attendances', {
         filter: {
@@ -179,7 +169,7 @@ export default function V2ShiftArc({ attendance, refresh }) {
 
       if (!isCheckedIn) {
         if (todayDoc?._id) {
-          await update('attendances', todayDoc._id, { checkIn: new Date().toISOString(), location: loc }, 'Clocked In!');
+          await update('attendances', todayDoc._id, { checkIn: nowIso, location: loc }, 'Clocked In!');
         } else {
           await create(
             'attendances',
@@ -187,7 +177,7 @@ export default function V2ShiftArc({ attendance, refresh }) {
               employee: user.id || user._id,
               employeeName: user.name,
               date: todayStr,
-              checkIn: new Date().toISOString(),
+              checkIn: nowIso,
               status: 'Present',
               managerId: user.managerId,
               workType: 'fixed',
@@ -196,12 +186,29 @@ export default function V2ShiftArc({ attendance, refresh }) {
             'Clocked In!'
           );
         }
+        setLocalAttendance({
+          ...(todayDoc || {}),
+          checkIn: nowIso,
+          checkOut: null,
+          punches: [
+            ...(todayDoc?.punches || []),
+            { checkIn: nowIso, location: loc }
+          ],
+          status: 'Present'
+        });
       } else {
         if (todayDoc?._id) {
-          await update('attendances', todayDoc._id, { checkOut: new Date().toISOString(), location: loc }, 'Clocked Out!');
+          await update('attendances', todayDoc._id, { checkOut: nowIso, location: loc }, 'Clocked Out!');
         } else {
           toast.error('Check-in record not found.');
         }
+        setLocalAttendance({
+          ...(todayDoc || attendance || {}),
+          checkOut: nowIso,
+          punches: (todayDoc?.punches || attendance?.punches || []).map((p, idx, arr) =>
+            idx === arr.length - 1 ? { ...p, checkOut: nowIso, checkOutLocation: loc } : p
+          )
+        });
       }
       if (refresh) refresh();
     } catch (err) {

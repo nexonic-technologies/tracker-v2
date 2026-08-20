@@ -5,6 +5,7 @@ import { useGenericAPI } from "@hooks/useGenericAPI";
 import axiosInstance from "@api/axiosInstance";
 import toast from "react-hot-toast";
 import ProfileImage from "@components/Common/ProfileImage";
+import { getBrowserLocation } from "@utils/geolocation";
 import {
   LogIn, LogOut, CheckCircle, XCircle,
   Clock, TrendingUp, Zap, ChevronLeft, ChevronRight, Plus, MapPin,
@@ -68,28 +69,6 @@ const isSameDay = (a, b) => {
 const isToday = (d) => isSameDay(d, new Date());
 const isFuture = (d) => new Date(d) > new Date() && !isToday(d);
 const isWeekend = (d) => [0, 6].includes(new Date(d).getDay());
-
-const getBrowserLocation = () => {
-  return new Promise((resolve) => {
-    if (!navigator?.geolocation) {
-      resolve(null);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      (error) => {
-        console.warn("Geolocation permission denied or failed:", error.message);
-        resolve(null);
-      },
-      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
-    );
-  });
-};
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const TARGET = 8;
@@ -380,11 +359,13 @@ const AttendancePage = () => {
     if (!user || actionBusy) return;
     setActionBusy(true);
     try {
-      const loc = await getBrowserLocation();
-      if (!loc) {
-        toast.error("Location access is required to check in. Please enable location permissions in your browser.");
+      const locRes = await getBrowserLocation();
+      if (locRes.status === 'DENIED') {
+        toast.error("Location permission is blocked. Please allow location access in your browser to check in.");
         return;
       }
+
+      const loc = locRes.location || { latitude: 0, longitude: 0 };
 
       if (todayRec?._id) {
         await update('attendances', todayRec._id, {
@@ -418,11 +399,13 @@ const AttendancePage = () => {
     if (!todayRec || actionBusy) return;
     setActionBusy(true);
     try {
-      const loc = await getBrowserLocation();
-      if (!loc) {
-        toast.error("Location access is required to check out. Please enable location permissions in your browser.");
+      const locRes = await getBrowserLocation();
+      if (locRes.status === 'DENIED') {
+        toast.error("Location permission is blocked. Please allow location access in your browser to check out.");
         return;
       }
+
+      const loc = locRes.location || { latitude: 0, longitude: 0 };
 
       await update('attendances', todayRec._id, {
         checkOut: new Date().toISOString(),

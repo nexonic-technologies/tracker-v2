@@ -1,7 +1,19 @@
 import mongoose from 'mongoose';
+import { getTenantModel } from '../../../tenant/tenantContext.js';
+import { getModel } from '../../../utils/appRegistry.js';
 import models from '../../../models/Collection.js';
 
-const Holiday = models.holidays;
+function resolveHolidayModel(ctx) {
+  try {
+    if (ctx?.tenantContext?.getModel) {
+      const m = ctx.tenantContext.getModel('Holiday');
+      if (m) return m;
+    }
+    return getTenantModel('Holiday') || getModel('Holiday') || models.holidays;
+  } catch (_) {
+    return models.holidays;
+  }
+}
 
 /**
  * Attendance Business Handler: holiday
@@ -17,6 +29,9 @@ export default async function holiday(state) {
   const targetDate = new Date(state.date);
   const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
   const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+
+  const Holiday = resolveHolidayModel(state.ctx);
+  if (!Holiday) return state;
 
   const holidayRecord = await Holiday.findOne({
     date: { $gte: startOfDay, $lte: endOfDay }

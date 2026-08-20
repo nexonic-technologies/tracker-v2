@@ -18,11 +18,7 @@ export default async function overtime(state) {
     ? policyOt.overtimeThresholdMins 
     : (state.shift?.overtimeThreshold !== undefined 
         ? state.shift.overtimeThreshold 
-        : (state.shift?.workingHours ? state.shift.workingHours * 60 : undefined));
-
-  if (thresholdMins === undefined) {
-    throw new Error('ATTENDANCE_POLICY_REQUIRED: Missing overtime threshold in policy or shift configuration');
-  }
+        : (state.shift?.workingHours ? state.shift.workingHours * 60 : 480));
 
   const workedMins = (state.workHours || 0) * 60;
   

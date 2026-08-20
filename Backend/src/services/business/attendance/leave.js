@@ -1,8 +1,31 @@
 import mongoose from 'mongoose';
+import { getTenantModel } from '../../../tenant/tenantContext.js';
+import { getModel } from '../../../utils/appRegistry.js';
 import models from '../../../models/Collection.js';
 
-const Leave = models.leaves;
-const WFHRequest = models.wfh_requests;
+function resolveLeaveModel(ctx) {
+  try {
+    if (ctx?.tenantContext?.getModel) {
+      const m = ctx.tenantContext.getModel('Leave');
+      if (m) return m;
+    }
+    return getTenantModel('Leave') || getModel('Leave') || models.leaves;
+  } catch (_) {
+    return models.leaves;
+  }
+}
+
+function resolveWFHModel(ctx) {
+  try {
+    if (ctx?.tenantContext?.getModel) {
+      const m = ctx.tenantContext.getModel('WFHRequest');
+      if (m) return m;
+    }
+    return getTenantModel('WFHRequest') || getModel('WFHRequest') || models.wfh_requests;
+  } catch (_) {
+    return models.wfh_requests;
+  }
+}
 
 /**
  * Attendance Business Handler: leave
@@ -15,14 +38,16 @@ export default async function leave(state) {
   if (!isDbConnected) return state;
 
   const targetDate = new Date(state.date);
+  const Leave = resolveLeaveModel(state.ctx);
+  const WFHRequest = resolveWFHModel(state.ctx);
 
   // 1. Check for Approved Work From Home
-  const wfhRecord = await WFHRequest.findOne({
+  const wfhRecord = WFHRequest ? await WFHRequest.findOne({
     employeeId: state.employeeId,
     status: 'Approved',
     startDate: { $lte: targetDate },
     endDate: { $gte: targetDate }
-  }).lean();
+  }).lean() : null;
 
   if (wfhRecord && (!state.checkIn && (!state.punches || state.punches.length === 0))) {
     return {
@@ -33,12 +58,12 @@ export default async function leave(state) {
   }
 
   // 2. Check for Approved Leave
-  const leaveRecord = await Leave.findOne({
+  const leaveRecord = Leave ? await Leave.findOne({
     employeeId: state.employeeId,
     status: 'Approved',
     startDate: { $lte: targetDate },
     endDate: { $gte: targetDate }
-  }).lean();
+  }).lean() : null;
 
   if (leaveRecord) {
     if (leaveRecord.leaveDuration === 'Half Day' || leaveRecord.halfDay) {
