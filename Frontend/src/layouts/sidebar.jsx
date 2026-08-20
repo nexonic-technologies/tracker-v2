@@ -48,39 +48,49 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
     return clean;
   };
 
-  // Auto-expand parent items when location changes to a child route
+  // Helper to find ancestor ID path for any navigation node
+  const findAncestorIds = (items, targetId, currentPath = []) => {
+    if (!items || !Array.isArray(items)) return null;
+    for (const item of items) {
+      if (item._id === targetId) {
+        return [...currentPath, item._id];
+      }
+      if (item.children && item.children.length > 0) {
+        const found = findAncestorIds(item.children, targetId, [...currentPath, item._id]);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  // Auto-expand parent items when location changes to an active child route, auto-closing unrelated parents
   useEffect(() => {
     if (!navItems || navItems.length === 0) return;
 
     const currentPath = location.pathname;
-    const idsToExpand = new Set();
 
-    const checkNode = (node) => {
-      const tenantRoute = getTenantRoute(node.mainRoute);
-      let isMatch = node.mainRoute === currentPath ||
-        tenantRoute === currentPath ||
-        (tenantSlug && currentPath.replace(`/${tenantSlug}`, '') === node.mainRoute);
-      if (node.children && node.children.length > 0) {
-        for (const child of node.children) {
-          if (checkNode(child)) {
-            isMatch = true;
-          }
+    const findActiveItemAncestors = (items, currentAncestors = []) => {
+      for (const node of items) {
+        const tenantRoute = getTenantRoute(node.mainRoute);
+        const isMatch = node.mainRoute === currentPath ||
+          tenantRoute === currentPath ||
+          (tenantSlug && currentPath.replace(`/${tenantSlug}`, '') === node.mainRoute);
+
+        if (isMatch) {
+          return currentAncestors;
+        }
+
+        if (node.children && node.children.length > 0) {
+          const found = findActiveItemAncestors(node.children, [...currentAncestors, node._id]);
+          if (found) return found;
         }
       }
-      if (isMatch && node._id) {
-        idsToExpand.add(node._id);
-      }
-      return isMatch;
+      return null;
     };
 
-    navItems.forEach(item => checkNode(item));
-
-    if (idsToExpand.size > 0) {
-      setExpandedItems(prev => {
-        const updated = new Set(prev);
-        idsToExpand.forEach(id => updated.add(id));
-        return updated;
-      });
+    const activeAncestors = findActiveItemAncestors(navItems);
+    if (activeAncestors && activeAncestors.length > 0) {
+      setExpandedItems(new Set(activeAncestors));
     }
   }, [location.pathname, navItems, tenantSlug]);
 
@@ -88,13 +98,19 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
     // Only allow toggling if sidebar is expanded
     if (!isExpandedView) return;
 
-    const newExpanded = new Set(expandedItems);
-    if (newExpanded.has(itemId)) {
-      newExpanded.delete(itemId);
+    if (expandedItems.has(itemId)) {
+      // User clicked already-open item: collapse it and its descendants
+      const newExpanded = new Set();
+      const ancestorPath = findAncestorIds(navItems, itemId) || [];
+      ancestorPath.forEach(id => {
+        if (id !== itemId) newExpanded.add(id);
+      });
+      setExpandedItems(newExpanded);
     } else {
-      newExpanded.add(itemId);
+      // Accordion restriction: Open the newly clicked parent item's ancestor path and auto-close all other open parents
+      const ancestorPath = findAncestorIds(navItems, itemId) || [itemId];
+      setExpandedItems(new Set(ancestorPath));
     }
-    setExpandedItems(newExpanded);
   };
 
   const handleNavigation = (item) => {
