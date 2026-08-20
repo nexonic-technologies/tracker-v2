@@ -27,21 +27,25 @@ export async function saveAuditLog({
   ip = null,
   metadata = {}
 }) {
-  // Convert to plain objects to avoid circular references
-  const before = toPlainObject(beforeDoc);
-  const after = toPlainObject(afterDoc);
+  try {
+    // Convert to plain objects to avoid circular references
+    const before = toPlainObject(beforeDoc);
+    const after = toPlainObject(afterDoc);
 
-  return AuditLog.create({
-    model: modelName,
-    docId,
-    action,
-    userId,
-    role,
-    ip,
-    before,
-    after,
-    metadata
-  });
+    return await AuditLog.create({
+      model: modelName,
+      docId: docId || null,
+      action,
+      userId: userId || null,
+      role: role || 'system',
+      ip,
+      before,
+      after,
+      metadata
+    });
+  } catch (err) {
+    console.error(`[AuditLogger] Failed to save audit log for ${modelName}:`, err.message);
+  }
 }
 
 /** Convert Mongoose document to plain object */

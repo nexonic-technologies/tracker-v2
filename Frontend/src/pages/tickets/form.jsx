@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axiosInstance from "@api/axiosInstance";
 import toast from "react-hot-toast";
 import FileViewerModal from "@components/Common/FileViewerModal";
+import { generateTicketWithAI } from "@services/ticketAI";
 import {
   ChevronLeft, Paperclip, X, Upload, FileIcon, FileText,
   FileSpreadsheet, FileArchive, PlayCircle, Music, ImageIcon,
-  Loader2, Save, Plus, AlertCircle
+  Loader2, Save, Plus, AlertCircle, Sparkles, CheckCircle2
 } from "lucide-react";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -210,6 +211,10 @@ const TicketsFormPage = () => {
   const [activeTab, setActiveTab] = useState("details");
   const [viewerFile, setViewerFile] = useState(null);
 
+  // ── AI generation state ────────────────────────────────────────────────────
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiEngine, setAiEngine] = useState(null); // which engine was used
+
   // ── Load record for edit ───────────────────────────────────────────────────
   useEffect(() => {
     if (!isEdit) return;
@@ -333,6 +338,41 @@ const TicketsFormPage = () => {
 
   const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
+  // ── AI ticket generation ───────────────────────────────────────────────────
+  const handleAIGenerate = useCallback(async () => {
+    if (!form.title?.trim()) {
+      toast.error("Enter a title first so AI has context to work with.");
+      return;
+    }
+    setAiGenerating(true);
+    setAiEngine(null);
+    try {
+      const clientName = form.clientId?.name || form.clientId?.title || '';
+      const productName = form.product?.name || form.product?.title || '';
+      const result = await generateTicketWithAI({
+        title: form.title,
+        clientName,
+        productName
+      });
+      setForm(prev => ({
+        ...prev,
+        title: result.title || prev.title,
+        userStory: result.userStory || prev.userStory,
+        impactAnalysis: result.impactAnalysis || prev.impactAnalysis,
+        acceptanceCriteria: result.acceptanceCriteria || prev.acceptanceCriteria,
+        description: result.description || prev.description,
+        priority: result.priority ? { _id: result.priority, name: result.priority } : prev.priority,
+        dueDate: result.suggestedDueDate || prev.dueDate,
+      }));
+      setAiEngine(result.engine);
+      toast.success(`AI filled all fields via ${result.engine}`);
+    } catch (err) {
+      toast.error(err.message || "AI generation failed. Try again.");
+    } finally {
+      setAiGenerating(false);
+    }
+  }, [form.title, form.clientId, form.product]);
+
   // ── Tab definitions ────────────────────────────────────────────────────────
   const TABS = [
     { id: "details", label: "Details" },
@@ -425,16 +465,43 @@ const TicketsFormPage = () => {
                 />
               </div>
 
-              {/* Title */}
-              <Field label="Title" required className="col-span-2">
+              {/* Title + AI Generate */}
+              <div className="col-span-2">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-semibold text-[var(--tracker-ink-muted)] uppercase tracking-wide">
+                    Title <span className="text-red-500 ml-0.5">*</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {aiEngine && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-500/10 text-violet-600 border border-violet-500/20">
+                        <CheckCircle2 size={9} /> Filled by {aiEngine}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleAIGenerate}
+                      disabled={aiGenerating}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11.5px] font-bold border transition-all duration-150 cursor-pointer ${
+                        aiGenerating
+                          ? 'border-violet-300 bg-violet-50 text-violet-400 cursor-wait'
+                          : 'border-violet-400/50 bg-violet-500/8 text-violet-600 hover:bg-violet-500/15 hover:border-violet-500/60'
+                      }`}
+                    >
+                      {aiGenerating
+                        ? <Loader2 size={12} className="animate-spin" />
+                        : <Sparkles size={12} className="animate-[pulse_2s_ease-in-out_infinite]" />}
+                      {aiGenerating ? 'Generating…' : 'Fill with AI'}
+                    </button>
+                  </div>
+                </div>
                 <input
                   type="text"
                   value={form.title}
-                  onChange={e => set("title", e.target.value)}
-                  placeholder="Brief description of the issue"
+                  onChange={e => { set("title", e.target.value); setAiEngine(null); }}
+                  placeholder="Enter a brief title and click 'Fill with AI' to auto-populate all fields"
                   className={inputCls}
                 />
-              </Field>
+              </div>
 
               {/* User Story */}
               <Field label="User Story" className="col-span-2">

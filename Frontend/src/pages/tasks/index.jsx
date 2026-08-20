@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import axiosInstance from "@api/axiosInstance";
 import { useAuth } from "@providers/AuthProvider";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import KanbanBoard from "@components/Common/KambanBoard";
 import GanttView from "@components/Tasks/GanttView";
 import EmployeeGanttView from "@components/Tasks/EmployeeGanttView";
@@ -32,6 +32,16 @@ const STATUSES = ["Backlogs", "To Do", "In Progress", "In Review", "Approved", "
 const TasksPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const getInitialViewMode = () => {
+    const v = searchParams.get("view");
+    if (v === "queue" || v === "employee-queue") return "employee-queue";
+    if (v === "gantt" || v === "timeline") return "gantt";
+    if (v === "sprint") return "sprint";
+    if (v === "board") return "board";
+    return "board";
+  };
 
   const [allTasks, setAllTasks] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -39,10 +49,39 @@ const TasksPage = () => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [groupBy, setGroupBy] = useState("status");
-  const [viewMode, setViewMode] = useState("board"); // 'board' | 'gantt' | 'employee-queue' | 'sprint'
+  const [viewMode, setViewMode] = useState(getInitialViewMode); // 'board' | 'gantt' | 'employee-queue' | 'sprint'
   const [selectedTask, setSelectedTask] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState(user?.id || null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(() => searchParams.get("employeeId") || user?.id || null);
+
+  // Sync URL search parameters on changes
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    const newParams = new URLSearchParams(searchParams);
+    const viewParam = mode === "employee-queue" ? "queue" : mode;
+    newParams.set("view", viewParam);
+    if (selectedEmployeeId) newParams.set("employeeId", selectedEmployeeId);
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const handleEmployeeSelect = (empId) => {
+    setSelectedEmployeeId(empId);
+    const newParams = new URLSearchParams(searchParams);
+    if (empId) newParams.set("employeeId", empId);
+    else newParams.delete("employeeId");
+    setSearchParams(newParams, { replace: true });
+  };
+
+  useEffect(() => {
+    const v = searchParams.get("view");
+    if (v === "queue" || v === "employee-queue") setViewMode("employee-queue");
+    else if (v === "gantt" || v === "timeline") setViewMode("gantt");
+    else if (v === "sprint") setViewMode("sprint");
+    else if (v === "board") setViewMode("board");
+
+    const emp = searchParams.get("employeeId");
+    if (emp) setSelectedEmployeeId(emp);
+  }, [searchParams]);
 
   // Filter state
   const [searchVal, setSearchVal] = useState("");
@@ -287,19 +326,19 @@ const TasksPage = () => {
 
           {/* View mode toggle */}
           <div className="lmx-tab-bar">
-            <button onClick={() => setViewMode("board")}
+            <button onClick={() => handleViewModeChange("board")}
               className={`lmx-tab ${viewMode === "board" ? "lmx-tab-active" : ""}`}>
               <LayoutGrid size={13} /> Board
             </button>
-            <button onClick={() => setViewMode("gantt")}
+            <button onClick={() => handleViewModeChange("gantt")}
               className={`lmx-tab ${viewMode === "gantt" ? "lmx-tab-active" : ""}`}>
               <CalendarDays size={13} /> Timeline
             </button>
-            <button onClick={() => setViewMode("employee-queue")}
+            <button onClick={() => handleViewModeChange("employee-queue")}
               className={`lmx-tab ${viewMode === "employee-queue" ? "lmx-tab-active" : ""}`}>
               <GanttChartSquare size={13} /> Queue
             </button>
-            <button onClick={() => setViewMode("sprint")}
+            <button onClick={() => handleViewModeChange("sprint")}
               className={`lmx-tab ${viewMode === "sprint" ? "lmx-tab-active" : ""}`}>
               <Layers size={13} /> Sprint
             </button>
@@ -419,7 +458,7 @@ const TasksPage = () => {
             employees={employees}
             currentUserId={user?.id}
             selectedEmployeeId={selectedEmployeeId}
-            onEmployeeChange={setSelectedEmployeeId}
+            onEmployeeChange={handleEmployeeSelect}
             onTaskClick={handleTaskClick}
           />
         )}

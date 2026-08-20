@@ -5,8 +5,8 @@ const audit_logsSchema = new mongoose.Schema({
   model: { type: String, required: true, index: true },
   docId: { type: mongoose.Schema.Types.ObjectId, index: true },
   action: { type: String, enum: ["create", "update", "delete"], required: true, index: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
-  role: { type: String, index: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, index: true },
+  role: { type: String, index: true, default: 'system' },
   before: { type: Object },
   after: { type: Object },
   metadata: { type: Object }

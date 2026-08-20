@@ -23,26 +23,26 @@ import toast from "react-hot-toast";
 const STATUS_OPTS = ["Open", "In Progress", "Review", "Testing", "Completed", "Closed"];
 
 const STATUS_CLS = {
-  "Open": "bg-blue-50 text-blue-700 border border-blue-200",
-  "In Progress": "bg-amber-50 text-amber-700 border border-amber-200",
-  "Review": "bg-violet-50 text-violet-700 border border-violet-200",
-  "Testing": "bg-teal-50 text-teal-700 border border-teal-200",
-  "Completed": "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  "Open": "bg-[hsl(213,94%,95%)] text-[hsl(213,80%,42%)] border border-[hsl(213,70%,82%)]",
+  "In Progress": "bg-[hsl(38,92%,93%)] text-[hsl(38,80%,35%)] border border-[hsl(38,65%,75%)]",
+  "Review": "bg-[hsl(258,85%,95%)] text-[hsl(258,60%,50%)] border border-[hsl(258,55%,80%)]",
+  "Testing": "bg-[hsl(174,72%,92%)] text-[hsl(174,65%,30%)] border border-[hsl(174,55%,72%)]",
+  "Completed": "bg-[hsl(142,72%,92%)] text-[hsl(142,65%,28%)] border border-[hsl(142,55%,72%)]",
   "Closed": "bg-[var(--tracker-surface-2)] text-[var(--tracker-ink-muted)] border border-[var(--tracker-border)]",
 };
 
 const PRIORITY_CLS = {
-  Critical: "bg-red-50 text-red-700 border border-red-200",
-  High: "bg-orange-50 text-orange-700 border border-orange-200",
-  Medium: "bg-amber-50 text-amber-700 border border-amber-200",
-  Low: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  Critical: "bg-[hsl(0,90%,95%)] text-[hsl(0,75%,42%)] border border-[hsl(0,65%,80%)]",
+  High: "bg-[hsl(25,90%,94%)] text-[hsl(25,80%,38%)] border border-[hsl(25,65%,78%)]",
+  Medium: "bg-[hsl(45,90%,93%)] text-[hsl(45,75%,32%)] border border-[hsl(45,65%,74%)]",
+  Low: "bg-[hsl(142,65%,92%)] text-[hsl(142,60%,28%)] border border-[hsl(142,55%,72%)]",
 };
 
 const PRIORITY_DOT = {
-  Critical: "bg-red-500",
-  High: "bg-orange-500",
-  Medium: "bg-amber-500",
-  Low: "bg-emerald-500",
+  Critical: "bg-[hsl(0,85%,55%)]",
+  High: "bg-[hsl(25,88%,52%)]",
+  Medium: "bg-[hsl(45,90%,48%)]",
+  Low: "bg-[hsl(142,65%,40%)]",
 };
 
 const getFileIcon = (mimetype) => {
@@ -117,6 +117,80 @@ const Avatar = ({ firstName, lastName, name, size = 32, className = "" }) => {
     </div>
   );
 };
+
+// ── EditableSection ─────────────────────────────────────────────────────────────
+// Always-visible inline textarea that saves on blur. Shows a muted placeholder
+// when the field is empty so users know it exists and can click to fill it.
+const EditableSection = ({ fieldKey, icon, label, value, placeholder, rows = 3, onSave }) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value || "");
+  const [saving, setSaving] = useState(false);
+  const textareaRef = useRef(null);
+
+  // Sync when ticket data reloads
+  useEffect(() => { setDraft(value || ""); }, [value]);
+
+  const startEdit = () => {
+    setDraft(value || "");
+    setEditing(true);
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
+  const handleBlur = async () => {
+    setEditing(false);
+    const trimmed = draft.trim();
+    if (trimmed === (value || "").trim()) return; // no change
+    setSaving(true);
+    try { await onSave(trimmed || ""); }
+    finally { setSaving(false); }
+  };
+
+  const isEmpty = !value?.trim();
+
+  return (
+    <div
+      className={`border-b border-[var(--tracker-border-soft)] transition-colors ${
+        editing ? "bg-[var(--tracker-surface-1)]" : "hover:bg-[var(--tracker-surface-1)] cursor-pointer"
+      } ${saving ? "opacity-60" : ""}`}
+      onClick={!editing ? startEdit : undefined}
+    >
+      <div className="px-5 py-3.5">
+        {/* Section label */}
+        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--tracker-ink-subtle)] mb-1.5 flex items-center gap-1.5">
+          {icon}
+          {label}
+          {saving && <span className="ml-auto text-[9px] font-normal text-[var(--tracker-ink-tertiary)] animate-pulse">Saving…</span>}
+          {!editing && !saving && (
+            <span className="ml-auto text-[9px] font-normal text-[var(--tracker-ink-tertiary)] opacity-0 group-hover:opacity-100">
+              Click to edit
+            </span>
+          )}
+        </p>
+        {editing ? (
+          <textarea
+            ref={textareaRef}
+            rows={rows}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={handleBlur}
+            placeholder={placeholder}
+            className="w-full bg-transparent border border-[var(--tracker-border-focus)] rounded-lg px-3 py-2 text-[13px] text-[var(--tracker-ink)] leading-relaxed resize-none outline-none focus:ring-2 focus:ring-[var(--module-ticket)]/20 placeholder:text-[var(--tracker-ink-tertiary)] transition-all"
+            style={{ minHeight: `${rows * 1.6}em` }}
+          />
+        ) : isEmpty ? (
+          <p className="text-[13px] text-[var(--tracker-ink-tertiary)] italic leading-relaxed">
+            {placeholder}
+          </p>
+        ) : (
+          <p className="text-[13.5px] text-[var(--tracker-ink)] leading-relaxed whitespace-pre-wrap">
+            {value}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 
 // ── Status Select ──────────────────────────────────────────────────────────────
 const StatusSelect = ({ value, onChange }) => {
@@ -253,79 +327,56 @@ const CommentCard = ({
   };
 
   return (
-    <div className={`group flex items-start gap-2.5 my-3 relative ${isMe ? "flex-row-reverse" : ""}`}>
-      {/* Avatar (Profile image or initials) */}
-      <ProfileImage
-        profileImage={profileImage}
-        firstName={firstName}
-        lastName={lastName}
-        px={32}
-        className="mt-0.5 shadow-xs shrink-0"
-      />
-
-      {/* Bubble Container: constraints width and aligns content */}
-      <div className={`flex flex-col max-w-[82%] sm:max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
-
-        {/* Chat Bubble */}
-        <div className={`rounded-2xl px-3.5 py-2.5 border shadow-xs transition-all w-full ${!isPublic
-          ? (isMe
-            ? "bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 border-dashed rounded-tr-none"
-            : "bg-amber-50/40 dark:bg-amber-950/10 border-amber-200/60 border-dashed rounded-tl-none")
-          : (isMe
-            ? "bg-[var(--module-ticket-light)] dark:bg-[var(--tracker-surface-2)] border-[var(--module-ticket-light)] dark:border-[var(--tracker-border)] rounded-tr-none"
-            : "bg-[var(--tracker-surface)] border-[var(--tracker-border)] rounded-tl-none")
-          }`}>
-          {/* Header row inside bubble */}
-          <div className="flex items-center justify-between gap-3 mb-1.5 flex-wrap">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[12px] font-semibold text-[var(--tracker-ink)]">
-                {isMe ? "You" : displayName}
+    <div className={`group relative ${!isPublic ? "pl-3 border-l-2 border-[hsl(38,75%,62%)]" : ""}`}>
+      {/* Comment header row */}
+      <div className="flex items-start gap-2.5">
+        <ProfileImage
+          profileImage={profileImage}
+          firstName={firstName}
+          lastName={lastName}
+          px={28}
+          className="shrink-0 mt-0.5"
+        />
+        <div className="flex-1 min-w-0">
+          {/* Name + meta row */}
+          <div className="flex items-center flex-wrap gap-1.5 mb-1">
+            <span className="text-[12px] font-bold text-[var(--tracker-ink)]">
+              {isMe ? "You" : displayName}
+            </span>
+            {isAgent && (
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[hsl(258,80%,95%)] text-[hsl(258,65%,48%)]">
+                Client
               </span>
-              {isAgent && (
-                <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300">
-                  Client
-                </span>
-              )}
-              {!isPublic && (
-                <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
-                  <Lock size={8} /> Internal Note
-                </span>
-              )}
-              {comment.edited && (
-                <span
-                  className="text-[9.5px] italic text-[var(--tracker-ink-subtle)]"
-                  title={comment.editedAt ? `Edited on ${formatDate(comment.editedAt)}` : "Edited"}
-                >
-                  (edited)
-                </span>
-              )}
-            </div>
-
-            {/* Timestamp, countdown badge, and read receipts */}
-            <div className="flex items-center gap-1.5 text-[10px] text-[var(--tracker-ink-subtle)] font-medium">
+            )}
+            {!isPublic && (
+              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[hsl(38,90%,92%)] text-[hsl(38,75%,32%)]">
+                <Lock size={8} /> Internal
+              </span>
+            )}
+            {comment.edited && (
+              <span className="text-[9.5px] italic text-[var(--tracker-ink-subtle)]" title={`Edited on ${formatDate(comment.editedAt)}`}>
+                edited
+              </span>
+            )}
+            <span className="text-[10.5px] text-[var(--tracker-ink-subtle)] ml-auto flex items-center gap-1">
               {remainingSec != null && remainingSec > 0 && (
-                <span className="inline-flex items-center gap-1 text-[9.5px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded-full border border-amber-200/50">
-                  <Clock size={9} />
-                  {formatTimer(remainingSec)}
+                <span className="inline-flex items-center gap-0.5 text-[9.5px] text-[hsl(38,80%,38%)] bg-[hsl(38,90%,93%)] px-1.5 py-0.5 rounded-full">
+                  <Clock size={9} />{formatTimer(remainingSec)}
                 </span>
               )}
-              <span>{formatRelativeTime(comment.createdAt || comment.commentedAt)}</span>
+              {formatRelativeTime(comment.createdAt || comment.commentedAt)}
               {isMe && (
-                <span className="shrink-0 ml-0.5">
-                  {allRead ? (
-                    <CheckCheck size={12} className="text-blue-500" />
-                  ) : (
-                    <Check size={12} className="text-[var(--tracker-ink-tertiary)]" />
-                  )}
+                <span className="ml-0.5">
+                  {allRead ? <CheckCheck size={11} className="text-[hsl(213,80%,55%)]" /> : <Check size={11} className="text-[var(--tracker-ink-tertiary)]" />}
                 </span>
               )}
-            </div>
+            </span>
           </div>
 
-          {/* Comment Message Body OR Inline Editor */}
+          {/* Comment body */}
           {isEditing ? (
-            <div className="mt-1 space-y-2">
-              <div className="bg-[var(--tracker-surface)] rounded-xl border border-[var(--tracker-border)] overflow-hidden">
+            <div className="space-y-2">
+              <div className="bg-[var(--tracker-surface)] rounded-xl border border-[var(--tracker-border-focus)] overflow-hidden">
                 <ReactQuill
                   theme="snow"
                   value={editMessage}
@@ -333,12 +384,12 @@ const CommentCard = ({
                   modules={quillModules}
                 />
               </div>
-              <div className="flex items-center justify-end gap-2 pt-1">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => { setIsEditing(false); setEditMessage(comment.message || comment.comment || ""); }}
                   disabled={isSaving}
-                  className="px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--tracker-ink-muted)] hover:bg-[var(--tracker-surface-2)] transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-[var(--tracker-ink-muted)] hover:bg-[var(--tracker-surface-2)] transition-colors"
                 >
                   Cancel
                 </button>
@@ -346,97 +397,72 @@ const CommentCard = ({
                   type="button"
                   onClick={handleSaveEdit}
                   disabled={isSaving}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold bg-[var(--module-ticket)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 shadow-xs cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-bold bg-[var(--module-ticket)] text-white hover:opacity-90 disabled:opacity-50"
                 >
-                  {isSaving && <Loader2 size={11} className="animate-spin" />}
+                  {isSaving && <Loader2 size={10} className="animate-spin" />}
                   Save
                 </button>
               </div>
             </div>
           ) : (
             <div
-              className="text-[13.5px] text-[var(--tracker-ink)] leading-relaxed break-words text-left ql-editor !p-0"
+              className="text-[13px] text-[var(--tracker-ink)] leading-relaxed break-words ql-editor !p-0"
               dangerouslySetInnerHTML={{ __html: comment.message || comment.comment }}
             />
           )}
 
-          {/* Comment Attachments inside bubble */}
+          {/* Attachments */}
           {comment.attachments && comment.attachments.length > 0 && !isEditing && (
-            <div className="mt-3 pt-2.5 border-t border-[var(--tracker-border-soft)]">
-              <p className="text-[9px] font-bold text-[var(--tracker-ink-subtle)] uppercase tracking-wider mb-2 text-left">
-                Attached Files ({comment.attachments.length})
-              </p>
-              <div className="flex flex-col gap-1.5">
-                {comment.attachments.map((att, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => onViewFile(att)}
-                    className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[var(--tracker-border)] bg-[var(--tracker-surface-1)] hover:bg-[var(--tracker-surface-2)] transition-colors text-[11px] font-medium text-[var(--tracker-ink-muted)] hover:text-[var(--module-ticket)] group max-w-full cursor-pointer text-left overflow-hidden"
-                  >
-                    {getFileIcon(att.mimetype)}
-                    <span className="truncate flex-1">{att.originalName}</span>
-                    <span className="text-[9px] opacity-60 shrink-0">{formatBytes(att.size)}</span>
-                    <Download size={10} className="opacity-0 group-hover:opacity-100 shrink-0 transition-opacity ml-1" />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {comment.attachments.map((att, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => onViewFile(att)}
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[var(--tracker-border)] bg-[var(--tracker-surface-1)] hover:bg-[var(--tracker-surface-2)] hover:border-[var(--module-ticket)] text-[11px] font-medium text-[var(--tracker-ink-muted)] hover:text-[var(--module-ticket)] transition-colors"
+                >
+                  {getFileIcon(att.mimetype)}
+                  <span className="max-w-[120px] truncate">{att.originalName}</span>
+                  <span className="text-[9px] opacity-50">{formatBytes(att.size)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Hover action row */}
+          {!isEditing && (canEdit || canDelete) && (
+            <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-2)] transition-colors"
+                >
+                  <Pencil size={10} /> Edit
+                </button>
+              )}
+              {canDelete && !showDeleteConfirm && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-[hsl(0,65%,55%)] hover:bg-[hsl(0,80%,96%)] transition-colors"
+                >
+                  <Trash2 size={10} /> Delete
+                </button>
+              )}
+              {showDeleteConfirm && (
+                <div className="inline-flex items-center gap-1.5 bg-[var(--tracker-surface)] border border-[hsl(0,60%,82%)] rounded-lg px-2 py-0.5 shadow-sm text-[10px]">
+                  <span className="text-[hsl(0,65%,45%)] font-semibold">Delete?</span>
+                  <button onClick={handleDelete} disabled={isDeleting} className="font-bold text-[hsl(0,65%,45%)] hover:underline disabled:opacity-50">
+                    {isDeleting ? "Deleting…" : "Yes"}
                   </button>
-                ))}
-              </div>
+                  <span className="text-[var(--tracker-ink-tertiary)]">·</span>
+                  <button onClick={() => setShowDeleteConfirm(false)} className="text-[var(--tracker-ink-muted)] hover:underline">No</button>
+                </div>
+              )}
             </div>
           )}
         </div>
-
-        {/* Action Toolbar (Edit / Delete) - visible on hover or mobile, gated by dynamic capabilities */}
-        {!isEditing && (canEdit || canDelete) && (
-          <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 px-1">
-            {canEdit && (
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                title="Edit Comment (within 15m)"
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-medium text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-2)] transition-colors cursor-pointer"
-              >
-                <Pencil size={11} />
-                <span>Edit</span>
-              </button>
-            )}
-
-            {canDelete && !showDeleteConfirm && (
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                title="Delete Comment"
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-medium text-red-600/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
-              >
-                <Trash2 size={11} />
-                <span>Delete</span>
-              </button>
-            )}
-
-            {/* Inline Delete Confirmation Popover */}
-            {showDeleteConfirm && (
-              <div className="inline-flex items-center gap-1.5 bg-[var(--tracker-surface)] border border-red-200 dark:border-red-900 rounded-lg px-2 py-0.5 shadow-sm text-[10.5px]">
-                <span className="text-red-600 font-medium">Delete?</span>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="font-bold text-red-600 hover:underline disabled:opacity-50 cursor-pointer"
-                >
-                  {isDeleting ? "Deleting…" : "Yes"}
-                </button>
-                <span className="text-[var(--tracker-ink-tertiary)]">·</span>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="text-[var(--tracker-ink-muted)] hover:underline cursor-pointer"
-                >
-                  No
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
       </div>
     </div>
   );
@@ -493,9 +519,9 @@ const PanelSection = ({ title, icon: Icon, children, defaultOpen = true }) => {
 
 // ── Field Row ──────────────────────────────────────────────────────────────────
 const FieldRow = ({ label, children }) => (
-  <div className="flex items-start justify-between gap-3 py-2">
-    <span className="text-[11.5px] text-[var(--tracker-ink-subtle)] shrink-0 mt-0.5">{label}</span>
-    <div className="text-right">{children}</div>
+  <div className="flex items-center justify-between gap-2 py-1.5 group">
+    <span className="text-[10.5px] font-semibold text-[var(--tracker-ink-subtle)] shrink-0 tracking-wide">{label}</span>
+    <div className="text-right max-w-[60%]">{children}</div>
   </div>
 );
 
@@ -912,34 +938,45 @@ const TicketDetailPage = () => {
           <div className="space-y-5">
 
             {/* ── Ticket Title + Meta ───────────────────────────────────── */}
-            <div className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] shadow-xs">
-              <div className="p-5 sm:p-6 border-b border-[var(--tracker-border-soft)]">
+            <div
+              className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] shadow-sm"
+              style={{ boxShadow: "0 1px 4px 0 hsl(var(--module-ticket-hsl,220 90% 56%) / 0.07), 0 0 0 1px hsl(var(--module-ticket-hsl,220 90% 56%) / 0.04)" }}
+            >
+              {/* Header */}
+              <div className="px-5 pt-5 pb-4 border-b border-[var(--tracker-border-soft)]">
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <span className="text-[10px] font-mono font-bold text-[var(--tracker-ink-subtle)] bg-[var(--tracker-surface-1)] px-2 py-1 rounded tracking-widest">
-                    {ticket.ticketId}
-                  </span>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold text-[var(--tracker-ink-subtle)] bg-[var(--tracker-surface-2)] px-2.5 py-1 rounded-md tracking-widest border border-[var(--tracker-border)]">
+                      {ticket.ticketId}
+                    </span>
                     {ticket.type && (
                       <span
-                        className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                        className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border"
                         style={{
                           color: ticket.type.color || "var(--module-ticket)",
-                          background: (ticket.type.color || "var(--module-ticket)")
-                            .replace(")", "-light)").replace("var(", "var("),
-                          backgroundColor: "var(--module-ticket-light)",
+                          background: `${ticket.type.color || "var(--module-ticket)"}18`,
+                          borderColor: `${ticket.type.color || "var(--module-ticket)"}35`,
                         }}
                       >
                         {ticket.type.name || ticket.type}
                       </span>
                     )}
                   </div>
+                  <button
+                    onClick={() => navigate(`/Tickets/form?id=${ticket._id}`)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--tracker-ink-muted)] hover:text-[var(--module-ticket)] transition-colors px-2 py-1 rounded-lg hover:bg-[var(--tracker-surface-1)] border border-transparent hover:border-[var(--tracker-border)]"
+                  >
+                    <Pencil size={11} /> Edit
+                  </button>
                 </div>
-                <h2 className="text-xl font-bold text-[var(--tracker-ink)] leading-snug">
+
+                <h2 className="text-[19px] font-bold text-[var(--tracker-ink)] leading-snug tracking-tight">
                   {ticket.title}
                 </h2>
-                <div className="flex flex-wrap items-center gap-3 mt-3 text-[12px] text-[var(--tracker-ink-subtle)]">
+
+                <div className="flex flex-wrap items-center gap-2.5 mt-3">
                   {ticket.createdBy && (
-                    <span className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1.5 text-[11.5px] text-[var(--tracker-ink-muted)] font-medium">
                       <Avatar
                         firstName={ticket.createdBy.basicInfo?.firstName}
                         lastName={ticket.createdBy.basicInfo?.lastName}
@@ -948,37 +985,57 @@ const TicketDetailPage = () => {
                       {ticket.createdBy.basicInfo?.firstName} {ticket.createdBy.basicInfo?.lastName}
                     </span>
                   )}
-                  <span>·</span>
-                  <span className="flex items-center gap-1">
+                  <span className="text-[var(--tracker-border-soft)] select-none">·</span>
+                  <span className="inline-flex items-center gap-1 text-[11.5px] text-[var(--tracker-ink-subtle)] font-medium">
                     <CalendarDays size={11} />
                     {formatRelativeTime(ticket.createdAt)}
                   </span>
                   {ticket.clientId && (
                     <>
-                      <span>·</span>
-                      <span className="flex items-center gap-1">
+                      <span className="text-[var(--tracker-border-soft)] select-none">·</span>
+                      <span className="inline-flex items-center gap-1 text-[11.5px] text-[var(--tracker-ink-subtle)] font-medium">
                         <Tag size={11} />
                         {ticket.clientId.name}
                       </span>
                     </>
                   )}
+                  {ticket.url && (
+                    <a
+                      href={ticket.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11.5px] text-[var(--module-ticket)] font-medium hover:underline"
+                    >
+                      <Link2 size={11} /> Reference URL
+                    </a>
+                  )}
                 </div>
               </div>
 
-              {/* Description (if any) */}
-              {ticket.description && (
-                <div className="px-5 sm:px-6 py-4 border-b border-[var(--tracker-border-soft)]">
-                  <p className="text-[13.5px] text-[var(--tracker-ink)] leading-relaxed whitespace-pre-wrap">
-                    {ticket.description}
-                  </p>
-                </div>
-              )}
+              {/* ── Content Sections: always visible, click-to-edit ── */}
+              {[
+                { key: 'userStory',         icon: <Users size={10} className="text-[var(--module-ticket)]" />,       label: 'User Story',           placeholder: 'Click to add user story…',           rows: 4 },
+                { key: 'description',       icon: <Info size={10} className="text-[var(--module-ticket)]" />,        label: 'Engineering Notes',    placeholder: 'Internal notes, root cause, workarounds…', rows: 3 },
+                { key: 'impactAnalysis',    icon: <AlertTriangle size={10} className="text-[hsl(38,85%,45%)]" />,    label: 'Impact Analysis',      placeholder: 'Which areas are affected? Business risk?', rows: 3 },
+                { key: 'acceptanceCriteria',icon: <CheckCheck size={10} className="text-[hsl(142,65%,38%)]" />,      label: 'Acceptance Criteria',  placeholder: 'List specific, testable conditions to close this ticket…', rows: 3 },
+              ].map(({ key, icon, label, placeholder, rows }) => (
+                <EditableSection
+                  key={key}
+                  fieldKey={key}
+                  icon={icon}
+                  label={label}
+                  value={ticket[key]}
+                  placeholder={placeholder}
+                  rows={rows}
+                  onSave={(val) => handleUpdate(key, val)}
+                />
+              ))}
 
               {/* Ticket-level Attachments */}
               {ticket.attachments && ticket.attachments.length > 0 && (
-                <div className="px-5 sm:px-6 py-4">
+                <div className="px-5 py-4">
                   <p className="text-[10px] font-bold text-[var(--tracker-ink-subtle)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <Paperclip size={11} />
+                    <Paperclip size={10} />
                     Attachments ({ticket.attachments.length})
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -987,7 +1044,7 @@ const TicketDetailPage = () => {
                         key={idx}
                         type="button"
                         onClick={() => setViewerFile(att)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-[var(--tracker-border)] bg-[var(--tracker-surface-1)] hover:bg-[var(--tracker-surface-2)] hover:border-[var(--tracker-border-focus)] transition-all group w-full text-left cursor-pointer"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-[var(--tracker-border)] bg-[var(--tracker-surface-1)] hover:bg-[var(--tracker-surface-2)] hover:border-[var(--module-ticket)] transition-all group w-full text-left cursor-pointer"
                       >
                         {getFileIcon(att.mimetype)}
                         <div className="flex-1 min-w-0 text-left">
@@ -1003,6 +1060,7 @@ const TicketDetailPage = () => {
                 </div>
               )}
             </div>
+
 
             {/* ── COMMENTS SECTION ──────────────────────────────────────── */}
             <div className="space-y-3">
@@ -1027,74 +1085,49 @@ const TicketDetailPage = () => {
                 )}
               </div>
 
-              {/* Comment List */}
-              {sortedComments.length === 0 ? (
-                <div className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] border-dashed p-10 text-center">
-                  <MessageSquare size={32} className="mx-auto text-[var(--tracker-ink-tertiary)] mb-2 opacity-50" />
-                  <p className="text-[13px] text-[var(--tracker-ink-subtle)]">No comments yet</p>
-                  <p className="text-[11px] text-[var(--tracker-ink-tertiary)] mt-1">
-                    Be the first to reply or leave an internal note
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {sortedComments.map((c, i) => (
-                    <CommentCard
-                      key={c._id || i}
-                      comment={c}
-                      commentReads={commentReads}
-                      participants={participants}
-                      currentUserId={user?.id || user?._id}
-                      onViewFile={setViewerFile}
-                      onEditComment={handleEditComment}
-                      onDeleteComment={handleDeleteComment}
-                    />
-                  ))}
-                </div>
-              )}
+              {/* ── COMPOSE BOX — top so users see it immediately ─────── */}
+              <div className={`rounded-2xl border-2 overflow-hidden transition-all duration-200 ${
+                commentType === "internal"
+                  ? "border-[hsl(38,75%,62%)] bg-[hsl(38,95%,98%)]"
+                  : "border-[var(--tracker-border)] bg-[var(--tracker-surface)] focus-within:border-[var(--module-ticket)]/50 focus-within:shadow-[0_0_0_3px_var(--module-ticket)/8%]"
+              }`}>
 
-              {/* ── COMPOSE BOX ──────────────────────────────────────────── */}
-              <div className={`bg-[var(--tracker-surface)] rounded-2xl border-2 transition-all shadow-xs overflow-hidden ${commentType === "internal"
-                ? "border-amber-300 border-dashed"
-                : "border-[var(--tracker-border)] focus-within:border-[var(--tracker-border-focus)]"
-                }`}>
-
-                {/* Internal note banner */}
-                {commentType === "internal" && (
-                  <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-amber-200">
-                    <AlertTriangle size={13} className="text-amber-600 shrink-0" />
-                    <span className="text-[12px] font-semibold text-amber-700">
-                      Internal Note — Only visible to team members
-                    </span>
+                {/* Compose type toggle — pill style */}
+                <div className="flex items-center gap-1.5 px-3.5 pt-3 pb-2">
+                  <div className="flex items-center bg-[var(--tracker-surface-2)] rounded-lg p-0.5 gap-0.5">
+                    <button
+                      onClick={() => setCommentType("public")}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all duration-150 ${
+                        commentType === "public"
+                          ? "bg-[var(--tracker-surface)] text-[var(--module-ticket)] shadow-sm border border-[var(--tracker-border)]"
+                          : "text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)]"
+                      }`}
+                    >
+                      <Globe size={10} />
+                      Public Reply
+                    </button>
+                    <button
+                      onClick={() => setCommentType("internal")}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all duration-150 ${
+                        commentType === "internal"
+                          ? "bg-[hsl(38,90%,92%)] text-[hsl(38,80%,32%)] shadow-sm border border-[hsl(38,60%,78%)]"
+                          : "text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)]"
+                      }`}
+                    >
+                      <Lock size={10} />
+                      Internal Note
+                    </button>
                   </div>
-                )}
-
-                {/* Toggle row */}
-                <div className="flex items-center gap-2 px-4 pt-3.5 pb-2">
-                  <button
-                    onClick={() => setCommentType("public")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11.5px] font-semibold transition-all ${commentType === "public"
-                      ? "bg-[var(--module-ticket-light)] text-[var(--module-ticket)] border border-[var(--module-ticket-light)]"
-                      : "text-[var(--tracker-ink-muted)] hover:bg-[var(--tracker-surface-1)]"
-                      }`}
-                  >
-                    <Globe size={11} />
-                    Public Reply
-                  </button>
-                  <button
-                    onClick={() => setCommentType("internal")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11.5px] font-semibold transition-all ${commentType === "internal"
-                      ? "bg-amber-100 text-amber-700 border border-amber-200"
-                      : "text-[var(--tracker-ink-muted)] hover:bg-[var(--tracker-surface-1)]"
-                      }`}
-                  >
-                    <Lock size={11} />
-                    Internal Note
-                  </button>
+                  {commentType === "internal" && (
+                    <span className="text-[10px] font-semibold text-[hsl(38,70%,38%)] flex items-center gap-1 ml-1">
+                      <AlertTriangle size={10} />
+                      Team only
+                    </span>
+                  )}
                 </div>
 
-                {/* Rich text editor wrapper */}
-                <div className="px-4 pb-3 lmx-feed-composer">
+                {/* Rich text editor */}
+                <div className="px-3.5 pb-2 lmx-feed-composer">
                   <div className="lmx-feed-composer__editor relative">
                     <ReactQuill
                       ref={composerRef}
@@ -1117,72 +1150,98 @@ const TicketDetailPage = () => {
                   </div>
                 </div>
 
-                {/* Selected Files Preview */}
+                {/* Staged file chips */}
                 {selectedFiles.length > 0 && (
-                  <div className="px-4 py-2 border-t border-[var(--tracker-border-soft)] flex flex-wrap gap-2">
+                  <div className="px-3.5 py-2 border-t border-[var(--tracker-border-soft)] flex flex-wrap gap-1.5">
                     {selectedFiles.map((file, i) => (
                       <div
                         key={i}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--tracker-border)] bg-[var(--tracker-surface-1)] text-xs font-medium text-[var(--tracker-ink-muted)] max-w-[180px]"
+                        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[var(--tracker-border)] bg-[var(--tracker-surface-1)] text-[11px] font-medium text-[var(--tracker-ink-muted)] max-w-[160px]"
                       >
                         {getFileIcon(file.type)}
                         <span className="truncate">{file.name}</span>
                         <button
                           onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))}
-                          className="text-[var(--tracker-ink-subtle)] hover:text-[var(--tracker-ink)] shrink-0 ml-1"
+                          className="text-[var(--tracker-ink-subtle)] hover:text-[hsl(0,75%,55%)] shrink-0 ml-0.5 transition-colors"
                         >
-                          <X size={11} />
+                          <X size={10} />
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* Compose footer */}
-                <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-[var(--tracker-border-soft)]">
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      title="Attach File"
-                      className="w-7 h-7 inline-flex items-center justify-center rounded-lg text-[var(--tracker-ink-subtle)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-1)] transition-colors"
-                    >
-                      <Paperclip size={13} />
-                    </button>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        setSelectedFiles(prev => [...prev, ...files]);
-                        if (fileInputRef.current) fileInputRef.current.value = "";
-                      }}
-                      multiple
-                      className="hidden"
-                    />
-                  </div>
+                {/* Footer: attach + send */}
+                <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 border-t border-[var(--tracker-border-soft)]">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Attach File"
+                    className="w-7 h-7 inline-flex items-center justify-center rounded-lg text-[var(--tracker-ink-subtle)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-2)] transition-colors"
+                  >
+                    <Paperclip size={13} />
+                  </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      setSelectedFiles(prev => [...prev, ...files]);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    multiple
+                    className="hidden"
+                  />
 
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-[var(--tracker-ink-tertiary)] hidden sm:block">
+                    <span className="text-[10.5px] text-[var(--tracker-ink-tertiary)] hidden sm:block">
                       Ctrl+Enter to send
                     </span>
                     <button
                       onClick={submitComment}
                       disabled={isSubmitting || ((!newComment.trim() || newComment === '<p><br></p>' || newComment === '<p></p>') && selectedFiles.length === 0)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12.5px] font-semibold bg-[var(--module-ticket)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                        commentType === "internal"
+                          ? "bg-[hsl(38,80%,42%)] text-white hover:bg-[hsl(38,80%,36%)]"
+                          : "bg-[var(--module-ticket)] text-white hover:opacity-90"
+                      }`}
                     >
                       {isSubmitting ? (
-                        <Loader2 size={13} className="animate-spin" />
+                        <Loader2 size={12} className="animate-spin" />
                       ) : (
-                        <Send size={13} />
+                        <Send size={12} />
                       )}
                       {commentType === "public" ? "Send Reply" : "Add Note"}
                     </button>
                   </div>
                 </div>
               </div>
+
+              {/* ── Comment List — below compose ──────────────────────── */}
+              {sortedComments.length === 0 ? (
+                <div className="py-6 text-center">
+                  <p className="text-[12px] text-[var(--tracker-ink-tertiary)]">No replies yet — start the conversation above.</p>
+                </div>
+              ) : (
+                <div className="space-y-3 pt-1">
+                  {sortedComments.map((c, i) => (
+                    <CommentCard
+                      key={c._id || i}
+                      comment={c}
+                      commentReads={commentReads}
+                      participants={participants}
+                      currentUserId={user?.id || user?._id}
+                      onViewFile={setViewerFile}
+                      onEditComment={handleEditComment}
+                      onDeleteComment={handleDeleteComment}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
+
+
 
           {/* ╔═══════════════════════════════════════════════════════════════╗
               ║  RIGHT SIDEBAR — DETAILS / PARTICIPANTS / ACTIVITY            ║
@@ -1190,7 +1249,10 @@ const TicketDetailPage = () => {
           <div className="space-y-4">
 
             {/* Sidebar Tab Bar */}
-            <div className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] overflow-hidden shadow-xs">
+            <div
+              className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] overflow-hidden"
+              style={{ boxShadow: "0 1px 3px 0 hsl(var(--module-ticket-hsl,220 90% 56%) / 0.06)" }}
+            >
               <div className="flex border-b border-[var(--tracker-border)]">
                 {[
                   { key: "details", label: "Details", icon: Info },
@@ -1200,10 +1262,10 @@ const TicketDetailPage = () => {
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
-                    className={`flex-1 flex flex-col items-center gap-0.5 py-3 text-[11px] font-semibold transition-colors border-b-2 ${activeTab === key
+                    className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10.5px] font-bold transition-all border-b-2 ${activeTab === key
                       ? "border-[var(--module-ticket)] text-[var(--module-ticket)] bg-[var(--module-ticket-light)]"
                       : "border-transparent text-[var(--tracker-ink-subtle)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-1)]"
-                      }`}
+                    }`}
                   >
                     <Icon size={13} />
                     {label}
@@ -1214,7 +1276,7 @@ const TicketDetailPage = () => {
               {/* ── TAB: DETAILS ─────────────────────────────────────────── */}
               {activeTab === "details" && (
                 <div className="divide-y divide-[var(--tracker-border-soft)]">
-                  <div className="px-5 py-4 space-y-1">
+                  <div className="px-4 py-3 space-y-0.5">
 
                     <FieldRow label="Status">
                       <StatusSelect

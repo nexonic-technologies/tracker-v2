@@ -16,6 +16,7 @@ import {
   AtSign,
   Clock
 } from "lucide-react";
+import { getCanonicalPageRoute } from "../../utils/canonicalRoutes.js";
 import ProfileImage from "../Common/ProfileImage.jsx";
 
 const NotificationDrawer = ({ isOpen, setIsOpen }) => {
@@ -297,12 +298,19 @@ const NotificationDrawer = ({ isOpen, setIsOpen }) => {
                   if (!isRead) {
                     markAsRead(notif._id);
                   }
-                  if (notif.relatedModel && notif.relatedId) {
-                    navigate(`/${notif.relatedModel}/${notif.relatedId}`);
-                  } else if (notif.meta?.model && notif.meta?.modelId) {
-                    navigate(`/${notif.meta.model}/${notif.meta.modelId}`);
+                  const targetModel = notif.relatedModel || notif.meta?.model;
+                  const targetId = notif.relatedId || notif.meta?.modelId;
+                  const canonical = getCanonicalPageRoute(targetModel, targetId);
+                  const tenantSlug = localStorage.getItem("x-tenant-slug") || "admin";
+
+                  if (canonical) {
+                    const clean = canonical.startsWith('/') ? canonical : `/${canonical}`;
+                    const target = clean.startsWith(`/${tenantSlug}/`) || clean === `/${tenantSlug}` ? clean : `/${tenantSlug}${clean}`;
+                    navigate(target);
                   } else if (notif.path) {
                     navigate(notif.path);
+                  } else if (targetModel && targetId) {
+                    navigate(`/${tenantSlug}/${targetModel}/${targetId}`);
                   }
                   setIsOpen(false);
                 }}

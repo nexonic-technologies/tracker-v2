@@ -86,7 +86,17 @@ export const DEFAULT_POPULATE_FIELDS = {
   },
   regularizations: {
     'employeeId': 'basicInfo.firstName,basicInfo.lastName,professionalInfo.empId',
+  },
+  operational_events: {
+    'employeeId': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,professionalInfo.empId,professionalInfo.department,professionalInfo.designation',
+    'resolvedBy': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage',
+    'taskId': 'title,priorityLevel,status,estimatedHours',
+    'ticketId': 'title,ticketId,priority,status'
+  },
+  assets_allocations: {
+    'employeeId': 'basicInfo.firstName,basicInfo.lastName,professionalInfo.empId,professionalInfo.department,professionalInfo.designation',
     'departmentId': 'name',
+    'assetId': 'name,serialNumber,category,status',
     'managerId': 'basicInfo.firstName,basicInfo.lastName'
   },
   sidebars: {
