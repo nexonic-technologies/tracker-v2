@@ -15,13 +15,12 @@ const ticketStatusHistorySchema = new mongoose.Schema({
   },
   changedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    refPath: 'changedByModel',
-    required: true
+    refPath: 'changedByModel'
   },
   changedByModel: {
     type: String,
-    enum: ['employees', 'agents'],
-    required: true
+    enum: ['employees', 'agents', 'system'],
+    default: 'employees'
   },
   durationSeconds: {
     type: Number // Time in seconds spent in fromStatus before transitioning

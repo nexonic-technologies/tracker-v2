@@ -188,22 +188,27 @@ export default function tickets() {
           }
         }
 
+        const creatorId = userId || ticket.createdBy?._id || ticket.createdBy || null;
+        const creatorModel = ticket.createdByModel || (role?.toString() === 'agent' ? 'agents' : (creatorId ? 'employees' : 'system'));
+
         // 3. Initialize ticket status history log
         await models.ticket_status_history.create({
           ticketId: docId,
           toStatus: ticket.status || 'Open',
-          changedBy: userId,
-          changedByModel: ticket.createdByModel
+          changedBy: creatorId,
+          changedByModel: creatorModel
         });
 
         // 4. Log ticket creation activity
-        await models.ticket_activity_logs.create({
-          ticketId: docId,
-          action: 'created',
-          performedBy: userId,
-          performedByModel: ticket.createdByModel,
-          details: { initialStatus: ticket.status || 'Open' }
-        });
+        if (creatorId) {
+          await models.ticket_activity_logs.create({
+            ticketId: docId,
+            action: 'created',
+            performedBy: creatorId,
+            performedByModel: creatorModel,
+            details: { initialStatus: ticket.status || 'Open' }
+          });
+        }
 
         const creatorName = `${ticket.createdBy?.basicInfo?.firstName || ''} ${ticket.createdBy?.basicInfo?.lastName || ''}`.trim() || 'Someone';
 
@@ -295,7 +300,8 @@ export default function tickets() {
           await models.ticket_comments.create(ctx.pendingCommentPayload);
         }
 
-        const commenterModel = role?.toString() === 'agent' ? 'agents' : 'employees';
+        const effectiveUserId = userId || ctx.user?._id || ctx.user?.id || beforeDoc?.assignedTo?.[0] || beforeDoc?.createdBy || null;
+        const commenterModel = role?.toString() === 'agent' ? 'agents' : (effectiveUserId ? 'employees' : 'system');
 
         // 1. Check if status changed
         if (data.status && beforeDoc && data.status !== beforeDoc.status) {
@@ -314,7 +320,7 @@ export default function tickets() {
             ticketId: docId,
             fromStatus: oldStatus,
             toStatus: newStatus,
-            changedBy: userId,
+            changedBy: effectiveUserId,
             changedByModel: commenterModel
           });
 
@@ -327,19 +333,21 @@ export default function tickets() {
           }
 
           // Create activity log
-          await models.ticket_activity_logs.create({
-            ticketId: docId,
-            action: 'status_changed',
-            performedBy: userId,
-            performedByModel: commenterModel,
-            details: { fromStatus: oldStatus, toStatus: newStatus }
-          });
+          if (effectiveUserId) {
+            await models.ticket_activity_logs.create({
+              ticketId: docId,
+              action: 'status_changed',
+              performedBy: effectiveUserId,
+              performedByModel: commenterModel,
+              details: { fromStatus: oldStatus, toStatus: newStatus }
+            });
+          }
 
           // Emit status change socket event
           await emitTicketEvent(docId, 'status_changed', {
             oldStatus,
             newStatus,
-            changedBy: userId,
+            changedBy: effectiveUserId,
             changedByModel: commenterModel
           });
 
