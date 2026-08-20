@@ -113,11 +113,29 @@ const FileViewerModal = ({ file, onClose }) => {
           url = URL.createObjectURL(file);
           setObjectUrl(url);
           await parseContent(file);
-        } else if (file?.path) {
-          const baseUrl = axiosInstance.defaults.baseURL.replace('/api', '');
-          const fileUrl = `${baseUrl}/api/files/${file.path}`;
+        } else if (file?.path || file?.url || file?.filePath) {
+          const rawPath = file.path || file.url || file.filePath;
+          let cleanPath = String(rawPath).trim();
 
-          const response = await axiosInstance.get(fileUrl, {
+          let fileEndpoint;
+          if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+            fileEndpoint = cleanPath;
+          } else {
+            // Strip any leading /api/files/, /files/, /api/, or leading slashes
+            cleanPath = cleanPath
+              .replace(/^\/?api\/files\/?/, '')
+              .replace(/^\/?files\/?/, '')
+              .replace(/^\/?api\/?/, '')
+              .replace(/^\/+/, '');
+
+            if (!cleanPath.startsWith('serve/') && !cleanPath.startsWith('render/')) {
+              cleanPath = `serve/${cleanPath}`;
+            }
+
+            fileEndpoint = `/files/${cleanPath}`;
+          }
+
+          const response = await axiosInstance.get(fileEndpoint, {
             responseType: 'blob'
           });
 

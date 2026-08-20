@@ -474,22 +474,36 @@ export const authMiddleware = async (req, res, next) => {
 
     // Decode to get userId
     const decoded = jwt.decode(token);
-    if (!decoded?.id)
+    const resolvedUserId = decoded?.id || decoded?.agentId || decoded?.userId;
+    if (!resolvedUserId)
       return res.status(401).json({ message: "Invalid token" });
 
-    // For external sources, skip session validation
-    if (source === 'external') {
-      req.user = decoded;
-      return next();
+    // For external sources or agent tokens, verify with JWT_SECRET or proceed
+    if (source === 'external' || decoded?.role === 'agent' || decoded?.agentId) {
+      try {
+        jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        return next();
+      } catch (_) {
+        if (source === 'external') {
+          req.user = decoded;
+          return next();
+        }
+      }
     }
 
-    const userSession = await session.findOne({
-      userId: decoded.id,
-      platform: decoded.platform,
-      deviceUUID,
+    const sessionQuery = {
+      userId: resolvedUserId,
       status: "Active",
-    });
+    };
+    if (decoded.platform) {
+      sessionQuery.platform = decoded.platform;
+    }
+    if (deviceUUID) {
+      sessionQuery.deviceUUID = deviceUUID;
+    }
 
+    const userSession = await session.findOne(sessionQuery).sort({ lastUsedAt: -1, createdAt: -1 });
 
     if (!userSession)
       return res.status(401).json({ message: "Session not found" });

@@ -22,6 +22,22 @@ export const DEFAULT_POPULATE_FIELDS = {
     'createdBy': 'basicInfo.firstName,basicInfo.lastName',
     'taskType': 'name'
   },
+  tickets: {
+    'clientId': 'name',
+    'productId': 'name',
+    'type': 'name,icon,color',
+    'assignedTo': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage',
+    'createdBy': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage',
+    'comments': 'ticketId,message,comment,commentedBy,commenterModel,isPublic,createdAt,updatedAt,attachments',
+    'attachments': 'filename,originalName,path,mimetype,size,uploadedBy,uploadedByModel'
+  },
+  ticket_comments: {
+    'commentedBy': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage',
+    'attachments': 'filename,originalName,path,mimetype,size'
+  },
+  ticket_attachments: {
+    'uploadedBy': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage'
+  },
   attendances: {
     'employee': 'basicInfo.firstName,basicInfo.lastName'
   },
