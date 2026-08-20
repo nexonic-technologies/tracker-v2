@@ -583,7 +583,7 @@ const LeaveAndRegularization = ({ onClose, onSuccess, onFailed, defaultType = ""
 
         {/* Dynamic Mode Switcher (Pill Bar) */}
         {!typeParam && (
-          <div className="flex items-center gap-1 p-1 rounded-[var(--tracker-radius-md)] bg-[var(--tracker-surface-1)] border border-[var(--tracker-border)] self-start sm:self-auto overflow-x-auto">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 p-1 rounded-[var(--tracker-radius-md)] bg-[var(--tracker-surface-1)] border border-[var(--tracker-border)] w-full sm:w-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const active = formType === tab.id;
@@ -592,7 +592,7 @@ const LeaveAndRegularization = ({ onClose, onSuccess, onFailed, defaultType = ""
                   key={tab.id}
                   type="button"
                   onClick={() => setFormType(tab.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-[var(--tracker-radius-sm)] text-[12px] font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`flex-1 sm:flex-initial flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-[var(--tracker-radius-sm)] text-[12px] font-semibold transition-all cursor-pointer whitespace-nowrap ${
                     active
                       ? "bg-[var(--tracker-surface)] text-[var(--tracker-ink)] shadow-xs border border-[var(--tracker-border)]"
                       : "text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-2)]/50"
@@ -895,15 +895,15 @@ const LeaveAndRegularization = ({ onClose, onSuccess, onFailed, defaultType = ""
               </span>
             </div>
 
-            <div className="space-y-2.5 text-[12px]">
-              <div className="flex items-center justify-between p-2 rounded-[var(--tracker-radius-sm)] bg-[var(--tracker-surface-1)]/50">
+            <div className="space-y-2 text-[12px]">
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-1 p-2 rounded-[var(--tracker-radius-sm)] bg-[var(--tracker-surface-1)]/50">
                 <span className="text-[var(--tracker-ink-muted)]">Applicant:</span>
                 <span className="font-semibold text-[var(--tracker-ink)]">
                   {userData?.basicInfo ? `${userData.basicInfo.firstName} ${userData.basicInfo.lastName}` : "You"}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-2 rounded-[var(--tracker-radius-sm)] bg-[var(--tracker-surface-1)]/50">
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-1 p-2 rounded-[var(--tracker-radius-sm)] bg-[var(--tracker-surface-1)]/50">
                 <span className="text-[var(--tracker-ink-muted)]">Approver:</span>
                 <span className="font-semibold text-[var(--tracker-ink)]">
                   {reportingManagerName}
@@ -911,7 +911,7 @@ const LeaveAndRegularization = ({ onClose, onSuccess, onFailed, defaultType = ""
               </div>
 
               {liveForm.totalDays && (
-                <div className="flex items-center justify-between p-2 rounded-[var(--tracker-radius-sm)] bg-[var(--tracker-surface-1)]/50">
+                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-1 p-2 rounded-[var(--tracker-radius-sm)] bg-[var(--tracker-surface-1)]/50">
                   <span className="text-[var(--tracker-ink-muted)]">Calculated Duration:</span>
                   <span className="font-bold text-emerald-600 dark:text-emerald-400">
                     {liveForm.totalDays} Day(s)
@@ -933,9 +933,9 @@ const LeaveAndRegularization = ({ onClose, onSuccess, onFailed, defaultType = ""
               <span className="text-[11px] text-[var(--tracker-ink-muted)]">Assigned Quotas</span>
             </div>
 
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
               {entitledLeaveTypes.length > 0 ? (
-                entitledLeaveTypes.slice(0, 4).map((lt) => {
+                entitledLeaveTypes.map((lt) => {
                   const statusObj = (userData?.leaveStatus || []).find(
                     (s) => (s.leaveType?._id || s.leaveType)?.toString() === lt._id?.toString()
                   );
@@ -953,11 +953,11 @@ const LeaveAndRegularization = ({ onClose, onSuccess, onFailed, defaultType = ""
                       key={lt._id}
                       className="p-2.5 rounded-[var(--tracker-radius-md)] bg-[var(--tracker-surface-1)]/40 border border-[var(--tracker-border)] space-y-1.5"
                     >
-                      <div className="flex items-center justify-between text-[12px]">
-                        <span className="font-semibold text-[var(--tracker-ink)]">
+                      <div className="flex items-center justify-between text-[12px] gap-1">
+                        <span className="font-semibold text-[var(--tracker-ink)] truncate">
                           {lt.name}
                         </span>
-                        <span className="font-mono text-[11px] text-[var(--tracker-ink-muted)]">
+                        <span className="font-mono text-[11px] text-[var(--tracker-ink-muted)] whitespace-nowrap">
                           <strong className="text-emerald-600 dark:text-emerald-400">
                             {available}
                           </strong>{" "}
@@ -974,7 +974,7 @@ const LeaveAndRegularization = ({ onClose, onSuccess, onFailed, defaultType = ""
                   );
                 })
               ) : (
-                <div className="text-[12px] text-[var(--tracker-ink-muted)] text-center py-2">
+                <div className="text-[12px] text-[var(--tracker-ink-muted)] text-center py-2 col-span-full">
                   No active policy quotas mapped.
                 </div>
               )}
@@ -1002,18 +1002,18 @@ const LeaveAndRegularization = ({ onClose, onSuccess, onFailed, defaultType = ""
                 {recentRequests.map((req) => (
                   <div
                     key={req.id}
-                    className="flex items-center justify-between p-2 rounded-[var(--tracker-radius-sm)] bg-[var(--tracker-surface-1)]/40 border border-[var(--tracker-border)] text-[12px]"
+                    className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 p-2 rounded-[var(--tracker-radius-sm)] bg-[var(--tracker-surface-1)]/40 border border-[var(--tracker-border)] text-[12px]"
                   >
-                    <div>
-                      <span className="font-semibold text-[var(--tracker-ink)] block">
+                    <div className="min-w-0 flex-1">
+                      <span className="font-semibold text-[var(--tracker-ink)] block truncate">
                         {req.title} <span className="font-normal text-[var(--tracker-ink-muted)]">({req.days})</span>
                       </span>
-                      <span className="text-[11px] text-[var(--tracker-ink-muted)]">
+                      <span className="text-[11px] text-[var(--tracker-ink-muted)] block">
                         {req.dates}
                       </span>
                     </div>
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 ${
                         req.status === "Approved"
                           ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                           : req.status === "Rejected"
