@@ -10,13 +10,9 @@ export default async function status(state) {
   const shiftConfig = state.policy?.shiftConfig || {};
   const shift = state.shift || {};
   
-  const fullDayMin = policyRules.fullDayMinHours !== undefined ? policyRules.fullDayMinHours : shift.workingHours;
-  const halfDayMin = policyRules.halfDayMinHours !== undefined ? policyRules.halfDayMinHours : (fullDayMin ? fullDayMin / 2 : undefined);
-  const absentMin = policyRules.absentMinHours !== undefined ? policyRules.absentMinHours : (fullDayMin ? fullDayMin / 4 : undefined);
-
-  if (fullDayMin === undefined || halfDayMin === undefined || absentMin === undefined) {
-    throw new Error('ATTENDANCE_POLICY_REQUIRED: Missing fullDayMinHours, halfDayMinHours, or absentMinHours in policy configuration');
-  }
+  const fullDayMin = policyRules.fullDayMinHours !== undefined ? policyRules.fullDayMinHours : (shift.workingHours !== undefined ? shift.workingHours : 8.0);
+  const halfDayMin = policyRules.halfDayMinHours !== undefined ? policyRules.halfDayMinHours : (fullDayMin ? fullDayMin / 2 : 4.0);
+  const absentMin = policyRules.absentMinHours !== undefined ? policyRules.absentMinHours : (fullDayMin ? fullDayMin / 4 : 2.0);
 
   const workedHours = state.workHours || 0;
   const checkIn = state.checkIn || (state.punches && state.punches[0]?.checkIn);

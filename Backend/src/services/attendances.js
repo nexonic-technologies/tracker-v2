@@ -163,15 +163,16 @@ export async function syncAttendanceForTimeTracker(userId, startTime, endTime, s
   }
 }
 
-const parseIsoDate = (val) => {
-  if (!val) return new Date();
+function safeParseAttendanceDate(val) {
+  if (!val) return null;
   if (val instanceof Date) return val;
   let str = val.toString().trim();
   if (str.includes('T') && !str.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(str)) {
     str += 'Z';
   }
-  return new Date(str);
-};
+  const parsed = new Date(str);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
 
 /**
  * Attendance Service
@@ -191,7 +192,7 @@ export default function attendances() {
       delete body.employeeId;
 
       if (!body.date) {
-        body.date = body.dateStr ? parseIsoDate(body.dateStr) : new Date();
+        body.date = body.dateStr ? safeParseAttendanceDate(body.dateStr) : new Date();
       }
       delete body.dateStr;
 
@@ -204,8 +205,9 @@ export default function attendances() {
 
       // Initialize punches array on first check-in of the day
       if (body.checkIn) {
+        body.checkIn = safeParseAttendanceDate(body.checkIn);
         body.punches = [{
-          checkIn: parseIsoDate(body.checkIn),
+          checkIn: body.checkIn,
           location: body.location
         }];
       }
@@ -214,10 +216,11 @@ export default function attendances() {
       const calculatedFields = await calculateAttendance({
         employeeId: body.employee || userId,
         date: body.date,
-        checkIn: body.checkIn ? parseIsoDate(body.checkIn) : null,
-        checkOut: body.checkOut ? parseIsoDate(body.checkOut) : null,
+        checkIn: body.checkIn,
+        checkOut: body.checkOut ? safeParseAttendanceDate(body.checkOut) : null,
         punches: body.punches || [],
-        body
+        body,
+        ctx
       }, { save: true });
 
       Object.assign(body, calculatedFields);
@@ -344,14 +347,14 @@ export default function attendances() {
       }
       // ── End Payroll Lock Gate ─────────────────────────────────────────────
 
-      const punches = attendanceDoc.punches || [];
+      const punches = [...(attendanceDoc.punches || [])];
 
       // Determine if this is a check-in or a check-out update
       const isCheckIn = !!body.checkIn && !body.checkOut;
       const isCheckOut = !!body.checkOut;
 
       if (isCheckIn) {
-        const newCheckIn = parseIsoDate(body.checkIn);
+        const newCheckIn = safeParseAttendanceDate(body.checkIn);
 
         // Push a new punch block if last punch is closed, or punches are empty
         const lastPunch = punches[punches.length - 1];
@@ -363,7 +366,28 @@ export default function attendances() {
         }
 
         body.punches = punches;
-        body.checkIn = attendanceDoc.checkIn || punches[0].checkIn;
+        body.checkIn = attendanceDoc.checkIn || (punches[0] && punches[0].checkIn) || newCheckIn;
+        body.checkOut = null;
+      } else if (isCheckOut) {
+        const newCheckOut = safeParseAttendanceDate(body.checkOut);
+
+        // Close the last open punch
+        const lastPunch = punches[punches.length - 1];
+        if (lastPunch && !lastPunch.checkOut) {
+          lastPunch.checkOut = newCheckOut;
+          if (body.location) {
+            lastPunch.checkOutLocation = body.location;
+          }
+        } else if (!lastPunch) {
+          punches.push({
+            checkIn: attendanceDoc.checkIn || newCheckOut,
+            checkOut: newCheckOut,
+            location: body.location
+          });
+        }
+
+        body.punches = punches;
+        body.checkIn = attendanceDoc.checkIn || (punches[0] && punches[0].checkIn) || newCheckOut;
         body.checkOut = newCheckOut;
       }
 
@@ -372,10 +396,11 @@ export default function attendances() {
         employeeId: attendanceDoc.employee,
         date: attendanceDoc.date,
         checkIn: body.checkIn || attendanceDoc.checkIn,
-        checkOut: body.checkOut || attendanceDoc.checkOut,
+        checkOut: body.checkOut !== undefined ? body.checkOut : attendanceDoc.checkOut,
         punches: body.punches || attendanceDoc.punches || [],
         attendanceDoc,
-        body
+        body,
+        ctx
       }, { save: true });
 
       Object.assign(body, calculatedFields);
