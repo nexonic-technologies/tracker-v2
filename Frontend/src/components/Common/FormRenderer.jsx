@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import toast from "react-hot-toast";
-import { ChevronDown, X, Search, Upload, FileText, Plus, Trash2, Check, Calendar, Eye, EyeOff } from "lucide-react";
+import { ChevronDown, X, Search, Upload, FileText, Plus, Trash2, Check, Calendar, Eye, EyeOff, Crop, Image as ImageIcon } from "lucide-react";
+import ImageCropperModal from "./ImageCropperModal";
 import { Country, State, City } from "country-state-city";
 import {
   buildDirtyPatch,
@@ -654,6 +655,7 @@ const FormRenderer = ({
   const [focusedField, setFocusedField] = useState(null);
   const [showPasswords, setShowPasswords] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [croppingField, setCroppingField] = useState(null);
   const baselineRef = useRef(null);
   const recordId = data?._id;
 
@@ -1013,26 +1015,125 @@ const FormRenderer = ({
       );
     }
 
-    /* ── File Upload ── */
+    /* ── File Upload with 1:1 Image Cropper ── */
     if (field.type === "file") {
       const hasFile = !!value;
+      const isImageField = field.accept?.includes('image') || field.name?.includes('profile') || field.name?.includes('avatar') || field.crop;
+      const fileId = `file-${field.name.replace(/\./g, '-')}`;
+
+      const getImageUrl = (val) => {
+        if (!val) return '';
+        if (typeof val === 'string') {
+          if (val.startsWith('http') || val.startsWith('data:') || val.startsWith('blob:')) return val;
+          if (val.includes('serve/')) return `${axiosInstance.defaults.baseURL.replace('/api', '')}/api/files/${val}`;
+          return `${axiosInstance.defaults.baseURL.replace('/api', '')}/api/files/render/profile/${val.split('/').pop()}`;
+        }
+        if (val instanceof Blob || val instanceof File) {
+          return URL.createObjectURL(val);
+        }
+        return '';
+      };
+
+      const imageUrl = isImageField && hasFile ? getImageUrl(value) : '';
+
+      const handleFileInput = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (isImageField) {
+          const rawSrc = URL.createObjectURL(file);
+          setCroppingField({ field, rawSrc, onFieldChange });
+        } else {
+          onFieldChange(file);
+        }
+        e.target.value = "";
+      };
+
+      if (isImageField) {
+        return (
+          <FormField label={field.label} required={field.required} focused={false}>
+            <div className="flex flex-wrap items-center gap-3.5 p-3 rounded-[var(--tracker-radius-md)] border border-hairline bg-[var(--tracker-surface)] shadow-2xs">
+              <input
+                type="file"
+                accept={field.accept || "image/*"}
+                onChange={handleFileInput}
+                className="hidden"
+                id={fileId}
+              />
+
+              {/* 1:1 Circular / Square Avatar Preview */}
+              <div className="relative group/avatar">
+                {imageUrl ? (
+                  <div className="w-13 h-13 rounded-full overflow-hidden border-2 border-indigo-500 bg-surface-1 shadow-xs flex-shrink-0 flex items-center justify-center">
+                    <img src={imageUrl} alt="Profile" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-13 h-13 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border-2 border-dashed border-indigo-300 dark:border-indigo-700 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                    <ImageIcon size={20} />
+                  </div>
+                )}
+                {imageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setCroppingField({ field, rawSrc: imageUrl, onFieldChange })}
+                    className="absolute -bottom-1 -right-1 p-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-md transition cursor-pointer"
+                    title="Adjust & Crop 1:1"
+                  >
+                    <Crop size={10} />
+                  </button>
+                )}
+              </div>
+
+              {/* Details and Actions */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <p className="text-[12.5px] font-semibold text-ink truncate">
+                    {hasFile ? (typeof value === 'string' ? '1:1 Profile Picture' : value.name) : 'No picture selected'}
+                  </p>
+                  {hasFile && (
+                    <span className="text-[8.5px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      1:1 Matched
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor={fileId}
+                    className="py-1 px-2.5 bg-surface hover:bg-surface-1 border border-hairline rounded-md text-[11px] font-medium text-ink flex items-center gap-1.5 cursor-pointer transition"
+                  >
+                    <Upload size={12} className="text-indigo-500" />
+                    {hasFile ? 'Change Picture' : 'Upload Image'}
+                  </label>
+
+                  {imageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setCroppingField({ field, rawSrc: imageUrl, onFieldChange })}
+                      className="py-1 px-2.5 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-md text-[11px] font-medium flex items-center gap-1.5 cursor-pointer transition"
+                    >
+                      <Crop size={12} />
+                      Adjust & Crop 1:1
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </FormField>
+        );
+      }
+
       return (
         <FormField label={field.label} required={field.required} focused={false}>
-          <label htmlFor={`file-${field.name.replace(/\./g, '-')}`}
+          <label htmlFor={fileId}
             className={`flex items-center gap-3 px-3.5 py-3 rounded-[var(--tracker-radius-md)] cursor-pointer group transition-all duration-200
               border border-dashed bg-[var(--tracker-surface)]
               ${hasFile ? 'border-[var(--brand-solid)] bg-[var(--brand-solid)]/5' : 'border-[var(--tracker-border)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)]/5'}
             `}
           >
-            <input type="file" accept={field.accept} onChange={(e) => onFieldChange(e.target.files[0])} className="hidden" id={`file-${field.name.replace(/\./g, '-')}`} />
-            {hasFile && (field.accept?.includes('image')) ? (
-              <img src={typeof value === 'string' ? (value.startsWith('http') ? value : (value.includes('serve/') ? `${axiosInstance.defaults.baseURL.replace('/api', '')}/api/files/${value}` : `${axiosInstance.defaults.baseURL.replace('/api', '')}/api/files/render/profile/${value.split('/').pop()}`)) : (value instanceof Blob || value instanceof File) ? URL.createObjectURL(value) : ''}
-                alt="" className="w-10 h-10 object-cover rounded-[var(--tracker-radius-sm)] border border-[var(--tracker-border)]" />
-            ) : (
-              <div className={`h-10 w-10 rounded-[var(--tracker-radius-sm)] flex items-center justify-center flex-shrink-0 transition-colors ${hasFile ? 'bg-[var(--tracker-surface)] border border-[var(--tracker-border)]' : 'bg-[var(--tracker-surface-1)] group-hover:bg-[var(--tracker-surface)] border border-transparent group-hover:border-[var(--tracker-border)]'}`}>
-                {hasFile ? <FileText className="h-4 w-4 text-[var(--tracker-ink)]" /> : <Upload className="h-4 w-4 text-[var(--tracker-ink-subtle)] group-hover:text-[var(--brand-solid)] transition-colors" />}
-              </div>
-            )}
+            <input type="file" accept={field.accept} onChange={handleFileInput} className="hidden" id={fileId} />
+            <div className={`h-10 w-10 rounded-[var(--tracker-radius-sm)] flex items-center justify-center flex-shrink-0 transition-colors ${hasFile ? 'bg-[var(--tracker-surface)] border border-[var(--tracker-border)]' : 'bg-[var(--tracker-surface-1)] group-hover:bg-[var(--tracker-surface)] border border-transparent group-hover:border-[var(--tracker-border)]'}`}>
+              {hasFile ? <FileText className="h-4 w-4 text-[var(--tracker-ink)]" /> : <Upload className="h-4 w-4 text-[var(--tracker-ink-subtle)] group-hover:text-[var(--brand-solid)] transition-colors" />}
+            </div>
             <div className="flex-1 min-w-0">
               <p className={`text-[13px] font-medium truncate transition-colors ${hasFile ? 'text-[var(--tracker-ink)]' : 'text-[var(--tracker-ink-muted)] group-hover:text-[var(--brand-solid)]'}`}>
                 {hasFile ? (typeof value === 'string' ? 'Change file' : value.name) : 'Click to upload'}
@@ -1204,6 +1305,19 @@ const FormRenderer = ({
       >
         {submitting ? "Saving…" : submitButton?.text || "Submit"}
       </button>
+
+      {/* 1:1 Image Cropper & Matcher Modal */}
+      {croppingField && (
+        <ImageCropperModal
+          imageSrc={croppingField.rawSrc}
+          title={`Crop & Match 1:1 (${croppingField.field.label || 'Profile Picture'})`}
+          onCropComplete={(blob, croppedFile) => {
+            croppingField.onFieldChange(croppedFile);
+            setCroppingField(null);
+          }}
+          onCancel={() => setCroppingField(null)}
+        />
+      )}
     </form>
   );
 };

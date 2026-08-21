@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { FiMoreHorizontal, FiMessageSquare, FiEye, FiPaperclip, FiThumbsUp, FiEdit2, FiTrash2, FiBookmark, FiShare2, FiFlag, FiCopy } from 'react-icons/fi';
+import { FiMoreHorizontal, FiMessageSquare, FiEye, FiPaperclip, FiThumbsUp, FiEdit2, FiTrash2, FiBookmark, FiShare2, FiFlag, FiCopy, FiX } from 'react-icons/fi';
 import { BiPin } from 'react-icons/bi';
 import ProfileImage from '../Common/ProfileImage';
 import { useAuth } from '../../context/authProvider';
@@ -30,17 +30,21 @@ export default function PostCard({ post, onRefresh, onEditDraft }) {
   const [isFollowing, setIsFollowing] = useState(checkIncludesUser(post.followers));
   const pickerTimeoutRef = useRef(null);
   const menuRef = useRef(null);
+  const viewsRef = useRef(null);
 
-  // Close menu when clicking outside
+  // Close menu & views popover when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setShowMenu(false);
       }
+      if (viewsRef.current && !viewsRef.current.contains(e.target)) {
+        setShowViews(false);
+      }
     };
-    if (showMenu) document.addEventListener('mousedown', handleClickOutside);
+    if (showMenu || showViews) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showMenu]);
+  }, [showMenu, showViews]);
 
   const handleMouseEnterPicker = () => {
     if (pickerTimeoutRef.current) clearTimeout(pickerTimeoutRef.current);
@@ -655,49 +659,93 @@ export default function PostCard({ post, onRefresh, onEditDraft }) {
               </button>
             </div>
 
-            {/* Views */}
-            <button
-              onClick={toggleViews}
-              className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-xs transition-all ${showViews
-                ? 'text-indigo-600 font-semibold bg-indigo-50'
-                : 'text-gray-400 hover:bg-gray-100 hover:text-indigo-600'
+            {/* Modern Views & Seen Facepile Popover Trigger */}
+            <div className="relative" ref={viewsRef}>
+              <button
+                type="button"
+                onClick={toggleViews}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border ${
+                  showViews
+                    ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 shadow-2xs'
+                    : 'bg-surface-1/60 hover:bg-surface-2 text-ink-muted hover:text-indigo-600 border-hairline'
                 }`}
-            >
-              <FiEye className="text-base" />
-              <span>{localPost.viewsCount || 0}</span>
-              <span className="hidden sm:inline">views</span>
-            </button>
+                title="View read receipts"
+              >
+                {/* Overlapping mini facepile of top 3 viewers */}
+                {localPost.viewedBy?.length > 0 && (
+                  <div className="flex items-center -space-x-1.5 mr-0.5">
+                    {localPost.viewedBy.slice(0, 3).map((v, i) => (
+                      <div key={i} className="relative z-[3-i] ring-1.5 ring-surface rounded-full">
+                        <ProfileImage
+                          profileImage={v.employee?.basicInfo?.profileImage}
+                          firstName={v.employee?.basicInfo?.firstName}
+                          lastName={v.employee?.basicInfo?.lastName}
+                          size="xs"
+                          className="!w-4 !h-4 text-[8px]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <FiEye className="text-xs text-indigo-500" />
+                <span className="font-semibold text-[11px]">{localPost.viewsCount || 0}</span>
+                <span className="hidden sm:inline text-[11px]">views</span>
+              </button>
+
+              {/* Floating Modern Viewer Receipts Popover Modal */}
+              {showViews && (
+                <div className="absolute right-0 bottom-full mb-2 w-72 max-w-[90vw] bg-surface/95 backdrop-blur-md border border-hairline rounded-tracker-xl shadow-xl p-3 z-30 animate-scale-in">
+                  <div className="flex items-center justify-between border-b border-hairline-soft pb-2 mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <FiEye className="text-indigo-500 text-xs" />
+                      <h4 className="text-[11px] font-bold text-ink">Read Receipts</h4>
+                      <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 border border-indigo-200 dark:border-indigo-800">
+                        {localPost.viewedBy?.length || 0}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowViews(false)}
+                      className="p-1 rounded-md text-ink-subtle hover:text-ink hover:bg-surface-2 transition cursor-pointer"
+                    >
+                      <FiX size={12} />
+                    </button>
+                  </div>
+
+                  {localPost.viewedBy?.length > 0 ? (
+                    <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 divide-y divide-hairline-soft/50">
+                      {localPost.viewedBy.map((v, idx) => {
+                        const name = `${v.employee?.basicInfo?.firstName || 'Colleague'} ${v.employee?.basicInfo?.lastName || ''}`.trim();
+                        const title = v.employee?.professionalInfo?.designation?.title || v.employee?.professionalInfo?.department?.name || 'Staff';
+                        return (
+                          <div key={idx} className="flex items-center gap-2 pt-1.5 first:pt-0">
+                            <ProfileImage
+                              profileImage={v.employee?.basicInfo?.profileImage}
+                              firstName={v.employee?.basicInfo?.firstName}
+                              lastName={v.employee?.basicInfo?.lastName}
+                              size="xs"
+                              className="!w-6 !h-6 text-[9px] rounded-full shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-semibold text-ink truncate leading-tight">{name}</p>
+                              <p className="text-[9px] text-ink-subtle truncate">{title}</p>
+                            </div>
+                            <span className="text-[9px] font-mono text-ink-subtle shrink-0">
+                              {dayjs(v.viewedAt).fromNow(true)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-ink-subtle text-center py-2">No reader receipts yet.</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
-
-      {/* VIEWS SECTION */}
-      {!localPost.isDraft && showViews && (
-        <div className="px-4 md:px-5 pb-4 pt-1 border-t border-gray-100">
-          <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3 mt-3">Viewed By</div>
-          {localPost.viewedBy?.length > 0 ? (
-            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-              {localPost.viewedBy.map((v, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full pl-1 pr-3 py-1 hover:border-indigo-200 transition-colors">
-                  <ProfileImage
-                    profileImage={v.employee?.basicInfo?.profileImage}
-                    firstName={v.employee?.basicInfo?.firstName}
-                    lastName={v.employee?.basicInfo?.lastName}
-                    size="xs"
-                    className="!w-6 !h-6 text-[10px] shrink-0"
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium text-gray-700">{v.employee?.basicInfo?.firstName || 'Unknown'}</span>
-                    <span className="text-[10px] text-gray-400">{dayjs(v.viewedAt).fromNow()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-xs text-gray-400 py-2">No views yet</div>
-          )}
-        </div>
-      )}
 
       {/* COMMENTS SECTION */}
       {!localPost.isDraft && showComments && (
