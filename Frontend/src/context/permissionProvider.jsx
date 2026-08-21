@@ -20,7 +20,7 @@ const parseContext = (ctx) => {
   };
 };
 
-const PermissionContext = createContext({
+export const PermissionContext = createContext({
   permissions: {},
   navigation: [],
   capabilities: [],
