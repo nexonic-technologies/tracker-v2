@@ -104,10 +104,14 @@ const Profile = () => {
   const [editing, setEditing] = useState(false);
   const [tab, setTab] = useState('personal');
 
-  useEffect(() => { fetchProfile(); }, []);
+  useEffect(() => {
+    if (user) fetchProfile();
+  }, [user?.id, user?.email]);
 
   const fetchProfile = async () => {
+    if (!user) return;
     try {
+      setLoading(true);
       const pop = {
         'professionalInfo.designation': 'title,description',
         'professionalInfo.department': 'name,head',
@@ -115,16 +119,81 @@ const Profile = () => {
         'professionalInfo.reportingManager': 'basicInfo.firstName,basicInfo.lastName,basicInfo.email',
         'professionalInfo.teamLead': 'basicInfo.firstName,basicInfo.lastName,basicInfo.email'
       };
-      const [empRes, leave_typesRes] = await Promise.all([
-        axiosInstance.post(`/populate/read/employees/${user.id}`, { populateFields: pop }),
-        axiosInstance.post('/populate/read/leave_types', {}).catch(() => null)
-      ]);
-      let emp = empRes.data.data;
+
+      const userId = user.id || user._id || user.userId;
+      let emp = null;
+
+      // 1. Try reading by direct ID
+      if (userId) {
+        try {
+          const empRes = await axiosInstance.post(`/populate/read/employees/${userId}`, { populateFields: pop });
+          if (empRes?.data?.data) {
+            emp = empRes.data.data;
+          }
+        } catch (_) {}
+      }
+
+      // 2. If not found by direct ID, search by email / username
+      if (!emp && (user.email || user.name)) {
+        try {
+          const searchFilters = [];
+          if (user.email) {
+            searchFilters.push({ 'authInfo.workEmail': user.email });
+            searchFilters.push({ 'basicInfo.email': user.email });
+          }
+          if (user.name) {
+            searchFilters.push({ 'authInfo.workEmail': user.name });
+            searchFilters.push({ 'basicInfo.firstName': user.name.split(' ')[0] });
+          }
+          if (user.employeeId) {
+            searchFilters.push({ _id: user.employeeId });
+          }
+
+          if (searchFilters.length > 0) {
+            const searchRes = await axiosInstance.post('/populate/read/employees', {
+              filter: { $or: searchFilters },
+              populateFields: pop,
+              limit: 1
+            });
+            const list = searchRes?.data?.data || [];
+            if (list.length > 0) {
+              emp = list[0];
+            }
+          }
+        } catch (_) {}
+      }
+
+      // 3. Fallback: Initialize graceful editable profile object if not yet created in tenant
+      if (!emp) {
+        emp = {
+          _id: userId,
+          basicInfo: {
+            firstName: user.name?.split(' ')[0] || user.name || 'User',
+            lastName: user.name?.split(' ').slice(1).join(' ') || '',
+            email: user.email || '',
+          },
+          professionalInfo: {
+            role: user.role || 'User',
+            designation: user.designation || null,
+            department: user.department || null,
+          },
+          authInfo: {
+            workEmail: user.email || '',
+          },
+          leaveStatus: []
+        };
+      }
+
+      // 4. Parse nested JSON string fields and link leave types
+      const leave_typesRes = await axiosInstance.post('/populate/read/leave_types', {}).catch(() => null);
       const leave_types = leave_typesRes?.data?.data || [];
+
       if (emp) {
         const p = v => { if (typeof v === 'string' && (v.startsWith('{') || v.startsWith('['))) { try { return JSON.parse(v); } catch { return v; } } return v; };
-        emp.basicInfo = p(emp.basicInfo); emp.personalDocuments = p(emp.personalDocuments);
-        emp.professionalDocuments = p(emp.professionalDocuments); emp.accountDetails = p(emp.accountDetails);
+        emp.basicInfo = p(emp.basicInfo) || {};
+        emp.personalDocuments = p(emp.personalDocuments) || {};
+        emp.professionalDocuments = p(emp.professionalDocuments) || {};
+        emp.accountDetails = p(emp.accountDetails) || {};
 
         if (emp.leaveStatus && leave_types.length > 0) {
           emp.leaveStatus = emp.leaveStatus.map(ls => {
@@ -136,9 +205,13 @@ const Profile = () => {
           });
         }
       }
+
       setEmployee(emp);
-    } catch (e) { console.error("Error fetching profile:", e); }
-    finally { setLoading(false); }
+    } catch (e) {
+      console.error("Error fetching profile:", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
@@ -152,7 +225,8 @@ const Profile = () => {
   })();
 
   const handleUpdate = (payload, meta) => {
-    const draftKey = formDraftKey("profile", user.id);
+    const targetId = employee?._id || user.id || user._id;
+    const draftKey = formDraftKey("profile", targetId);
 
     enqueueFormSubmit({
       draftKey,
@@ -160,7 +234,7 @@ const Profile = () => {
       execute: async () => {
         const fd = buildEmployeeUpdateFormData(payload);
         if (![...fd.entries()].length) return;
-        await axiosInstance.put(`/populate/update/employees/${user.id}`, fd, {
+        await axiosInstance.put(`/populate/update/employees/${targetId}`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       },
