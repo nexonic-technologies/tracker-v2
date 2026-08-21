@@ -368,14 +368,26 @@ export async function populateHelper(req, res, next) {
 
       // Handle multiple attachments
       if (req.files && req.files.attachments) {
-        const attachmentPaths = req.files.attachments.map(file => ({
-          filename: file.filename,
-          originalName: file.originalname,
-          path: `serve/documents/${datePath}/${file.filename}`,
-          mimetype: file.mimetype,
-          size: file.size,
-          uploadedAt: new Date()
-        }));
+        const attachmentPaths = req.files.attachments.map(file => {
+          const ext = file.originalname?.split('.').pop()?.toLowerCase() || '';
+          const isImg = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) || file.mimetype?.startsWith('image/');
+          const isAud = ['mp3', 'wav', 'ogg', 'webm', 'm4a'].includes(ext) || file.mimetype?.startsWith('audio/');
+          const isVid = ['mp4', 'webm', 'mov'].includes(ext) || file.mimetype?.startsWith('video/');
+          const type = isImg ? 'image' : isAud ? 'audio' : isVid ? 'video' : 'file';
+          const fileUrl = `/api/files/serve/documents/${datePath}/${file.filename}`;
+
+          return {
+            name: file.originalname || file.filename,
+            url: fileUrl,
+            type: type,
+            filename: file.filename,
+            originalName: file.originalname,
+            path: `serve/documents/${datePath}/${file.filename}`,
+            mimetype: file.mimetype,
+            size: file.size,
+            uploadedAt: new Date()
+          };
+        });
 
         requestBody = {
           ...requestBody,

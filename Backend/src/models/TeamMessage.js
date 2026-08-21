@@ -3,10 +3,15 @@ import mongoose, { Schema } from 'mongoose';
 const AttachmentSchema = new Schema(
   {
     type: { type: String, enum: ['image', 'file', 'video', 'audio'], default: 'file' },
-    name: { type: String, required: true },
-    url: { type: String, required: true },
+    name: { type: String, default: 'Attachment' },
+    url: { type: String, default: '' },
     size: { type: Number },
     thumbnail: { type: String },
+    duration: { type: Number }, // Duration in seconds for audio/voice notes
+    filename: { type: String },
+    path: { type: String },
+    mimetype: { type: String },
+    originalName: { type: String },
   },
   { _id: false }
 );

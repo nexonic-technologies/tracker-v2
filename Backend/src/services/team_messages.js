@@ -35,6 +35,11 @@ class team_messagesService {
         .findById(messageId)
         .populate('sender', 'basicInfo.firstName basicInfo.lastName basicInfo.profileImage name')
         .populate('recipient', 'basicInfo.firstName basicInfo.lastName basicInfo.profileImage name')
+        .populate({
+          path: 'replyTo',
+          select: 'message sender type attachments',
+          populate: { path: 'sender', select: 'basicInfo.firstName basicInfo.lastName name' }
+        })
         .lean();
 
       if (!populatedMsg) return;

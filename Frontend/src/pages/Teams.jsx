@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/authProvider";
 import PageLoader from "../components/Common/PageLoader";
@@ -9,6 +10,7 @@ import {
 import toast from "react-hot-toast";
 
 export default function Teams() {
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
   const [attendances, setAttendances] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,12 @@ export default function Teams() {
       // 2. Fetch today's attendances to determine live status
       const todayStr = new Date().toISOString().split('T')[0];
       const attendanceRes = await axiosInstance.post('/populate/read/attendances', {
-        filter: { dateStr: todayStr },
+        filter: {
+          date: {
+            $gte: `${todayStr}T00:00:00.000Z`,
+            $lte: `${todayStr}T23:59:59.999Z`
+          }
+        },
         limit: 1000
       });
       setAttendances(attendanceRes.data?.data || []);
@@ -60,18 +67,27 @@ export default function Teams() {
     }
   };
 
-  // Determine current live status for an employee
+  // Determine current live status for an employee based on today's check-in
   const getEmployeeStatus = (empId) => {
-    const att = attendances.find(a => (a.employeeId?._id || a.employeeId) === empId);
-    if (!att) return { label: "Offline", color: "text-slate-400 bg-slate-50 dark:bg-slate-900/40", icon: Clock };
+    const att = attendances.find(a => {
+      const aEmpId = (a.employee?._id || a.employee || a.employeeId?._id || a.employeeId)?.toString();
+      return aEmpId === empId?.toString();
+    });
+
+    if (!att || !att.checkIn) {
+      if (att?.status === "Leave") {
+        return { label: "On Leave", color: "text-purple-600 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800", dot: "bg-purple-500", icon: Clock };
+      }
+      return { label: "Absent", color: "text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700", dot: "bg-slate-400", icon: Clock };
+    }
 
     if (att.checkOut) {
-      return { label: "Checked Out", color: "text-amber-500 bg-amber-50 dark:bg-amber-950/20", icon: Clock };
+      return { label: "Checked Out", color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800", dot: "bg-amber-500", icon: Clock };
     }
     if (att.status === "On Break") {
-      return { label: "On Break", color: "text-orange-500 bg-orange-50 dark:bg-orange-950/20", icon: Coffee };
+      return { label: "On Break", color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800", dot: "bg-orange-500", icon: Coffee };
     }
-    return { label: "Present / Active", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20", icon: CheckCircle };
+    return { label: "Present", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800", dot: "bg-emerald-500", icon: CheckCircle };
   };
 
   // Group departments
@@ -277,108 +293,108 @@ export default function Teams() {
   if (loading) return <PageLoader />;
 
   return (
-    <div className="h-full flex flex-col gap-4 p-6 bg-canvas text-ink" style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}>
+    <div className="h-[calc(100vh-var(--topbar-height,56px)-28px)] max-h-[calc(100vh-var(--topbar-height,56px)-28px)] flex flex-col text-ink overflow-hidden" style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}>
 
       {/* Header controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-3 mb-2 flex-shrink-0">
         <div>
-          <p className="lmx-page-eyebrow mb-0.5">COLLABORATION</p>
-          <h1 className="text-[20px] font-bold text-ink flex items-center gap-2">
-            <Users className="h-6 w-6 text-indigo-500" />
+          <p className="lmx-page-eyebrow text-[9px] mb-0.2">COLLABORATION</p>
+          <h1 className="text-base font-bold text-ink flex items-center gap-1.5 tracking-tight">
+            <Users className="h-4 w-4 text-indigo-500" />
             Company Teams & Directory
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Dept Filter */}
           <select
             value={selectedDeptId}
             onChange={(e) => setSelectedDeptId(e.target.value)}
-            className="p-2 text-xs bg-surface border border-hairline rounded-[8px] outline-none text-ink cursor-pointer font-medium"
+            className="py-1 px-2.5 text-[11px] bg-surface border border-hairline rounded-tracker-md outline-none text-ink cursor-pointer font-medium"
           >
             <option value="all">All Departments</option>
             {departmentsList.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
 
           {/* View toggle */}
-          <div className="flex bg-surface-1 p-0.5 rounded-[8px] border border-hairline">
+          <div className="flex bg-surface-1 p-0.5 rounded-tracker-md border border-hairline">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-[6px] transition cursor-pointer ${viewMode === "grid" ? "bg-surface text-indigo-600 shadow-sm" : "text-ink-subtle"}`}
+              className={`p-1 rounded-sm text-xs transition cursor-pointer ${viewMode === "grid" ? "bg-surface shadow-2xs text-indigo-600 font-bold" : "text-ink-subtle hover:text-ink"}`}
+              title="Grid View"
             >
-              <Grid className="h-4 w-4" />
+              <Grid className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={() => setViewMode("tree")}
-              className={`p-1.5 rounded-[6px] transition cursor-pointer ${viewMode === "tree" ? "bg-surface text-indigo-600 shadow-sm" : "text-ink-subtle"}`}
+              className={`p-1 rounded-sm text-xs transition cursor-pointer ${viewMode === "tree" ? "bg-surface shadow-2xs text-indigo-600 font-bold" : "text-ink-subtle hover:text-ink"}`}
+              title="Organization Hierarchy Tree"
             >
-              <Network className="h-4 w-4" />
+              <Network className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       </div>
 
       {/* Main content display */}
-      <div className="flex-1 overflow-y-auto space-y-6 pr-1">
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1 min-h-0">
         {filteredTeams.map(team => (
-          <div key={team.id} className="bg-surface border border-hairline rounded-tracker-card p-5 shadow-sm space-y-4">
+          <div key={team.id} className="bg-surface border border-hairline rounded-tracker-md p-3.5 shadow-2xs space-y-3">
 
-            <div className="flex items-center justify-between border-b border-hairline-soft pb-3 flex-shrink-0">
-              <h2 className="text-[14px] font-bold text-ink flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+            <div className="flex items-center justify-between border-b border-hairline-soft pb-2 flex-shrink-0">
+              <h2 className="text-xs font-bold text-ink flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-indigo-500" />
                 {team.name} Team
               </h2>
-              <span className="text-[11px] font-semibold text-ink-subtle bg-surface-1 px-2.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-semibold text-ink-subtle bg-surface-1 px-2 py-0.5 rounded-full">
                 {team.members.length} Members
               </span>
             </div>
 
             {viewMode === "grid" ? (
-              /* Grid Layout */
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              /* Grid Layout - Compact cards */
+              <div className="flex flex-wrap gap-2.5">
                 {team.members.map(member => {
                   const isMe = member._id === user?.id;
                   const name = `${member.basicInfo?.firstName || ""} ${member.basicInfo?.lastName || ""}`.trim();
                   return (
                     <div
                       key={member._id}
-                      className={`p-4 border rounded-tracker-card transition-all flex flex-col items-center text-center ${isMe ? "bg-indigo-50/10 border-indigo-200" : "border-hairline hover:shadow-md hover:border-indigo-300"
+                      className={`w-[170px] sm:w-[180px] p-2.5 border rounded-tracker-md transition-all flex flex-col items-center text-center flex-shrink-0 ${isMe ? "bg-indigo-50/20 border-indigo-200" : "border-hairline hover:shadow-xs hover:border-indigo-300"
                         }`}
                     >
                       {/* Avatar */}
-                      <div className="relative w-12 h-12 mb-3">
-                        <div className="w-12 h-12 rounded-full bg-surface-2 flex items-center justify-center font-bold text-indigo-600 dark:text-indigo-400 text-[15px] border border-hairline">
-                          {member.basicInfo?.firstName?.[0] || <User />}
+                      <div className="relative w-8 h-8 mb-1.5">
+                        <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center font-bold text-indigo-600 dark:text-indigo-400 text-[11px] border border-hairline">
+                          {member.basicInfo?.firstName?.[0] || <User size={12} />}
                         </div>
-                        <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-surface ${member.liveStatus.label.includes("Present") ? "bg-emerald-500" :
-                            member.liveStatus.label.includes("Break") ? "bg-orange-500" : "bg-slate-400"
-                          }`} />
+                        <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-surface ${member.liveStatus.dot || "bg-slate-400"}`} />
                       </div>
 
-                      <h4 className="text-[13px] font-bold text-ink leading-snug truncate w-full">{name} {isMe && "(You)"}</h4>
-                      <p className="text-[10px] text-ink-subtle mt-0.5 truncate w-full">{member.professionalInfo?.designation?.title || "Staff Member"}</p>
+                      <h4 className="text-[11.5px] font-bold text-ink leading-snug truncate w-full">{name} {isMe && "(You)"}</h4>
+                      <p className="text-[8.5px] text-ink-subtle truncate w-full mt-0.2">{member.professionalInfo?.designation?.title || "Staff Member"}</p>
 
-                      <span className={`inline-block mt-2.5 px-2 py-0.5 rounded-full text-[9px] font-bold ${member.liveStatus.color}`}>
+                      <span className={`inline-block mt-1 px-1.5 py-0.2 rounded-full text-[7.5px] font-bold ${member.liveStatus.color}`}>
                         {member.liveStatus.label}
                       </span>
 
                       {/* Card Actions */}
-                      <div className="flex items-center justify-center gap-2 mt-4 pt-3 border-t border-hairline-soft w-full">
+                      <div className="flex items-center justify-center gap-1 mt-2 pt-1.5 border-t border-hairline-soft w-full">
                         <button
                           onClick={() => setCallMember(member)}
-                          className="flex-1 py-1.5 bg-surface hover:bg-surface-1 border border-hairline rounded-[6px] text-ink flex items-center justify-center gap-1 text-[11px] cursor-pointer"
+                          className="flex-1 py-1 bg-surface hover:bg-surface-1 border border-hairline rounded-md text-ink flex items-center justify-center gap-1 text-[9.5px] cursor-pointer"
                         >
-                          <Phone className="h-3 w-3 text-indigo-500" /> Call
+                          <Phone className="h-2.5 w-2.5 text-indigo-500" /> Call
                         </button>
                         <button
-                          onClick={() => !isMe && setChatMember(member)}
+                          onClick={() => !isMe && navigate(`/messages?chat=${member._id}`)}
                           disabled={isMe}
-                          className={`flex-1 py-1.5 rounded-[6px] flex items-center justify-center gap-1 text-[11px] transition ${isMe
+                          className={`flex-1 py-1 rounded-md flex items-center justify-center gap-1 text-[9.5px] transition ${isMe
                               ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-hairline"
-                              : "bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
+                              : "bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer shadow-2xs"
                             }`}
                         >
-                          <MessageSquare className="h-3 w-3" /> {isMe ? "Your Profile" : "Chat"}
+                          <MessageSquare className="h-2.5 w-2.5" /> {isMe ? "Profile" : "Chat"}
                         </button>
                       </div>
                     </div>
@@ -387,7 +403,7 @@ export default function Teams() {
               </div>
             ) : (
               /* Visual Tree View Layout */
-              <div className="overflow-x-auto p-4 border border-hairline-soft bg-surface-1/20 rounded-[10px]">
+              <div className="overflow-x-auto p-3 border border-hairline-soft bg-surface-1/20 rounded-tracker-md">
                 {renderDepartmentTree(team.members)}
               </div>
             )}

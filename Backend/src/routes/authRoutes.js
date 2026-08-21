@@ -2,7 +2,7 @@
 import express from "express";
 import {
   login, logout, refresh, authMiddleware, storePushToken, sendManualTestNotification,
-  forgotPassword, resetPassword, getMe, getContext, changePassword, googleLogin
+  forgotPassword, resetPassword, getMe, getContext, changePassword, googleLogin, getActiveUsers
 } from "../Controller/AuthController.js"
 
 const router = express.Router();
@@ -14,6 +14,9 @@ router.get("/me", authMiddleware, getMe);
 
 // Get unified permission context (permissions + filtered navigation + capabilities)
 router.get("/me/context", authMiddleware, getContext);
+
+// Get currently active online user IDs
+router.get("/active-users", authMiddleware, getActiveUsers);
 
 // Login
 router.post("/login", (req, res, next) => {

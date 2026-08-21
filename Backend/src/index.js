@@ -550,4 +550,12 @@ export async function initApp() {
   }
 }
 
+export function getActiveOnlineUserIds() {
+  const ids = new Set();
+  for (const conn of activeConnections.values()) {
+    if (conn.userId) ids.add(conn.userId.toString());
+  }
+  return Array.from(ids);
+}
+
 export { app, server, io, activeConnections };

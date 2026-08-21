@@ -1050,3 +1050,16 @@ export const getContext = async (req, res, next) => {
   }
 };
 
+export const getActiveUsers = async (req, res, next) => {
+  try {
+    const { getActiveOnlineUserIds } = await import("../index.js");
+    const onlineUserIds = getActiveOnlineUserIds ? getActiveOnlineUserIds() : [];
+    return res.json({
+      success: true,
+      onlineUserIds
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
