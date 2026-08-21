@@ -1,4 +1,4 @@
-import { pauseActiveTimerOnCheckout } from '../timetrackersessions.js';
+import { pauseActiveTimerOnCheckout } from '../time_tracker_sessions.js';
 
 /**
  * Handle business rules when an employee checks out.

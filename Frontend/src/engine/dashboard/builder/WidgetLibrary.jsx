@@ -8,12 +8,14 @@ import React, { useState } from 'react';
 import { getAllWidgets, getCategories } from '../registry/widgetRegistry';
 import {
   BarChart3, List, PieChart, Rss, Calendar,
-  Activity, ShieldAlert, Sparkles, Zap, Target, Plus, Search
+  Activity, ShieldAlert, Sparkles, Zap, Target, Plus, Search,
+  Clock, CheckSquare, Ticket
 } from 'lucide-react';
 
 const ICON_MAP = {
   BarChart3, List, PieChart, Rss, Calendar,
-  Activity, ShieldAlert, Sparkles, Zap, Target
+  Activity, ShieldAlert, Sparkles, Zap, Target,
+  Clock, CheckSquare, Ticket
 };
 
 export default function WidgetLibrary({ onAddWidget }) {

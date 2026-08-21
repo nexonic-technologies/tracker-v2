@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import axiosInstance from "@api/axiosInstance";
 import { useAuth } from "@providers/AuthProvider";
 import TableGenerator from "@components/Common/TableGenerator";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { entityFormPath } from "../../utils/formRoutes";
 import FormDraftBanner from "@components/Forms/FormDraftBanner";
 import ProfileImage from "@components/Common/ProfileImage";
@@ -90,18 +90,33 @@ const PRIORITIES = ["Critical", "High", "Medium", "Low"];
 
 const TicketsPage = () => {
   const { user } = useAuth();
+  const userId = user?.id || user?._id || "";
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  const [currentTab, setCurrentTab] = useState("all");
+  const [currentTab, setCurrentTab] = useState(searchParams.get("tab") || "all");
 
-  const [fStatus, setFStatus] = useState(null);
-  const [fPriority, setFPriority] = useState(null);
-  const [fType, setFType] = useState(null);
-  const [fAssignee, setFAssignee] = useState(null);
+  const [fStatus, setFStatus] = useState(searchParams.get("status") || null);
+  const [fPriority, setFPriority] = useState(searchParams.get("priority") || null);
+  const [fType, setFType] = useState(searchParams.get("type") || null);
+  const [fAssignee, setFAssignee] = useState(searchParams.get("assignee") || null);
   const [fDateFrom, setFDateFrom] = useState("");
   const [fDateTo, setFDateTo] = useState("");
+
+  // Sync state if URL search parameters change
+  useEffect(() => {
+    const qStatus = searchParams.get("status");
+    const qPriority = searchParams.get("priority");
+    const qType = searchParams.get("type");
+    const qTab = searchParams.get("tab");
+    if (qStatus) setFStatus(qStatus);
+    if (qPriority) setFPriority(qPriority);
+    if (qType) setFType(qType);
+    if (qTab) setCurrentTab(qTab);
+  }, [searchParams]);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -140,7 +155,7 @@ const TicketsPage = () => {
 
     // Filter by tab segment
     if (currentTab === "my") {
-      d = d.filter(t => t.assignedTo?.some(a => String(a._id || a) === user.id));
+      d = d.filter(t => t.assignedTo?.some(a => String(a._id || a) === userId));
     } else if (currentTab === "unassigned") {
       d = d.filter(t => !t.assignedTo || t.assignedTo.length === 0);
     } else if (currentTab === "overdue") {
@@ -158,7 +173,7 @@ const TicketsPage = () => {
 
     // Sort by updatedAt descending
     return [...d].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-  }, [tickets, currentTab, user.id, fStatus, fPriority, fType, fAssignee, fDateFrom, fDateTo]);
+  }, [tickets, currentTab, userId, fStatus, fPriority, fType, fAssignee, fDateFrom, fDateTo]);
 
   const activeFilters = [fStatus, fPriority, fType, fAssignee, fDateFrom, fDateTo].filter(Boolean).length;
 
@@ -175,7 +190,7 @@ const TicketsPage = () => {
   const criticalCount = tickets.filter(t => t.priority === "Critical").length;
   const resolvedCount = tickets.filter(t => t.status === "Completed" && new Date(t.updatedAt) > weekAgo).length;
 
-  const myCount = tickets.filter(t => t.assignedTo?.some(a => String(a._id || a) === user.id)).length;
+  const myCount = tickets.filter(t => t.assignedTo?.some(a => String(a._id || a) === userId)).length;
   const unassignedCount = tickets.filter(t => !t.assignedTo || t.assignedTo.length === 0).length;
   const overdueCount = tickets.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "Completed" && t.status !== "Closed").length;
   const resolvedTodayCount = tickets.filter(t => t.status === "Completed" && new Date(t.updatedAt).toDateString() === new Date().toDateString()).length;

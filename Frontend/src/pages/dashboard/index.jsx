@@ -1,302 +1,111 @@
 import React from 'react';
-import { Users, UserCheck, Ban, Calendar, Clock, CheckSquare } from 'lucide-react';
+import { Calendar, Clock, LayoutGrid, PlusCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { MODULES } from '../../constants/uiTokens';
 import { useAuth } from '../../context/authProvider';
-import { useUserRole } from '../../hooks/useUserRole';
-
-import { getRoleConfig } from '../../components/dashboard/config/dashboardConfig';
-import { useWidgetPermissions } from '../../components/dashboard/hooks/useWidgetPermissions';
-import { useDashboardData } from '../../components/dashboard/hooks/useDashboardData';
+import { usePermissions } from '../../hooks/usePermissions';
 import DashboardRenderer from '../../engine/dashboard/DashboardRenderer';
 import { useDashboardSchema } from '../../engine/dashboard/hooks/useDashboardSchema';
 
-// V1 components
-import DashboardLoader from '../../components/dashboard/DashboardLoader';
-import DashboardHero from '../../components/dashboard/DashboardHero';
-import QuickActions from '../../components/dashboard/QuickActions';
-import PendingLeaves from '../../components/dashboard/PendingLeaves';
-import StatCard from '../../components/Common/StatCard';
-import TableGenerator from '../../components/Common/TableGenerator';
-import PriorityTasks from '../../components/Common/PriorityTasks';
-import RecentActivity from '../../components/role/Employee/RecentActivity';
-
-// V2 components
-import V2AlertBanner from '../../components/dashboard/V2AlertBanner';
-import V2WorkforcePulse from '../../components/dashboard/V2WorkforcePulse';
-import V2StatsRow from '../../components/dashboard/V2StatsRow';
-import V2ActionCenter from '../../components/dashboard/V2ActionCenter';
-import V2TeamAttendanceGrid from '../../components/dashboard/V2TeamAttendanceGrid';
-import V2EmployeeHeader from '../../components/dashboard/V2EmployeeHeader';
-import V2EmployeeTasks from '../../components/dashboard/V2EmployeeTasks';
-import V2EmployeeLeaveBalance from '../../components/dashboard/V2EmployeeLeaveBalance';
-
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const { userRole, loading: roleLoading } = useUserRole();
-  const userId = user?.id || user?._id;
+  const { can } = usePermissions();
+  const { schema, loading, error, dateRange, setDateRange, refresh } = useDashboardSchema();
 
-  // 1. Resolve configuration actions
-  const roleConfig = getRoleConfig(userRole);
+  const canManageLayout = can('update', 'dashboard_schemas') || can('create', 'dashboard_schemas');
 
-  // 2. Fetch which widgets this role is allowed to see from DB
-  const { can, widgets: enabledWidgets, loading: widgetsLoading, hasConfig } = useWidgetPermissions(user?.role);
-
-  // 3. Fetch data via aggregation endpoint
-  const { stats, pendingLeaves, dashboardData, loading: dataLoading, refresh } = useDashboardData({
-    enabledWidgets,
-    userId,
-  });
-
-  // 4. Fetch dynamic custom dashboard schema from dashboard_schemas (if customized in Dashboard Builder)
-  const { schema: customSchema } = useDashboardSchema();
-
-  const loading = roleLoading || widgetsLoading || dataLoading;
-
-  if (loading) return <DashboardLoader />;
-
-  // If a custom schema was designed and saved in Dashboard Builder, render it dynamically
-  if (customSchema?.isCustom && customSchema?.widgets?.length > 0) {
+  if (loading) {
     return (
-      <div className="space-y-4 animate-fade-in" data-module={MODULES.project.id}>
-        <DashboardRenderer schema={customSchema} />
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 space-y-3 animate-fade-in" data-module={MODULES.project.id}>
+        <div className="w-8 h-8 border-3 border-[var(--tracker-border)] border-t-[var(--brand-solid)] rounded-full animate-spin" />
+        <p className="text-xs text-[var(--tracker-ink-subtle)]">Loading dashboard layout...</p>
       </div>
     );
   }
 
-  // Empty state if role has no configuration saved yet
-  if (!hasConfig && !roleLoading && !widgetsLoading) {
-    return (
-      <div className="space-y-6 animate-fade-in" data-module={MODULES.project.id}>
-        <DashboardHero
-          userName={user?.name}
-          heroActions={roleConfig.heroActions}
-          stats={stats}
-        />
-        <div className="lmx-section-card p-10 flex flex-col items-center text-center gap-3">
-          <div className="lmx-icon-tile w-fit p-4">
-            <Users className="h-6 w-6" />
-          </div>
-          <h3 className="text-base font-semibold text-ink">No dashboard widgets configured</h3>
-          <p className="text-sm text-ink-muted max-w-sm">
-            An administrator needs to enable dashboard widgets for the <strong>{userRole}</strong> role
-            in <strong>Settings → Role Permissions → Dashboard Widgets</strong>.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Determine if V2 dashboard is enabled (if any V2 widget is checked in the role settings)
-  const isV2 =
-    can('v2_alert_banner') ||
-    can('v2_workforce_pulse') ||
-    can('v2_employee_header') ||
-    can('v2_action_center') ||
-    can('v2_team_attendance_grid') ||
-    can('v2_stat_pending_approvals') ||
-    can('v2_stat_overdue_tasks') ||
-    can('v2_stat_open_tickets') ||
-    can('v2_stat_attendance_issues') ||
-    can('v2_stat_payroll_status') ||
-    can('v2_stat_payroll_cost') ||
-    can('v2_stat_workforce_health') ||
-    can('v2_stat_financial_exposure') ||
-    can('v2_employee_tasks') ||
-    can('v2_employee_leave_balance');
-
-  // --- RENDER V2 DASHBOARD LAYOUTS ---
-  if (isV2 && dashboardData) {
-    const { layoutVariant, pulse, stats: v2Stats, alerts, actionCenter, employee, teamGrid } = dashboardData;
-
-    return (
-      <div className="space-y-4 animate-fade-in" data-module={MODULES.project.id}>
-        {/* Top Header Row: 3:4 Employee Clock-in Card (Left) & 1:4 Alert Banner (Right) */}
-        {(() => {
-          const showHeader = can('v2_employee_header');
-          const showAlert = can('v2_alert_banner') && alerts && alerts.length > 0;
-
-          if (!showHeader && !showAlert) return null;
-
-          if (showHeader && showAlert) {
-            return (
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 w-full">
-                <div className="sm:col-span-3">
-                  <V2EmployeeHeader attendance={employee?.attendance} refresh={refresh} />
-                </div>
-                <div className="sm:col-span-1">
-                  <V2AlertBanner alerts={alerts} />
-                </div>
-              </div>
-            );
-          }
-
-          if (showHeader) {
-            return (
-              <div className="w-full">
-                <V2EmployeeHeader attendance={employee?.attendance} refresh={refresh} />
-              </div>
-            );
-          }
-
-          return (
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 w-full">
-              <div className="sm:col-start-4 sm:col-span-1">
-                <V2AlertBanner alerts={alerts} />
-              </div>
-            </div>
-          );
-        })()}
-
-        {can('v2_workforce_pulse') && (
-          <V2WorkforcePulse pulse={pulse} scope={layoutVariant === 'manager' ? 'team' : 'org'} />
-        )}
-
-        <V2StatsRow stats={v2Stats} can={can} />
-
-        {/* Dynamic cols: Employee Tasks, Action Center, Team Attendance Grid */}
-        {(() => {
-          const hasMain = can('v2_employee_tasks') || can('v2_action_center');
-          const hasSide = can('v2_team_attendance_grid');
-
-          if (!hasMain && !hasSide) return null;
-
-          // Both main panels & side panels allowed
-          if (hasMain && hasSide) {
-            return (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-                <div className="lg:col-span-2 space-y-4">
-                  {can('v2_employee_tasks') && <V2EmployeeTasks tasks={employee?.tasks} />}
-                  {can('v2_action_center') && (
-                    <V2ActionCenter items={actionCenter} layoutVariant={layoutVariant} refresh={refresh} />
-                  )}
-                </div>
-                <div className="lg:col-span-1 flex flex-col">
-                  {can('v2_team_attendance_grid') && <V2TeamAttendanceGrid teamGrid={teamGrid} />}
-                </div>
-              </div>
-            );
-          }
-
-          // Only main panels allowed
-          if (hasMain) {
-            const mainCount = (can('v2_employee_tasks') ? 1 : 0) + (can('v2_action_center') ? 1 : 0);
-            return (
-              <div className={`grid grid-cols-1 ${mainCount > 1 ? 'lg:grid-cols-2' : ''} gap-4`}>
-                {can('v2_employee_tasks') && <V2EmployeeTasks tasks={employee?.tasks} />}
-                {can('v2_action_center') && (
-                  <V2ActionCenter items={actionCenter} layoutVariant={layoutVariant} refresh={refresh} />
-                )}
-              </div>
-            );
-          }
-
-          // Only side panels allowed
-          return (
-            <div className="grid grid-cols-1 gap-4">
-              {can('v2_team_attendance_grid') && <V2TeamAttendanceGrid teamGrid={teamGrid} />}
-            </div>
-          );
-        })()}
-      </div>
-    );
-  }
-
-  // --- RENDER V1 LEGACY FALLBACK ---
-  const onLeave = (stats?.totalEmployees || 0) - (stats?.presentToday || 0);
-
-  const orgStats = [
-    can('stat_total_employees') && (
-      <StatCard key="total_emp" title="Total Employees" value={stats?.totalEmployees || 0} icon={Users} color="blue" loading={dataLoading} />
-    ),
-    can('stat_present_today') && (
-      <StatCard key="present" title="Present Today" value={stats?.presentToday || 0} icon={UserCheck} color="green" loading={dataLoading} />
-    ),
-    can('stat_on_leave') && (
-      <StatCard key="on_leave" title="On Leave" value={onLeave} icon={Ban} color="yellow" loading={dataLoading} />
-    ),
-    can('stat_pending_leaves') && (
-      <StatCard key="pend_leaves" title="Pending Leaves" value={pendingLeaves.length} icon={Calendar} color="orange" loading={dataLoading} />
-    ),
-  ].filter(Boolean);
-
-  const employeeStats = [
-    can('stat_attendance_status') && (
-      <StatCard
-        key="att_status"
-        title="Today's Attendance"
-        value={
-          stats?.attendanceStatus === 'check-in' ? 'Checked In'
-          : stats?.attendanceStatus === 'check-out' ? 'Checked Out'
-          : 'Not Started'
-        }
-        icon={Clock}
-        color={
-          stats?.attendanceStatus === 'check-in' ? 'green'
-          : stats?.attendanceStatus === 'check-out' ? 'yellow'
-          : 'red'
-        }
-        loading={dataLoading}
-      />
-    ),
-    can('stat_leave_balance') && (
-      <StatCard key="leave_bal" title="Leave Balance" value={stats?.leaveBalance || 0} subtitle="days remaining" icon={Calendar} color="yellow" loading={dataLoading} />
-    ),
-    can('stat_my_tasks') && (
-      <StatCard key="my_tasks" title="My Tasks" value={stats?.myTasks || 0} subtitle="assigned to me" icon={CheckSquare} color="blue" loading={dataLoading} />
-    ),
-  ].filter(Boolean);
-
-  const hasOrgStats = orgStats.length > 0;
-  const hasEmployeeStats = employeeStats.length > 0;
-  const hasLeftPanel = can('quick_actions') || can('recent_tasks_table') || can('priority_tasks');
-  const hasRightPanel = can('pending_leaves_list') || can('recent_activity');
+  const hasWidgets = schema?.widgets && schema.widgets.length > 0;
 
   return (
-    <div className="space-y-6 animate-fade-in" data-module={MODULES.project.id}>
-      <DashboardHero
-        userName={user?.name}
-        heroActions={roleConfig.heroActions}
-        stats={stats}
-      />
-
-      {hasOrgStats && (
-        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(orgStats.length, 4)} gap-5`}>
-          {orgStats}
+    <div className="space-y-3.5 animate-fade-in" data-module={MODULES.project.id}>
+      {/* ─── CONTROLS & DATE RANGE TOOLBAR ─── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-hairline-soft">
+        {/* Date Presets */}
+        <div className="flex items-center gap-1 bg-surface-1 p-1 rounded-tracker-md border border-hairline">
+          {[
+            { id: 'today', label: 'Today' },
+            { id: '7d', label: 'Last 7 Days' },
+            { id: '30d', label: 'Last 30 Days' },
+          ].map(r => (
+            <button
+              key={r.id}
+              onClick={() => setDateRange({ range: r.id })}
+              className={`px-3 py-1 rounded-tracker-sm text-xs font-semibold transition-all cursor-pointer ${
+                dateRange?.range === r.id
+                  ? 'bg-surface shadow-xs text-ink font-bold'
+                  : 'text-ink-muted hover:text-ink'
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
         </div>
-      )}
 
-      {hasEmployeeStats && (
-        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(employeeStats.length, 3)} gap-5`}>
-          {employeeStats}
+        {/* Custom Date Range & Refresh */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs text-ink-muted bg-surface-1 px-2.5 py-1 rounded-tracker-md border border-hairline">
+            <Calendar size={13} className="text-ink-subtle" />
+            <input
+              type="date"
+              value={dateRange?.startDate || ''}
+              onChange={(e) => setDateRange({ startDate: e.target.value, endDate: dateRange?.endDate, range: 'custom' })}
+              className="bg-transparent text-[11.5px] text-ink focus:outline-none w-[115px] cursor-pointer"
+              title="Start Date"
+            />
+            <span className="text-ink-subtle text-[11px]">to</span>
+            <input
+              type="date"
+              value={dateRange?.endDate || ''}
+              onChange={(e) => setDateRange({ startDate: dateRange?.startDate, endDate: e.target.value, range: 'custom' })}
+              className="bg-transparent text-[11.5px] text-ink focus:outline-none w-[115px] cursor-pointer"
+              title="End Date"
+            />
+          </div>
+
+          <button
+            onClick={refresh}
+            className="p-1.5 rounded-tracker-md border border-hairline bg-surface hover:bg-surface-1 text-ink-muted hover:text-ink transition-colors cursor-pointer"
+            title="Refresh Data"
+          >
+            <Clock size={14} />
+          </button>
         </div>
-      )}
+      </div>
 
-      {(hasLeftPanel || hasRightPanel) && (
-        <div className={`grid grid-cols-1 ${hasRightPanel ? 'lg:grid-cols-3' : ''} gap-6`}>
-          {hasLeftPanel && (
-            <div className={`${hasRightPanel ? 'lg:col-span-2' : ''} space-y-6`}>
-              {can('quick_actions') && <QuickActions actions={roleConfig.quickActions} />}
-              {can('recent_tasks_table') && (
-                <TableGenerator
-                  model="tasks"
-                  title="Recent Tasks"
-                  searchable
-                  sortable
-                  pagination={false}
-                  className="max-h-[320px]"
-                  autoRefresh
-                  refreshInterval={30000}
-                />
-              )}
-              {can('priority_tasks') && <PriorityTasks />}
-            </div>
-          )}
-
-          {hasRightPanel && (
-            <div className="space-y-6">
-              {can('pending_leaves_list') && <PendingLeaves leaves={pendingLeaves} />}
-              {can('recent_activity') && <RecentActivity />}
-            </div>
+      {/* ─── DYNAMIC DASHBOARD BUILDER RENDERER ─── */}
+      {hasWidgets ? (
+        <DashboardRenderer schema={schema} />
+      ) : (
+        <div className="flex flex-col items-center justify-center p-12 bg-surface rounded-tracker-card border border-hairline text-center space-y-4 shadow-xs">
+          <div className="p-3.5 bg-surface-2 rounded-2xl text-[var(--brand-solid)] border border-hairline">
+            <LayoutGrid size={28} />
+          </div>
+          <div className="space-y-1 max-w-md">
+            <h3 className="text-base font-semibold text-ink">No Dashboard Layout Configured</h3>
+            <p className="text-xs text-ink-muted leading-relaxed">
+              {canManageLayout
+                ? 'No active widget configuration found for this role. Use the Dashboard Builder to design and publish a layout with live metrics, quick actions, and trend graphs.'
+                : 'No dashboard layout has been configured for your role yet. Please contact your organization administrator to set up your dashboard view.'}
+            </p>
+          </div>
+          {canManageLayout && (
+            <button
+              onClick={() => navigate('/admin/dashboard/builder')}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-[var(--brand-solid)] hover:opacity-90 rounded-tracker-md transition-all shadow-xs cursor-pointer"
+            >
+              <PlusCircle size={14} />
+              Open Dashboard Builder
+            </button>
           )}
         </div>
       )}

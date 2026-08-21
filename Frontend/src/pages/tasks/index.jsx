@@ -9,7 +9,12 @@ import SprintPlanningPanel from "@components/Tasks/SprintPlanningPanel";
 import TaskSkeleton from "@components/Common/TaskSkeleton";
 import FormDraftBanner from "@components/Forms/FormDraftBanner";
 import FilterDropdown from "@components/Common/FilterDropdown";
-import { FolderKanban, Plus, Search, X, ChevronDown, SlidersHorizontal, LayoutGrid, CalendarDays, Download, Users, GanttChartSquare, Layers } from "lucide-react";
+import {
+  FolderKanban, Plus, Search, X, ChevronDown, SlidersHorizontal,
+  LayoutGrid, CalendarDays, Download, Users, GanttChartSquare, Layers,
+  Archive, RotateCcw, CheckCircle2, AlertCircle, Building2, User
+} from "lucide-react";
+import toast from "react-hot-toast";
 
 const STATUS_COLS = [
   { id: "Backlogs", title: "Backlogs" },
@@ -163,14 +168,44 @@ const TasksPage = () => {
     }
   };
 
+  const handleRestoreTask = async (task) => {
+    try {
+      await axiosInstance.put(`/populate/update/tasks/${task._id}`, { metaStatus: "active" });
+      setAllTasks(prev => prev.map(t => t._id === task._id ? { ...t, metaStatus: "active" } : t));
+      toast.success("Task restored to active board!");
+    } catch (err) {
+      console.error('Failed to restore task:', err);
+      toast.error("Failed to restore task");
+    }
+  };
+
+  const handleArchiveTask = async (task) => {
+    try {
+      await axiosInstance.put(`/populate/update/tasks/${task._id}`, { metaStatus: "archived" });
+      setAllTasks(prev => prev.map(t => t._id === task._id ? { ...t, metaStatus: "archived" } : t));
+      toast.success("Task moved to archive!");
+    } catch (err) {
+      console.error('Failed to archive task:', err);
+      toast.error("Failed to archive task");
+    }
+  };
+
   const handleTaskClick = (task) => {
     navigate(`/tasks/${task._id}`);
   };
 
-  // ── Client-side filtering (passed to KanbanBoard as `data`) ─────────────────
+  // ── Separation: Active vs Archived Tasks (metaStatus single source of truth) ──
+  const archivedTasks = useMemo(() => {
+    return allTasks.filter(t => t.metaStatus === 'archived');
+  }, [allTasks]);
 
+  const activeTasks = useMemo(() => {
+    return allTasks.filter(t => t.metaStatus !== 'archived');
+  }, [allTasks]);
+
+  // ── Client-side filtering (passed to KanbanBoard as `data`) ─────────────────
   const filteredTasks = useMemo(() => {
-    let d = allTasks;
+    let d = viewMode === "archive" ? archivedTasks : activeTasks;
     if (searchVal) {
       const q = searchVal.toLowerCase();
       d = d.filter(t =>
@@ -193,7 +228,7 @@ const TasksPage = () => {
     if (fDateFrom) d = d.filter(t => t.createdAt && new Date(t.createdAt) >= new Date(fDateFrom));
     if (fDateTo) d = d.filter(t => t.createdAt && new Date(t.createdAt) <= new Date(fDateTo + "T23:59:59"));
     return d;
-  }, [allTasks, searchVal, fStatus, fPriority, fAssignee, fClient, fCategory, fDateFrom, fDateTo]);
+  }, [viewMode, archivedTasks, activeTasks, searchVal, fStatus, fPriority, fAssignee, fClient, fCategory, fDateFrom, fDateTo]);
 
   const activeFilters = [fStatus, fPriority, fAssignee, fClient, fCategory, fDateFrom, fDateTo].filter(Boolean).length;
 
@@ -342,6 +377,15 @@ const TasksPage = () => {
               className={`lmx-tab ${viewMode === "sprint" ? "lmx-tab-active" : ""}`}>
               <Layers size={13} /> Sprint
             </button>
+            <button onClick={() => handleViewModeChange("archive")}
+              className={`lmx-tab ${viewMode === "archive" ? "lmx-tab-active" : ""}`}>
+              <Archive size={13} /> Archive
+              {archivedTasks.length > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-2 text-ink-muted">
+                  {archivedTasks.length}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* Export Button */}
@@ -427,7 +471,7 @@ const TasksPage = () => {
         </div>
       )}
 
-      {/* ── Board / Timeline / Queue / Sprint ── */}
+      {/* ── Board / Timeline / Queue / Sprint / Archive ── */}
       <div className="flex-1 overflow-hidden">
         {viewMode === "board" && (
           <KanbanBoard
@@ -464,6 +508,106 @@ const TasksPage = () => {
         )}
         {viewMode === "sprint" && (
           <SprintPlanningPanel />
+        )}
+        {viewMode === "archive" && (
+          <div className="h-full overflow-y-auto p-4 space-y-4">
+            <div className="flex items-center justify-between bg-surface border border-hairline p-4 rounded-tracker-card shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-surface-2 flex items-center justify-center text-ink-muted">
+                  <Archive size={18} />
+                </div>
+                <div>
+                  <h2 className="text-[15px] font-bold text-ink leading-tight">Archived & Completed Tasks</h2>
+                  <p className="text-[12px] text-ink-muted mt-0.5">
+                    Tasks marked as Completed are auto-archived and kept off active sprint and queue boards.
+                  </p>
+                </div>
+              </div>
+              <div className="text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-2 text-ink-muted">
+                {filteredTasks.length} Archived {filteredTasks.length === 1 ? 'Task' : 'Tasks'}
+              </div>
+            </div>
+
+            {filteredTasks.length === 0 ? (
+              <div className="bg-surface border border-hairline rounded-tracker-card p-12 text-center">
+                <CheckCircle2 size={32} className="mx-auto text-ink-subtle mb-3" />
+                <p className="text-[14px] font-semibold text-ink">No archived tasks</p>
+                <p className="text-[12px] text-ink-muted mt-1">Completed tasks will automatically archive here.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {filteredTasks.map((t) => {
+                  const clientName = typeof t.clientId === "object" ? t.clientId?.name : t.clientId;
+                  const catName = t.projectTypeId?.name || (typeof t.projectTypeId === "string" ? t.projectTypeId : "");
+                  return (
+                    <div
+                      key={t._id}
+                      className="bg-surface border border-hairline hover:border-hairline-strong rounded-tracker-card p-4 transition-all shadow-xs flex flex-col justify-between gap-3 group"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[var(--tracker-success-light)] text-[var(--tracker-success)]">
+                            {t.status || 'Completed'}
+                          </span>
+                          <span className="text-[11px] font-semibold text-ink-subtle">
+                            {t.updatedAt ? new Date(t.updatedAt).toLocaleDateString() : ''}
+                          </span>
+                        </div>
+
+                        <h3
+                          onClick={() => handleTaskClick(t)}
+                          className="text-[13.5px] font-bold text-ink group-hover:text-brand transition-colors cursor-pointer line-clamp-2"
+                        >
+                          {t.title}
+                        </h3>
+
+                        {t.userStory && (
+                          <p className="text-[12px] text-ink-muted line-clamp-2">
+                            {t.userStory}
+                          </p>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                          {clientName && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-surface-1 text-ink-muted border border-hairline-soft">
+                              <Building2 size={11} /> {clientName}
+                            </span>
+                          )}
+                          {catName && (
+                            <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-surface-1 text-ink-muted border border-hairline-soft">
+                              {catName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-hairline-soft pt-3 mt-1">
+                        <div className="flex items-center gap-1">
+                          {t.assignedTo && t.assignedTo.length > 0 ? (
+                            <span className="text-[11.5px] font-medium text-ink-muted flex items-center gap-1">
+                              <User size={12} />
+                              {t.assignedTo.map(a => a?.basicInfo ? `${a.basicInfo.firstName || ''}` : '').filter(Boolean).join(', ') || 'Assigned'}
+                            </span>
+                          ) : (
+                            <span className="text-[11.5px] text-ink-subtle italic">Unassigned</span>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => handleRestoreTask(t)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-surface-1 hover:bg-surface-2 text-ink border border-hairline transition-colors cursor-pointer shadow-xs"
+                          title="Restore task to active board"
+                        >
+                          <RotateCcw size={12} className="text-brand" />
+                          <span>Restore</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
       </div>
 

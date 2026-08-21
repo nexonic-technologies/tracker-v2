@@ -25,11 +25,12 @@ import { getFixtureForRole } from '../fixtures/fixtureLoader';
  *   refresh: Function
  * }}
  */
-export function useDashboardSchema() {
+export function useDashboardSchema(initialDateRange = { range: '7d' }) {
   const { user } = useAuth();
   const { userRole, loading: roleLoading } = useUserRole();
   const userId = user?.id || user?._id;
 
+  const [dateRange, setDateRange] = useState(initialDateRange);
   const [schema, setSchema] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -57,19 +58,25 @@ export function useDashboardSchema() {
     return getFixtureForRole(userRole);
   }, [userRole]);
 
-  // Step 2: Fetch live data from /dashboard/stats
-  const fetchData = useCallback(async () => {
+  // Step 2: Fetch live data from /dashboard/stats with date range
+  const fetchData = useCallback(async (rangeOpts) => {
     try {
-      const res = await axiosInstance.get('/dashboard/stats');
+      const params = new URLSearchParams();
+      if (rangeOpts?.startDate) params.set('startDate', rangeOpts.startDate);
+      if (rangeOpts?.endDate) params.set('endDate', rangeOpts.endDate);
+      if (rangeOpts?.range) params.set('range', rangeOpts.range);
+
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      const res = await axiosInstance.get(`/dashboard/stats${qs}`);
       return res.data?.data || null;
     } catch (err) {
       console.error('[DashboardEngine] Data fetch error:', err.message);
-      throw err;
+      return null; // Graceful degradation — widgets show EMPTY, layout survives
     }
   }, []);
 
-  // Combined load
-  const load = useCallback(async () => {
+  // Combined load — schema and stats are independent.
+  const load = useCallback(async (rangeOverride) => {
     if (!userId || !userRole) {
       setLoading(false);
       return;
@@ -78,20 +85,24 @@ export function useDashboardSchema() {
     setLoading(true);
     setError(null);
 
-    try {
-      const [dashSchema, data] = await Promise.all([
-        loadSchema(),
-        fetchData(),
-      ]);
+    const activeRange = rangeOverride || dateRange;
 
-      setDashboardData(data);
-      setSchema(dashSchema);
-    } catch (err) {
-      setError(err.message || 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
+    const [schemaResult, dataResult] = await Promise.allSettled([
+      loadSchema(),
+      fetchData(activeRange),
+    ]);
+
+    const dashSchema = schemaResult.status === 'fulfilled' ? schemaResult.value : null;
+    const data = dataResult.status === 'fulfilled' ? dataResult.value : null;
+
+    if (schemaResult.status === 'rejected') {
+      setError(schemaResult.reason?.message || 'Failed to load dashboard layout');
     }
-  }, [userId, userRole, loadSchema, fetchData]);
+
+    setDashboardData(data);
+    setSchema(dashSchema);
+    setLoading(false);
+  }, [userId, userRole, dateRange, loadSchema, fetchData]);
 
   useEffect(() => {
     load();
@@ -130,8 +141,14 @@ export function useDashboardSchema() {
 
   return {
     schema: displaySchema,
+    dashboardData,
+    dateRange,
+    setDateRange: (newRange) => {
+      setDateRange(newRange);
+      load(newRange);
+    },
     loading: loading || roleLoading,
     error,
-    refresh: load,
+    refresh: () => load(),
   };
 }

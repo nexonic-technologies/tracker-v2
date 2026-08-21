@@ -14,6 +14,9 @@ import './RiskWidget';
 import './InsightWidget';
 import './QuickActionWidget';
 import './GoalWidget';
+import './AttendancePunchWidget';
+import './TaskActionWidget';
+import './TicketActionWidget';
 
 export { default as MetricWidget } from './MetricWidget';
 export { default as CollectionWidget } from './CollectionWidget';
@@ -25,3 +28,7 @@ export { default as RiskWidget } from './RiskWidget';
 export { default as InsightWidget } from './InsightWidget';
 export { default as QuickActionWidget } from './QuickActionWidget';
 export { default as GoalWidget } from './GoalWidget';
+export { default as AttendancePunchWidget } from './AttendancePunchWidget';
+export { default as TaskActionWidget } from './TaskActionWidget';
+export { default as TicketActionWidget } from './TicketActionWidget';
+

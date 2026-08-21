@@ -13,6 +13,7 @@
  *   comparison: { label: string, value: number }
  */
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { registerWidget } from '../registry/widgetRegistry';
 import { WIDGET_CATEGORIES } from '../registry/widgetManifest';
 import {
@@ -20,6 +21,7 @@ import {
   ClipboardCheck, AlertCircle, Ticket,
   HeartPulse, Users, DollarSign, Clock,
   BarChart3, ShieldAlert, Briefcase, CircleDot,
+  ArrowUpRight
 } from 'lucide-react';
 
 /** Icon name → component map (subset of lucide) */
@@ -28,6 +30,19 @@ const ICON_MAP = {
   HeartPulse, Users, DollarSign, Clock,
   BarChart3, ShieldAlert, Briefcase, CircleDot,
   TrendingUp, TrendingDown,
+};
+
+/** Default navigation routes inferred from dataSource if not explicitly configured */
+const DEFAULT_ROUTES = {
+  'stats.openTickets': '/Tickets?status=Open',
+  'stats.pendingApprovals': '/attendance/leaves?status=Pending',
+  'stats.overdueTasks': '/tasks?status=overdue',
+  'stats.workforceHealth': '/attendance',
+  'stats.attendanceIssues': '/attendance?filter=issues',
+  'stats.payrollStatus': '/payroll/dashboard',
+  'stats.payrollCost': '/payroll/dashboard',
+  'stats.financialExposure': '/payroll/dashboard',
+  'stats.criticalTickets': '/Tickets?priority=Critical',
 };
 
 /** Format a value based on format type */
@@ -66,6 +81,8 @@ function resolveColor(value, semanticColor, thresholds) {
  * @param {Object} props.data - resolved data payload
  */
 function MetricWidget({ config, data }) {
+  const navigate = useNavigate();
+
   const {
     valueKey = 'value',
     format = 'number',
@@ -73,7 +90,12 @@ function MetricWidget({ config, data }) {
     icon,
     thresholds,
     comparison,
+    navigationRoute,
+    dataSource,
   } = config;
+
+  // Resolve target route from explicit config or intelligent default
+  const targetRoute = navigationRoute || DEFAULT_ROUTES[dataSource] || config.to || null;
 
   // Extract the display value
   const rawValue = typeof data === 'object' && data !== null
@@ -93,8 +115,22 @@ function MetricWidget({ config, data }) {
     value: comparison.value,
   } : null;
 
+  const handleClick = (e) => {
+    if (targetRoute) {
+      e.stopPropagation();
+      navigate(targetRoute);
+    }
+  };
+
   return (
-    <div className="flex flex-col justify-between h-full pt-1">
+    <div
+      onClick={handleClick}
+      role={targetRoute ? "button" : undefined}
+      tabIndex={targetRoute ? 0 : undefined}
+      className={`group flex flex-col justify-between h-full pt-1 transition-all duration-200 ${
+        targetRoute ? 'cursor-pointer select-none' : ''
+      }`}
+    >
       {/* Icon + Value row */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-0.5">
@@ -104,8 +140,11 @@ function MetricWidget({ config, data }) {
         </div>
 
         {IconComponent && (
-          <div className={`dsh-bg-${color} flex items-center justify-center w-12 h-12 rounded-2xl flex-shrink-0 transition-transform duration-300 hover:scale-105`}>
+          <div className={`dsh-bg-${color} relative flex items-center justify-center w-12 h-12 rounded-2xl flex-shrink-0 transition-all duration-300 group-hover:scale-110 group-hover:shadow-sm`}>
             <IconComponent size={22} strokeWidth={1.8} />
+            {targetRoute && (
+              <ArrowUpRight size={11} className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            )}
           </div>
         )}
       </div>
@@ -135,6 +174,7 @@ const manifest = {
   configSchema: [
     { type: 'textbox', name: 'title', label: 'Title' },
     { type: 'metricPicker', name: 'dataSource', label: 'Data source' },
+    { type: 'textbox', name: 'navigationRoute', label: 'Click Navigation Route (e.g. /Tickets?status=Open)' },
     { type: 'select', name: 'format', label: 'Format', options: [
       { value: 'number', label: 'Number' },
       { value: 'percentage', label: 'Percentage' },
@@ -154,6 +194,7 @@ const manifest = {
     format: 'number',
     semanticColor: 'neutral',
     valueKey: 'value',
+    navigationRoute: '',
   },
 };
 

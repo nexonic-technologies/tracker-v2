@@ -90,5 +90,5 @@ export const useUserRole = () => {
         fetchUserRoleName();
     }, [user, isSuperAdmin]);
 
-    return { userRole, capabilities, policies, loading, error, userId: user?._id || user?.id };
+    return { userRole, isSuperAdmin, capabilities, policies, loading, error, userId: user?._id || user?.id };
 };

@@ -174,18 +174,6 @@ export async function populateHelper(req, res, next) {
             }
 
             try {
-              // Check version conflict
-              const versionCheck = raceConditionHandler.checkVersionConflict(docId, currentVersion);
-
-              if (versionCheck.conflict) {
-                errors.push({
-                  filter: itemFilter,
-                  error: 'Version conflict - document was modified',
-                  expectedVersion: versionCheck.expectedVersion
-                });
-                continue;
-              }
-
               opResult = await buildQuery(makeCtx({
                 action: 'update',
                 modelName: model,
@@ -195,15 +183,15 @@ export async function populateHelper(req, res, next) {
                 tenantContext: req.tenantContext
               }));
 
-              // Increment version on successful update
-              raceConditionHandler.incrementVersion(docId);
+              if (opResult) {
+                raceConditionHandler.setVersion(docId, opResult.__v || 0);
+              }
             } finally {
               raceConditionHandler.releaseLock(docId, lockResult.lockId, fingerprint);
             }
           } else {
             // CREATE
             // Merge filter into body for creation if needed (e.g. role, modelName)
-            // usually itemBody should have everything needed for creation
             opResult = await buildQuery(makeCtx({
               action: 'create',
               modelName: model,
@@ -212,9 +200,8 @@ export async function populateHelper(req, res, next) {
               tenantContext: req.tenantContext
             }));
 
-            // Track new document version
             if (opResult && opResult._id) {
-              raceConditionHandler.incrementVersion(opResult._id);
+              raceConditionHandler.setVersion(opResult._id, opResult.__v || 0);
             }
           }
           results.push(opResult);
@@ -224,9 +211,11 @@ export async function populateHelper(req, res, next) {
         }
       }
 
+      const isSuccessful = errors.length === 0 && results.length > 0;
       return res.json({
-        success: true,
+        success: isSuccessful,
         count: results.length,
+        data: results,
         errors: errors.length > 0 ? errors : undefined,
         rateLimit: req.rateLimit?.status,
         deviceFingerprint: fingerprint.substring(0, 16) // Only expose part of fingerprint

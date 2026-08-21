@@ -6,7 +6,7 @@
  */
 import React from 'react';
 import { getWidget } from '../registry/widgetRegistry';
-import { TextField, NumberField, SelectField, MetricPicker } from './fields/index';
+import { TextField, NumberField, SelectField, MetricPicker, ActionsSelector } from './fields/index';
 import { Trash2, Move, ArrowLeft } from 'lucide-react';
 
 export default function ConfigPanel({ widget, onChange, onDelete, onClose }) {
@@ -77,7 +77,7 @@ export default function ConfigPanel({ widget, onChange, onDelete, onClose }) {
 
         <button
           onClick={() => onDelete(widget.id)}
-          className="p-1.5 rounded-[var(--tracker-radius-sm)] text-[var(--dsh-negative)] hover:bg-[var(--dsh-negative-light)] transition-colors"
+          className="p-1.5 rounded-[var(--tracker-radius-sm)] text-[var(--dsh-negative)] hover:bg-[var(--dsh-negative-light)] transition-colors cursor-pointer"
           title="Delete widget"
           type="button"
         >
@@ -99,7 +99,7 @@ export default function ConfigPanel({ widget, onChange, onDelete, onClose }) {
           <label className="text-xs font-bold uppercase tracking-wider text-[var(--tracker-ink-subtle)]">
             Grid Placement & Dimensions
           </label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2.5">
             <div>
               <label className="text-[11px] font-medium text-[var(--tracker-ink-subtle)]">Column (X: 0-11)</label>
               <input
@@ -116,7 +116,6 @@ export default function ConfigPanel({ widget, onChange, onDelete, onClose }) {
               <input
                 type="number"
                 min={0}
-                max={100}
                 value={widget.layout?.y ?? 0}
                 onChange={(e) => handleLayoutChange('y', e.target.value)}
                 className="w-full text-xs px-2.5 py-1.5 rounded-[var(--tracker-radius-sm)] border border-[var(--tracker-border)] bg-[var(--tracker-surface)] text-[var(--tracker-ink)] focus:outline-none focus:border-[var(--brand-solid)]"
@@ -164,6 +163,16 @@ export default function ConfigPanel({ widget, onChange, onDelete, onClose }) {
                 case 'scopePicker':
                   return (
                     <MetricPicker
+                      key={field.name}
+                      field={field}
+                      value={val}
+                      onChange={(v) => handleConfigChange(field.name, v)}
+                    />
+                  );
+                case 'actionsSelector':
+                case 'checkboxGroup':
+                  return (
+                    <ActionsSelector
                       key={field.name}
                       field={field}
                       value={val}

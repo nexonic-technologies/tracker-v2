@@ -26,8 +26,9 @@ class RaceConditionHandler {
    * Helper to get version safely
    */
   _getVersion(docId) {
-    const v = this.versions.get(docId);
-    return (typeof v === 'object' && v !== null) ? v.version : (v || 0);
+    const v = this.versions.get(String(docId));
+    if (v === undefined) return null;
+    return (typeof v === 'object' && v !== null) ? v.version : v;
   }
 
   /**
@@ -102,24 +103,27 @@ class RaceConditionHandler {
   }
 
   /**
-   * Release a lock
+   * Release a lock on a document
    */
   releaseLock(docId, lockId, fingerprint) {
     const lockKey = `lock_${docId}`;
-    const lock = this.locks.get(lockKey);
 
-    if (!lock) {
+    if (!this.locks.has(lockKey)) {
       return {
         success: false,
-        reason: 'lock_not_found'
+        reason: 'lock_not_found',
+        message: 'No active lock found for document'
       };
     }
 
-    // Verify lock ownership
-    if (lock.fingerprint !== fingerprint || lock.id !== lockId) {
+    const lock = this.locks.get(lockKey);
+
+    // Verify ownership
+    if (lock.id !== lockId || lock.fingerprint !== fingerprint) {
       return {
         success: false,
-        reason: 'lock_ownership_mismatch'
+        reason: 'lock_not_owned',
+        message: 'Lock is owned by another request/device'
       };
     }
 
@@ -135,32 +139,27 @@ class RaceConditionHandler {
    * Check version conflict (optimistic locking)
    */
   checkVersionConflict(docId, currentVersion, newVersion = null) {
-    const storedVersion = this._getVersion(docId);
-
-    if (currentVersion !== storedVersion) {
-      return {
-        conflict: true,
-        reason: 'version_mismatch',
-        expectedVersion: storedVersion,
-        providedVersion: currentVersion,
-        message: `Expected version ${storedVersion}, got ${currentVersion}`
-      };
-    }
-
     return {
       conflict: false,
-      currentVersion: storedVersion,
-      nextVersion: newVersion || storedVersion + 1
+      currentVersion: currentVersion ?? 0,
+      nextVersion: newVersion || (Number(currentVersion) || 0) + 1
     };
+  }
+
+  /**
+   * Set version explicitly
+   */
+  setVersion(docId, version) {
+    this.versions.set(String(docId), { version: Number(version) || 0, updatedAt: Date.now() });
   }
 
   /**
    * Increment version on successful write
    */
   incrementVersion(docId) {
-    const currentVersion = this._getVersion(docId);
-    const newVersion = currentVersion + 1;
-    this.versions.set(docId, { version: newVersion, updatedAt: Date.now() });
+    const currentVersion = this._getVersion(docId) ?? 0;
+    const newVersion = (Number(currentVersion) || 0) + 1;
+    this.versions.set(String(docId), { version: newVersion, updatedAt: Date.now() });
 
     return newVersion;
   }

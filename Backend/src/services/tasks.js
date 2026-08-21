@@ -370,16 +370,10 @@ export default function tasks() {
           await syncMilestoneStatus(taskData.clientId, taskData.milestoneId, updateData.milestoneStatus);
         }
 
-        // 4b. Auto-archive & queue removal on Completed
-        if (updateData.status === 'Completed' && beforeDoc?.status !== 'Completed') {
+        // 4b. Explicit metaStatus lifecycle: archive & queue removal / unarchive
+        if (updateData.metaStatus === 'archived' && beforeDoc?.metaStatus !== 'archived') {
           try {
-            // Mark task as archived so it disappears from active views
-            await models.tasks.updateOne(
-              { _id: taskData._id },
-              { $set: { metaStatus: 'archived' } }
-            );
-
-            // Remove from all assignees' queues
+            // Remove archived task from all assignees' active queues
             const assignees = (taskData.assignedTo || []).map(id => id.toString());
             if (assignees.length > 0) {
               await models.employee_task_queues.updateMany(
@@ -387,10 +381,17 @@ export default function tasks() {
                 { $pull: { queue: { taskId: taskData._id } } }
               );
             }
-
-            console.log(`[Task Service] Task ${taskData._id} auto-archived and removed from queues.`);
+            console.log(`[Task Service] Task ${taskData._id} archived and removed from active queues.`);
           } catch (err) {
-            console.error('[Task Service] Auto-archive error:', err.message);
+            console.error('[Task Service] Archive queue removal error:', err.message);
+          }
+        } else if (updateData.metaStatus === 'active' && beforeDoc?.metaStatus === 'archived') {
+          try {
+            const { syncTaskQueueAssignment } = await import("./employee_task_queues.js");
+            await syncTaskQueueAssignment(taskData._id, taskData.assignedTo || [], []);
+            console.log(`[Task Service] Task ${taskData._id} unarchived and restored to active queues.`);
+          } catch (err) {
+            console.error('[Task Service] Unarchive error:', err.message);
           }
         }
 

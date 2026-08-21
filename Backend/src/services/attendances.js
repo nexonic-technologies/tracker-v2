@@ -205,7 +205,7 @@ export default function attendances() {
 
       // Initialize punches array on first check-in of the day
       if (body.checkIn) {
-        body.checkIn = safeParseAttendanceDate(body.checkIn);
+        body.checkIn = safeParseAttendanceDate(body.checkIn) || new Date();
         body.punches = [{
           checkIn: body.checkIn,
           location: body.location
@@ -429,7 +429,7 @@ export default function attendances() {
 
         try {
           // Auto-pause active time tracking session on checkout
-          const { pauseActiveTimerOnCheckout } = await import('./timetrackersessions.js');
+          const { pauseActiveTimerOnCheckout } = await import('./time_tracker_sessions.js');
           await pauseActiveTimerOnCheckout(attendanceDoc.employee);
         } catch (err) {
           console.error('[AttendanceService] Failed to auto-pause time tracker on checkout:', err);

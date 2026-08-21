@@ -101,30 +101,24 @@ const Ring = ({ pct, size = 52, sw = 5, color }) => {
 /* ════════════════════════════════
    MAIN ATTENDANCE HUB
    ════════════════════════════════ */
+import { usePermissions } from "../../hooks/usePermissions";
+
 const AttendancePage = () => {
   const { user, loading: authLoading } = useAuth();
+  const { can, isSuperAdmin } = usePermissions();
   const { read, create, update } = useGenericAPI();
   const navigate = useNavigate();
 
   // Active Control Center Tab: "my" | "team" | "approvals"
   const [activeTab, setActiveTab] = useState("my");
 
-  // Dynamic capability resolution (Sacred Zero-Hardcode Law)
-  const isSuperAdmin = Boolean(
-    user?.isSuperAdmin === true ||
-    user?.isSuperAdmin === 'true' ||
-    user?.role?.isSuperAdmin === true ||
-    user?.roleMeta?.isSuperAdmin === true ||
-    user?.role === 'Super Admin' ||
-    user?.roleTitle === 'Super Admin' ||
-    user?.role?.name === 'Super Admin' ||
-    user?.role?.title === 'Super Admin'
-  );
+  // Dynamic capability resolution via Central ABAC Policy Engine
+  const canPunchIn = can('create', 'attendances');
+  const canPunchOut = can('update', 'attendances');
 
   const canViewTeam = Boolean(
     isSuperAdmin ||
-    user?.canViewTeam === true ||
-    user?.roleMeta?.canViewTeam === true ||
+    can('read', 'team_attendance') ||
     user?.isManager === true ||
     user?.departmentHead === true ||
     user?.subordinatesCount > 0
@@ -693,26 +687,38 @@ const AttendancePage = () => {
                 </div>
               </div>
 
-              {/* Check-In / Check-Out Action Button */}
+              {/* Check-In / Check-Out Action Button (ABAC Gated) */}
               <div className="flex items-center gap-2">
                 {!hasIn ? (
-                  <button
-                    onClick={handleCheckIn}
-                    disabled={actionBusy}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                  >
-                    {actionBusy ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />}
-                    Clock In
-                  </button>
+                  canPunchIn ? (
+                    <button
+                      onClick={handleCheckIn}
+                      disabled={actionBusy}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                    >
+                      {actionBusy ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />}
+                      Clock In
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface-2 text-ink-muted">
+                      Clock-in managed by Admin
+                    </span>
+                  )
                 ) : isCurrentlyCheckedIn ? (
-                  <button
-                    onClick={handleCheckOut}
-                    disabled={actionBusy}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                  >
-                    {actionBusy ? <Loader2 size={15} className="animate-spin" /> : <LogOut size={15} />}
-                    Clock Out
-                  </button>
+                  canPunchOut ? (
+                    <button
+                      onClick={handleCheckOut}
+                      disabled={actionBusy}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                    >
+                      {actionBusy ? <Loader2 size={15} className="animate-spin" /> : <LogOut size={15} />}
+                      Clock Out
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface-2 text-ink-muted">
+                      Shift in progress
+                    </span>
+                  )
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface-2 text-ink-muted">
                     <CheckCircle size={13} className="text-emerald-500" /> Shift Completed
@@ -724,9 +730,21 @@ const AttendancePage = () => {
 
           {/* ─── SUMMARY KPI STRIP ─── */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <StatCard icon={CheckCircle} value={`${presentDays} / ${workDaysPassed} d`} label="Days Present" />
-            <StatCard icon={Clock} value={fmtHM(totalHrs)} label="Total Logged Hours" />
-            <StatCard icon={TrendingUp} value={`${attendRate}%`} label="Monthly Attendance Rate" />
+            <StatCard
+              icon={CheckCircle}
+              value={`${presentDays} / ${workDaysPassed} d`}
+              label={viewType === "monthly" ? "Days Present (Month)" : viewType === "weekly" ? "Days Present (Week)" : "Daily Status"}
+            />
+            <StatCard
+              icon={Clock}
+              value={fmtHM(totalHrs)}
+              label={viewType === "monthly" ? "Monthly Logged Hours" : viewType === "weekly" ? "Weekly Logged Hours" : "Today's Logged Hours"}
+            />
+            <StatCard
+              icon={TrendingUp}
+              value={viewType === "daywise" ? `${Math.round(pct)}%` : `${attendRate}%`}
+              label={viewType === "monthly" ? "Monthly Attendance Rate" : viewType === "weekly" ? "Weekly Attendance Rate" : "Shift Target Progress (8h)"}
+            />
           </div>
 
           {/* ─── ATTENDANCE LEDGER & CALENDAR ─── */}

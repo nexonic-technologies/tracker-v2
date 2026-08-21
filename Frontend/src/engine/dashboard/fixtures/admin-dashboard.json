@@ -23,6 +23,7 @@
       "layout": { "x": 0, "y": 2, "w": 3, "h": 2 },
       "config": {
         "dataSource": "stats.pendingApprovals",
+        "navigationRoute": "/attendance/leaves?status=Pending",
         "valueKey": "value",
         "format": "number",
         "semanticColor": "warning",
@@ -30,7 +31,7 @@
         "emptyMessage": "No pending approvals"
       },
       "data": { "status": "loading", "payload": null },
-      "actions": [{ "label": "View all", "action": "navigate:/Attendance/leaves" }]
+      "actions": [{ "label": "View all", "action": "navigate:/attendance/leaves?status=Pending" }]
     },
     {
       "id": "w-metric-overdue",
@@ -39,6 +40,7 @@
       "layout": { "x": 3, "y": 2, "w": 3, "h": 2 },
       "config": {
         "dataSource": "stats.overdueTasks",
+        "navigationRoute": "/tasks?status=overdue",
         "valueKey": "value",
         "format": "number",
         "semanticColor": "negative",
@@ -46,7 +48,7 @@
         "emptyMessage": "No overdue tasks"
       },
       "data": { "status": "loading", "payload": null },
-      "actions": [{ "label": "View tasks", "action": "navigate:/tasks" }]
+      "actions": [{ "label": "View tasks", "action": "navigate:/tasks?status=overdue" }]
     },
     {
       "id": "w-metric-tickets",
@@ -55,6 +57,7 @@
       "layout": { "x": 6, "y": 2, "w": 3, "h": 2 },
       "config": {
         "dataSource": "stats.openTickets",
+        "navigationRoute": "/Tickets?status=Open",
         "valueKey": "value",
         "format": "number",
         "semanticColor": "info",
@@ -62,7 +65,7 @@
         "emptyMessage": "No open tickets"
       },
       "data": { "status": "loading", "payload": null },
-      "actions": [{ "label": "View tickets", "action": "navigate:/tickets" }]
+      "actions": [{ "label": "View tickets", "action": "navigate:/Tickets?status=Open" }]
     },
     {
       "id": "w-metric-health",
@@ -71,6 +74,7 @@
       "layout": { "x": 9, "y": 2, "w": 3, "h": 2 },
       "config": {
         "dataSource": "stats.workforceHealth",
+        "navigationRoute": "/attendance",
         "valueKey": "value",
         "format": "percentage",
         "semanticColor": "auto",
@@ -82,10 +86,41 @@
       "actions": []
     },
     {
+      "id": "w-quick-actions-1",
+      "type": "quickActions",
+      "title": "Quick Actions",
+      "layout": { "x": 0, "y": 4, "w": 6, "h": 2 },
+      "config": {
+        "title": "Quick Actions",
+        "actions": [
+          { "id": "punch", "type": "punch", "label": "Check In / Out", "icon": "LogIn" },
+          { "id": "create_task", "type": "route", "label": "Create Task", "icon": "CheckSquare", "to": "/tasks/form" },
+          { "id": "create_ticket", "type": "route", "label": "Create Ticket", "icon": "Ticket", "to": "/tickets/form" },
+          { "id": "view_attendance", "type": "route", "label": "Attendance", "icon": "Clock", "to": "/attendance" }
+        ]
+      },
+      "data": { "status": "ready", "payload": null },
+      "actions": []
+    },
+    {
+      "id": "w-chart-ticket-trends",
+      "type": "visualization",
+      "title": "Ticket Lifecycle Trends",
+      "layout": { "x": 6, "y": 4, "w": 6, "h": 3 },
+      "config": {
+        "dataSource": "stats.ticketTrends",
+        "chartType": "area",
+        "xKey": "label",
+        "series": ["created", "inProgress", "resolved", "closed"]
+      },
+      "data": { "status": "loading", "payload": null },
+      "actions": []
+    },
+    {
       "id": "w-action-center",
       "type": "collection",
       "title": "Action Center",
-      "layout": { "x": 0, "y": 4, "w": 8, "h": 4 },
+      "layout": { "x": 0, "y": 6, "w": 8, "h": 4 },
       "config": {
         "dataSource": "actionCenter",
         "variant": "action-queue",
@@ -100,7 +135,7 @@
       "id": "w-celebrations",
       "type": "feed",
       "title": "Celebrations",
-      "layout": { "x": 8, "y": 4, "w": 4, "h": 4 },
+      "layout": { "x": 8, "y": 6, "w": 4, "h": 4 },
       "config": {
         "dataSource": "celebrations",
         "variant": "celebrations",

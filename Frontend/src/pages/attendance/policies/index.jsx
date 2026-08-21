@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../../api/axiosInstance.js';
+import { usePermissions } from '../../../hooks/usePermissions.js';
 import AttendancePolicyEditor from './AttendancePolicyEditor.jsx';
 import AttendancePreviewModal from './AttendancePreviewModal.jsx';
 
 export default function attendance_policiesPage() {
+  const { can } = usePermissions();
+  const canManagePolicies = can('create', 'attendance_policies') || can('update', 'attendance_policies');
+
   const [policies, setPolicies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingPolicy, setEditingPolicy] = useState(null);
@@ -69,12 +73,14 @@ export default function attendance_policiesPage() {
           >
             <span>⚡</span> Test Preview Sandbox
           </button>
-          <button
-            onClick={() => { setEditingPolicy(null); setShowEditor(true); }}
-            className="tracker-btn-brand flex items-center gap-2 cursor-pointer shadow-md"
-          >
-            <span>+</span> New Attendance Policy
-          </button>
+          {canManagePolicies && (
+            <button
+              onClick={() => { setEditingPolicy(null); setShowEditor(true); }}
+              className="tracker-btn-brand flex items-center gap-2 cursor-pointer shadow-md"
+            >
+              <span>+</span> New Attendance Policy
+            </button>
+          )}
         </div>
       </div>
 

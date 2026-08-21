@@ -11,12 +11,11 @@
  * In Phase 1, this wraps the existing /dashboard/stats endpoint.
  * In Phase 5, it switches to the query-based backend.
  */
-import { DATA_STATUS } from '../registry/widgetManifest';
+import { DATA_STATUS, WIDGET_CATEGORIES } from '../registry/widgetManifest';
+import { getWidget } from '../registry/widgetRegistry';
 
 /**
- * Data source registry — maps named queries to API configuration.
- * Admin configures which query a widget uses (Phase 5).
- * For now, all queries resolve from the single /dashboard/stats response.
+ * Data source registry — declarative mapping of dotted query paths to API response keys.
  */
 const DATA_SOURCES = {
   // Pulse & Org
@@ -34,18 +33,27 @@ const DATA_SOURCES = {
   'stats.pendingApprovals': { path: 'stats.pendingApprovals' },
   'stats.overdueTasks': { path: 'stats.overdueTasks' },
   'stats.openTickets': { path: 'stats.openTickets' },
+  'stats.criticalTickets': { path: 'stats.criticalTickets' },
   'stats.attendanceIssues': { path: 'stats.attendanceIssues' },
   'stats.payrollStatus': { path: 'stats.payrollStatus' },
   'stats.payrollCost': { path: 'stats.payrollCost' },
   'stats.workforceHealth': { path: 'stats.workforceHealth' },
   'stats.financialExposure': { path: 'stats.financialExposure' },
 
-  // Employee
+  // Trends & Graphs (mapped to response paths)
+  'stats.ticketTrends': { path: 'trends.tickets' },
+  'stats.taskTrends': { path: 'trends.tasks' },
+  'stats.attendanceTrends': { path: 'trends.attendance' },
+  'trends.tickets': { path: 'trends.tickets' },
+  'trends.tasks': { path: 'trends.tasks' },
+  'trends.attendance': { path: 'trends.attendance' },
+
+  // Employee Context
   'employee.attendance': { path: 'employee.attendance' },
   'employee.tasks': { path: 'employee.tasks' },
   'employee.leaveBalance': { path: 'employee.leaveBalance' },
 
-  // Collections
+  // Collections & Feeds
   'actionCenter': { path: 'actionCenter' },
   'teamGrid': { path: 'teamGrid' },
   'celebrations': { path: 'celebrations' },
@@ -75,6 +83,8 @@ function resolvePath(obj, path) {
 export function hydrateWidgets(widgets, dashboardData, loading, error) {
   return widgets.map((widget) => {
     const dataSource = widget.config?.dataSource;
+    const widgetEntry = getWidget(widget.type);
+    const isActionWidget = widgetEntry?.manifest?.category === WIDGET_CATEGORIES.ACTIONS;
 
     // Loading state
     if (loading) {
@@ -89,6 +99,17 @@ export function hydrateWidgets(widgets, dashboardData, loading, error) {
       return {
         ...widget,
         data: { status: DATA_STATUS.ERROR, error, payload: null },
+      };
+    }
+
+    // Declarative Manifest Resolution: Action widgets are always interactive/ready
+    if (isActionWidget) {
+      const payload = (dataSource && dashboardData)
+        ? (resolvePath(dashboardData, DATA_SOURCES[dataSource]?.path || dataSource) || dashboardData.employee?.attendance || {})
+        : (dashboardData?.employee?.attendance || {});
+      return {
+        ...widget,
+        data: { status: DATA_STATUS.READY, payload }
       };
     }
 
@@ -113,7 +134,7 @@ export function hydrateWidgets(widgets, dashboardData, loading, error) {
     const pathKey = DATA_SOURCES[dataSource]?.path || dataSource;
     const resolved = resolvePath(dashboardData, pathKey);
 
-    // Determine status
+    // Determine status declaratively
     let status = DATA_STATUS.READY;
     if (resolved === undefined || resolved === null) {
       status = DATA_STATUS.EMPTY;

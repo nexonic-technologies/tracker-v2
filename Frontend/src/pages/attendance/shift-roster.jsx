@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../../context/authProvider.jsx";
+import { usePermissions } from "../../hooks/usePermissions.js";
 import useGenericAPI from "../../components/useGenericAPI.js";
 import {
   Clock, ChevronLeft, ChevronRight, Users, Calendar, ArrowRightLeft
@@ -42,7 +43,10 @@ import ShiftEditorModal from "./ShiftEditorModal.jsx";
 
 const ShiftRoster = () => {
   const { user } = useAuth();
+  const { can } = usePermissions();
   const { read, create, update } = useGenericAPI();
+
+  const canManageShifts = can('create', 'shifts') || can('update', 'shifts');
 
   const [weekOffset, setWeekOffset] = useState(0);
   const [employees, setEmployees] = useState([]);
@@ -175,13 +179,15 @@ const ShiftRoster = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Shift Configure Button */}
-          <button
-            onClick={() => { setEditingShift(null); setShowShiftModal(true); }}
-            className="px-3.5 py-1.5 text-[13px] font-semibold bg-brand text-brand-contrast rounded-[8px] hover:opacity-90 transition cursor-pointer shadow-sm flex items-center gap-1.5"
-          >
-            <span>+</span> Configure Shift Profiles
-          </button>
+          {/* Shift Configure Button (Admin / Manager Capability Gated) */}
+          {canManageShifts && (
+            <button
+              onClick={() => { setEditingShift(null); setShowShiftModal(true); }}
+              className="px-3.5 py-1.5 text-[13px] font-semibold bg-brand text-brand-contrast rounded-[8px] hover:opacity-90 transition cursor-pointer shadow-sm flex items-center gap-1.5"
+            >
+              <span>+</span> Configure Shift Profiles
+            </button>
+          )}
 
           {/* Week Nav */}
           <div className="flex items-center gap-1 bg-surface border border-hairline rounded-[8px] px-1 py-0.5">

@@ -1,9 +1,15 @@
 import { useState, useEffect } from "react";
 import useGenericAPI from "../../components/useGenericAPI";
+import { useAuth } from "../../context/authProvider";
+import { usePermissions } from "../../hooks/usePermissions";
 import TableGenerator from "../../components/Common/TableGenerator";
 import { Check, X, Clock, ShieldCheck, ChevronLeft, Calendar } from "lucide-react";
 
 const PendingApprovals = () => {
+  const { user } = useAuth();
+  const { can } = usePermissions();
+  const canApprove = can('approve', 'leaves') || can('approve', 'regularizations') || can('update', 'leaves') || can('update', 'regularizations');
+
   const { read, update, loading } = useGenericAPI();
   const [pendingRequests, setPendingRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -107,7 +113,7 @@ const PendingApprovals = () => {
         {row.status}
       </span>
     ),
-    actions: (row) => (
+    actions: (row) => canApprove ? (
       <div className="flex gap-2">
         <button
           onClick={() => handleAction(row, 'approve')}
@@ -122,6 +128,8 @@ const PendingApprovals = () => {
           Reject
         </button>
       </div>
+    ) : (
+      <span className="text-xs text-ink-subtle italic">Review pending</span>
     )
   };
 

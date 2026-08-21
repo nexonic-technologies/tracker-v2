@@ -441,6 +441,16 @@ const TaskDetailPage = () => {
                     Complete Task
                   </button>
                   <button
+                    onClick={() => {
+                      const nextMeta = task.metaStatus === 'archived' ? 'active' : 'archived';
+                      handleUpdate("metaStatus", nextMeta);
+                      setShowMoreDropdown(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-canvas-muted text-xs text-ink cursor-pointer font-medium"
+                  >
+                    {task.metaStatus === 'archived' ? 'Unarchive Task' : 'Archive Task'}
+                  </button>
+                  <button
                     onClick={handleDuplicate}
                     className="w-full text-left px-4 py-2 hover:bg-canvas-muted text-xs text-ink cursor-pointer font-medium"
                   >

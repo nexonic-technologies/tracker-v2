@@ -19,10 +19,10 @@ The JSON must have exactly these keys:
 {
   "title": "Refined, precise ticket title (clear and actionable, max 80 chars)",
   "userStory": "As a [user type], I want to [action] so that [benefit]. Include 3-5 bullet points of detailed context.",
-  "impactAnalysis": "Which system areas are affected, user segments impacted, business risk level (Low/Medium/High/Critical), and estimated scope.",
+  "impactAnalysis": "Which system areas are affected, user segments impacted, business risk level (Low/Medium/High), and estimated scope.",
   "acceptanceCriteria": "Numbered list of 3-6 specific, testable conditions that must be true for this ticket to be considered resolved.",
   "description": "Internal engineering notes: technical root cause hypothesis, affected endpoints or components, debugging approach, and any known workarounds.",
-  "priority": "Low | Medium | High | Critical",
+  "priority": "Low | Medium | High ",
   "suggestedDueDate": "ISO date string YYYY-MM-DD (estimate based on complexity, 3-14 days from today)"
 }`;
 
