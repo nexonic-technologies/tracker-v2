@@ -29,13 +29,14 @@ export const tenantMiddleware = async (req, res, next) => {
     }
 
     const isPlatformAdminRoute = req.path?.startsWith('/admin') || req.originalUrl?.includes('/api/admin');
+    const isJarvisRoute = req.path?.startsWith('/jarvis') || req.originalUrl?.includes('/api/jarvis');
     const isPublicRoute = req.path?.includes('/auth/login') || req.path === '/test' || req.originalUrl?.includes('/api/auth/login');
     const isFileServing = req.path?.startsWith('/files/serve') || req.path?.startsWith('/files/render') || req.originalUrl?.includes('/api/files/serve') || req.originalUrl?.includes('/api/files/render');
 
     let tenantId = jwtTenantId || headerTenantId || req.params?.tenantSlug;
     
     if (!tenantId) {
-      if (isPlatformAdminRoute) {
+      if (isPlatformAdminRoute || isJarvisRoute) {
         tenantId = 'admin';
       } else if (isPublicRoute || isFileServing) {
         tenantId = 'default';

@@ -1,0 +1,16 @@
+{
+  "name": "workhub-tracker-v2-root",
+  "version": "3.1.2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "version:get": "node scripts/version-tool.mjs get",
+    "version:sync": "node scripts/version-tool.mjs sync",
+    "version:bump": "node scripts/version-tool.mjs bump",
+    "version:bump:patch": "node scripts/version-tool.mjs bump patch",
+    "version:bump:minor": "node scripts/version-tool.mjs bump minor",
+    "version:bump:major": "node scripts/version-tool.mjs bump major",
+    "verify:backend": "node scripts/verify-deploy-version.mjs --target=backend",
+    "verify:frontend": "node scripts/verify-deploy-version.mjs --target=frontend"
+  }
+}

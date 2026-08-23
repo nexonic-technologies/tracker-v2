@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Bell, Menu, Moon, Sun, KeyRound, LogOut, User } from "lucide-react";
+import { Search, Bell, Menu, Moon, Sun, KeyRound, LogOut, User, Sparkles } from "lucide-react";
 import { useAuth } from "../context/authProvider";
 import { useTheme } from "../context/themeProvider";
 import NotificationDrawer from "../components/Static/NotificationDrawer.jsx";
@@ -78,6 +78,20 @@ const TopNavBar = ({ onToggleSidebar, sidebarOpen }) => {
           aria-label="Toggle theme"
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', altKey: true, ctrlKey: true }));
+          }}
+          className="jarvis-topbar-btn mr-1"
+          title="Open Jarvis AI Assistant (Alt + Ctrl + J)"
+          aria-label="Jarvis AI Assistant"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-cyan-500 animate-pulse" />
+          <span className="hidden sm:inline">Jarvis</span>
+          <span className="hidden lg:inline text-[9px] opacity-70 font-mono">Alt+Ctrl+J</span>
         </button>
 
         <button

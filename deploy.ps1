@@ -1,6 +1,22 @@
-#!/usr/bin/env pwsh
 # deploy.ps1 — Manually trigger Vercel redeploy for tracker-v2 (staging)
-# Usage: .\deploy.ps1
+# Usage: .\deploy.ps1 [-Force]
+
+param (
+  [switch]$Force
+)
+
+Write-Host "🔍 Running Pre-flight Deployment Version Check..." -ForegroundColor Cyan
+
+if (-not $Force) {
+  node ./scripts/verify-deploy-version.mjs --target=frontend
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "🛑 Deploy aborted: Frontend version verification failed." -ForegroundColor Red
+    Write-Host "   Bump version with 'npm run version:bump patch' or use '.\deploy.ps1 -Force'" -ForegroundColor Yellow
+    exit 1
+  }
+} else {
+  Write-Host "⚠️  -Force flag supplied: bypassing local version verification." -ForegroundColor Yellow
+}
 
 Write-Host "🚀 Triggering Vercel redeploy..." -ForegroundColor Cyan
 

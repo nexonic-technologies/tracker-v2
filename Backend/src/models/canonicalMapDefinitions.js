@@ -1,4 +1,8 @@
 export const CANONICAL_MODEL_NAMES = Object.freeze({
+  jarvis_chat_session: 'JarvisChatSession',
+  jarvis_chat_sessions: 'JarvisChatSession',
+  JarvisChatSession: 'JarvisChatSession',
+
   employee: 'Employee',
   employees: 'Employee',
   Employee: 'Employee',

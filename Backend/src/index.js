@@ -1,5 +1,7 @@
 import express from "express";
 import http from "http";
+import fs from "fs";
+import path from "path";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -16,6 +18,7 @@ import exportRoutes from "./routes/exportRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
 import ganttRoutes from "./routes/ganttRoutes.js";
+import jarvisRoutes from "./routes/jarvisRoutes.js";
 
 import { apiHitLogger } from "./middlewares/apiHitLogger.js";
 import { authMiddleware } from "./Controller/AuthController.js";
@@ -100,9 +103,30 @@ import { moduleGateMiddleware } from "./middlewares/moduleGateMiddleware.js";
 // ─── Global Tenant Context Middleware ──────────────────────────────────────
 app.use("/api", tenantMiddleware);
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
+// ─── Version & Health Endpoints ──────────────────────────────────────────────
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is working', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/version', (req, res) => {
+  let version = "3.1.2";
+  try {
+    const rootVersionPath = path.resolve(process.cwd(), "../version.json");
+    const localVersionPath = path.resolve(process.cwd(), "package.json");
+    if (fs.existsSync(rootVersionPath)) {
+      version = JSON.parse(fs.readFileSync(rootVersionPath, "utf8")).version || version;
+    } else if (fs.existsSync(localVersionPath)) {
+      version = JSON.parse(fs.readFileSync(localVersionPath, "utf8")).version || version;
+    }
+  } catch (_) {}
+
+  res.json({
+    success: true,
+    version,
+    service: "tracker-backend",
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.use("/api/agent", agentRoutes);
@@ -116,6 +140,7 @@ app.use("/api/admin", authMiddleware, requireGlobalAdmin, adminSystemRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/api/dashboard", authMiddleware, dashboardRoutes);
 app.use("/api/search", authMiddleware, searchRoutes);
+app.use("/api/jarvis", authMiddleware, jarvisRoutes);
 app.use("/api", ganttRoutes); // Gantt queue + ETA recalculation
 
 app.use(errorHandler);
@@ -547,6 +572,17 @@ export async function initApp() {
     console.log("[initApp] Tenant pre-warming completed successfully.");
   } catch (preWarmErr) {
     console.warn("[initApp] Non-fatal: Tenant pre-warming encountered an error:", preWarmErr.message);
+  }
+
+  // 5. Initialize J.A.R.V.I.S. Cognitive Memory & Token Knowledge Graph
+  try {
+    const { defaultTokenRegistry } = await import('./jarvis/tokens/TokenRegistry.js');
+    const { defaultRelationshipGraph } = await import('./jarvis/tokens/RelationshipGraph.js');
+    await defaultTokenRegistry.loadFromDB();
+    await defaultRelationshipGraph.loadFromDB();
+    console.log(`[initApp] J.A.R.V.I.S. Knowledge Graph loaded: ${defaultTokenRegistry.tokensById.size} tokens, ${defaultRelationshipGraph.edges.length} edges.`);
+  } catch (jarvisErr) {
+    console.warn('[initApp] J.A.R.V.I.S. Knowledge Graph load notice:', jarvisErr.message);
   }
 }
 

@@ -11,6 +11,7 @@ import AcademyLayout from "../pages/academy/index.jsx";
 import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import ModernLoader from "../components/Common/ModernLoader.jsx";
 import { ErrorBoundary } from "../components/ErrorBoundary.jsx";
+import JarvisWidget from "../components/Jarvis/JarvisWidget.jsx";
 
 // Memoized static layout components
 const MemoSidebar = memo(Sidebar);
@@ -188,6 +189,9 @@ const BaseLayout = () => {
           </div>
         </main>
       </div>
+
+      {/* Global Jarvis AI Assistant Widget */}
+      <JarvisWidget />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import axiosInstance from "@api/axiosInstance";
 import toast from "react-hot-toast";
 import FileViewerModal from "@components/Common/FileViewerModal";
 import { generateTicketWithAI } from "@services/ticketAI";
+import JarvisTicketAssist from "../../components/Jarvis/JarvisTicketAssist.jsx";
 import {
   ChevronLeft, Paperclip, X, Upload, FileIcon, FileText,
   FileSpreadsheet, FileArchive, PlayCircle, Music, ImageIcon,
@@ -500,6 +501,24 @@ const TicketsFormPage = () => {
                   onChange={e => { set("title", e.target.value); setAiEngine(null); }}
                   placeholder="Enter a brief title and click 'Fill with AI' to auto-populate all fields"
                   className={inputCls}
+                />
+
+                <JarvisTicketAssist
+                  title={form.title}
+                  description={form.userStory || form.description}
+                  priority={form.priority?.name || form.priority}
+                  client={form.clientId?.name || form.clientId}
+                  category={form.category?.name || form.category}
+                  onApply={({ title: refinedTitle, description: refinedDesc, priority: refinedPriority, type: refinedType }) => {
+                    if (refinedTitle) set("title", refinedTitle);
+                    if (refinedDesc) {
+                      set("userStory", refinedDesc);
+                      set("description", refinedDesc);
+                    }
+                    if (refinedPriority) set("priority", { _id: refinedPriority, name: refinedPriority });
+                    if (refinedType) set("type", { _id: refinedType, name: refinedType });
+                    toast.success("Applied J.A.R.V.I.S. ticket proposal!");
+                  }}
                 />
               </div>
 

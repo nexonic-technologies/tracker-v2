@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "vite build",
+    "build": "node ../scripts/verify-deploy-version.mjs --target=frontend && vite build",
+    "build:only": "vite build",
+    "verify:version": "node ../scripts/verify-deploy-version.mjs --target=frontend",
     "lint": "eslint .",
     "test": "eslint .",
     "preview": "vite preview"

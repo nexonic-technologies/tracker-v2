@@ -4,6 +4,11 @@ import UserLoginSchema from './UserLogin.js';
 import ModuleSchema from './Module.js';
 import ModelDefinitionSchema from './ModelDefinition.js';
 import ProvisioningRunSchema from './ProvisioningRun.js';
+import JarvisTokenSchema from './JarvisToken.js';
+import JarvisRelationshipSchema from './JarvisRelationship.js';
+import JarvisMemorySchema from './JarvisMemory.js';
+import JarvisTraceSchema from './JarvisTrace.js';
+import JarvisChatSessionSchema from './JarvisChatSession.js';
 
 let globalConn = null;
 let Tenant = null;
@@ -11,6 +16,11 @@ let UserLogin = null;
 let Module = null;
 let ModelDefinition = null;
 let ProvisioningRun = null;
+let JarvisToken = null;
+let JarvisRelationship = null;
+let JarvisMemory = null;
+let JarvisTrace = null;
+let JarvisChatSession = null;
 
 import { MODULE_DEFINITIONS, MODULE_METADATA } from '../tenantRegistry.js';
 
@@ -39,12 +49,19 @@ export const initGlobalModels = (conn = mongoose.connection) => {
   ModelDefinition = conn.models.ModelDefinition || conn.model('ModelDefinition', ModelDefinitionSchema);
   ProvisioningRun = conn.models.ProvisioningRun || conn.model('ProvisioningRun', ProvisioningRunSchema);
 
+  // Global Jarvis Knowledge & Memory Models (Zero Tenant-Scoping — Shared Global Intelligence)
+  JarvisToken = conn.models.jarvis_tokens || conn.model('jarvis_tokens', JarvisTokenSchema);
+  JarvisRelationship = conn.models.jarvis_relationships || conn.model('jarvis_relationships', JarvisRelationshipSchema);
+  JarvisMemory = conn.models.jarvis_memories || conn.model('jarvis_memories', JarvisMemorySchema);
+  JarvisTrace = conn.models.jarvis_traces || conn.model('jarvis_traces', JarvisTraceSchema);
+  JarvisChatSession = conn.models.jarvis_chat_sessions || conn.model('jarvis_chat_sessions', JarvisChatSessionSchema);
+
   // Auto-seed global system modules if empty
   seedGlobalModules().catch((err) =>
     console.error('[initGlobalModels] Failed to seed system modules:', err.message)
   );
 
-  return { Tenant, UserLogin, Module, ModelDefinition, ProvisioningRun };
+  return { Tenant, UserLogin, Module, ModelDefinition, ProvisioningRun, JarvisToken, JarvisRelationship, JarvisMemory, JarvisTrace, JarvisChatSession };
 };
 
 export const seedGlobalModules = async () => {
@@ -64,10 +81,21 @@ export const seedGlobalModules = async () => {
 };
 
 export const getGlobalModels = () => {
-  if (!Tenant || !UserLogin || !Module || !ModelDefinition || !ProvisioningRun) {
+  if (!Tenant || !UserLogin || !Module || !ModelDefinition || !ProvisioningRun || !JarvisToken || !JarvisRelationship || !JarvisMemory || !JarvisTrace || !JarvisChatSession) {
     initGlobalModels(mongoose.connection);
   }
-  return { Tenant, UserLogin, Module, ModelDefinition, ProvisioningRun };
+  return { Tenant, UserLogin, Module, ModelDefinition, ProvisioningRun, JarvisToken, JarvisRelationship, JarvisMemory, JarvisTrace, JarvisChatSession };
 };
 
-export { TenantSchema, UserLoginSchema, ModuleSchema, ModelDefinitionSchema, ProvisioningRunSchema };
+export {
+  TenantSchema,
+  UserLoginSchema,
+  ModuleSchema,
+  ModelDefinitionSchema,
+  ProvisioningRunSchema,
+  JarvisTokenSchema,
+  JarvisRelationshipSchema,
+  JarvisMemorySchema,
+  JarvisTraceSchema,
+  JarvisChatSessionSchema,
+};

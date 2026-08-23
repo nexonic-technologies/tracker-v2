@@ -4,6 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "build": "node ../scripts/verify-deploy-version.mjs --target=backend",
+    "verify:version": "node ../scripts/verify-deploy-version.mjs --target=backend",
     "test": "node ../scripts/verify/run.js",
     "dev": "nodemon server.js",
     "start": "node --max-old-space-size=4096 server.js",
@@ -16,7 +18,9 @@
     "queue:health": "node -e \"import('./src/services/attendanceService.js').then(s => // console.log(s.default.getQueueStats()))\"",
     "db:analyze": "node -e \"import('dotenv').then(d => d.config()); import('./src/Config/ConnectDB.js').then(c => c.default()).then(() => import('./src/services/databaseIndexer.js')).then(s => s.default.analyzeQueryPerformance()).then(() => process.exit(0))\"",
     "db:reindex": "node -e \"import('dotenv').then(d => d.config()); import('./src/Config/ConnectDB.js').then(c => c.default()).then(() => import('./src/services/databaseIndexer.js')).then(s => s.default.createOptimalIndexes()).then(() => process.exit(0))\"",
-    "test:security": "node testSecurity.js"
+    "test:security": "node testSecurity.js",
+    "jarvis:repl": "node src/jarvis/cli.js",
+    "jarvis:test": "node src/jarvis/tests/slotMatching.test.js"
   },
   "keywords": [],
   "author": "",

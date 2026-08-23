@@ -9,6 +9,7 @@ import AudioMessagePlayer from "../components/Messages/AudioMessagePlayer";
 import VoiceRecorderBar from "../components/Messages/VoiceRecorderBar";
 import ForwardMessageModal from "../components/Messages/ForwardMessageModal";
 import ImageLightboxModal from "../components/Messages/ImageLightboxModal";
+import JarvisChatCatchup from "../components/Jarvis/JarvisChatCatchup.jsx";
 import {
   MessageSquare, Search, Send, User, Clock, CheckCircle, Coffee,
   Paperclip, Image as ImageIcon, Smile, Circle, Mic, CornerUpLeft,
@@ -666,6 +667,9 @@ export default function Messages() {
                 </div>
               </div>
             </div>
+
+            {/* Jarvis Unread Discussion Catch-Up */}
+            <JarvisChatCatchup conversationId={[user?.id, selectedMember?._id].sort().join('_')} />
 
             {/* Messages Scroll Area */}
             <div className="flex-1 p-3 overflow-y-auto min-h-0 flex flex-col">

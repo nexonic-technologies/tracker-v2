@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { getCanonicalPageRoute } from "../../utils/canonicalRoutes.js";
 import ProfileImage from "../Common/ProfileImage.jsx";
+import JarvisNotificationDigest from "../Jarvis/JarvisNotificationDigest.jsx";
 
 const NotificationDrawer = ({ isOpen, setIsOpen }) => {
   const { notifications, markAsRead, deleteNotification, clearAll } = useNotification();
@@ -268,6 +269,11 @@ const NotificationDrawer = ({ isOpen, setIsOpen }) => {
         >
           <Trash2 className="h-4 w-4" />
         </button>
+      </div>
+
+      {/* Jarvis AI Notification Digest Card */}
+      <div className="pt-2">
+        <JarvisNotificationDigest />
       </div>
 
       {/* Scrollable Notification List */}

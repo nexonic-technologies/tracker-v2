@@ -1,5 +1,6 @@
 import { getTenantModel } from '../tenant/tenantContext.js';
 import { getCanonicalModelName } from '../models/canonicalModelMap.js';
+import { getGlobalModels } from '../models/global/index.js';
 
 const registry = {
   models: {},
@@ -26,7 +27,7 @@ export function getComponent(type, name) {
 }
 
 /**
- * Helper to retrieve a model synchronously (delegates 100% to active tenant context store).
+ * Helper to retrieve a model synchronously (delegates to active tenant context store, fallback to global models).
  * @param {string} name
  * @returns {any}
  */
@@ -40,7 +41,14 @@ export function getModel(name) {
   if (fallback) {
     return fallback;
   }
-  throw new Error(`[appRegistry] Model "${name}" (canonical: "${canonicalName}") is not registered on active tenant context`);
+  try {
+    const globalModels = getGlobalModels();
+    if (globalModels) {
+      const gModel = globalModels[canonicalName] || globalModels[name] || globalModels[`jarvis_${name}`] || globalModels[`Jarvis${canonicalName}`];
+      if (gModel) return gModel;
+    }
+  } catch (_) {}
+  throw new Error(`[appRegistry] Model "${name}" (canonical: "${canonicalName}") is not registered on active tenant context or global registry`);
 }
 
 /**

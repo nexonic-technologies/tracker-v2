@@ -19,6 +19,7 @@ import leaves from "./Leave.js";
 import tasks from "./Tasks.js";
 import comments_threads from "./CommentsThreads.js";
 import team_messages from "./TeamMessage.js";
+import jarvis_chat_sessions from "./JarvisChatSession.js";
 import session from "./Session.js";
 import todos from "./Todo.js";
 import auditlog from "./AuditLog.js";
@@ -121,7 +122,7 @@ export const MODULE_METADATA = {
 
 export const MODULE_DEFINITIONS = {
   core: [
-    'general_settings', 'access_policies', 'roles', 'session', 'audit_log', 'error_log',
+    'general_settings', 'access_policies', 'roles', 'session', 'jarvis_chat_sessions', 'audit_log', 'error_log',
     'sidebars', 'api_hit_logs', 'capabilities', 'grants', 'user_overrides', 'useroverrides', 'status_configs', 'status_mappings', 'activity_logs',
     'notifications', 'notification_receptionists', 'notification_preferences', 'notification_rules', 'notification_deliveries',
     'employees', 'departments', 'designations', 'company', 'clients', 'contacts', 'service_providers',
@@ -180,6 +181,7 @@ const staticModelMap = {
   tasks,
   comments_threads,
   team_messages,
+  jarvis_chat_sessions,
   session,
   todos,
   auditlog,

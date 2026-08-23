@@ -11,6 +11,7 @@ import { useAuth } from '@context/authProvider';
 import toast from 'react-hot-toast';
 import ProfileImage from '@components/Common/ProfileImage';
 import FilterDropdown from '@components/Common/FilterDropdown';
+import JarvisFeedSummarizer from '../../components/Jarvis/JarvisFeedSummarizer';
 
 dayjs.extend(relativeTime);
 
@@ -819,6 +820,8 @@ export default function Feeds() {
           <div className="flex p-3 md:p-4 gap-4">
             {/* Main Feed Column */}
             <div className="flex-1 min-w-0 space-y-3">
+              <JarvisFeedSummarizer posts={posts} />
+
               <FeedComposer
                 user={user}
                 expanded={isComposerExpanded}
