@@ -1,5 +1,5 @@
 import { createModuleConfig } from "../createModuleConfig";
-import { EMPLOYEE_FORM_TABS, employeeSubmitButton } from "@constants/employeeForm";
+import { employeeSubmitButton } from "@constants/employeeForm";
 
 export const employeesConfig = createModuleConfig({
   folder: "Employees",
@@ -9,7 +9,7 @@ export const employeesConfig = createModuleConfig({
   singularName: "Employee",
   fields: [],
   submitButton: employeeSubmitButton,
-  tabs: EMPLOYEE_FORM_TABS,
+  // tabs: EMPLOYEE_FORM_TABS,
   list: {
     mapTableData: (emp) => ({
       _id: emp._id,

@@ -3,8 +3,8 @@ import { Schema, model } from 'mongoose';
 
 const EmployeeSchema = new Schema({
   basicInfo: {
-    firstName: { type: String, trim: true, index: true },
-    lastName: { type: String, trim: true, index: true },
+    firstName: { type: String, trim: true, index: true, validate: { validator: function (v) { return !v || /^[A-Za-z\s]+$/.test(v); }, message: props => `${props.value} contains invalid characters — only letters and spaces allowed` } },
+    lastName: { type: String, trim: true, index: true, validate: { validator: function (v) { return !v || /^[A-Za-z\s]+$/.test(v); }, message: props => `${props.value} contains invalid characters — only letters and spaces allowed` } },
     dob: { type: Date },
     /** Date of Anniversary (Wedding Anniversary) */
     doa: { type: Date },
@@ -12,13 +12,13 @@ const EmployeeSchema = new Schema({
     gender: { type: String, enum: ['male', 'female', 'other'], index: true },
     phone: { type: String, validate: { validator: function (v) { return !v || /^(\+\d{1,3}[- ]?)?\d{10}$/.test(v); }, message: props => `${props.value} is not a valid phone number!` } },
     email: { type: String, lowercase: true, trim: true, index: true, validate: { validator: function (v) { return !v || /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(v); }, message: props => `${props.value} is not a valid email!` } },
-    fatherName: { type: String, trim: true },
-    motherName: { type: String, trim: true },
+    fatherName: { type: String, trim: true, validate: { validator: function (v) { return !v || /^[A-Za-z\s]+$/.test(v); }, message: props => `${props.value} contains invalid characters — only letters and spaces allowed` } },
+    motherName: { type: String, trim: true, validate: { validator: function (v) { return !v || /^[A-Za-z\s]+$/.test(v); }, message: props => `${props.value} contains invalid characters — only letters and spaces allowed` } },
     address: {
       street: String,
       city: String,
       state: String,
-      zip: String,
+      zip: { type: String, validate: { validator: function (v) { return !v || /^\d{6}$/.test(v); }, message: props => `${props.value} is not a valid PIN Code (must be 6 digits)` } },
       country: String
     },
     profileImage: { type: String }

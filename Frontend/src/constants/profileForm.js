@@ -108,9 +108,10 @@ export const profileFormFields = (userData) => [
   },
   {
     name: "basicInfo.address.zip",
-    label: "ZIP Code",
+    label: "PIN Code",
     type: "text",
-    placeholder: "Enter ZIP code",
+    placeholder: "Enter PIN Code",
+    validate: { pattern: /^\d{6}$/, maxLength: 6, digitOnly: true, message: "PIN Code must be exactly 6 digits (no letters)" },
     orderKey: 13,
     gridClass: "col-span-1",
   },

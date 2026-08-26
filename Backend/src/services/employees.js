@@ -3,6 +3,29 @@ import { getTenantStore } from '../tenant/tenantContext.js';
 import { resolveEmployeeLeavePolicy } from './business/leavePolicyResolver.js';
 
 export default function employeesService() {
+
+  // Shared future-date validation guard
+  const rejectFutureDates = (body) => {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const dateChecks = [
+      { path: 'basicInfo.dob', label: 'Date of Birth' },
+      { path: 'basicInfo.doa', label: 'Date of Anniversary' },
+      { path: 'professionalInfo.doj', label: 'Date of Joining' },
+      { path: 'professionalInfo.confirmDate', label: 'Confirmation Date' },
+    ];
+    for (const { path, label } of dateChecks) {
+      const parts = path.split('.');
+      let val = body;
+      for (const p of parts) { val = val?.[p]; }
+      if (val && new Date(val) > today) {
+        const err = new Error(`${label} cannot be a future date`);
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+  };
+
   return {
     /**
      * beforeCreate: Hash the password inside authInfo before saving a new employee.
@@ -10,6 +33,10 @@ export default function employeesService() {
      */
     async beforeCreate(ctx) {
       const { body } = ctx;
+
+      // ── Future Date Validation Guard ──
+      rejectFutureDates(body);
+
 
       // ── Max Users Capacity Limit Guard ──
       try {
@@ -65,6 +92,10 @@ export default function employeesService() {
      */
     async beforeUpdate(ctx) {
       const { body, docId, existingDoc } = ctx;
+
+      // ── Future Date Validation Guard ──
+      rejectFutureDates(body);
+
 
       // 1. Guard against direct mutation of legacy salaryDetails
       if (body?.salaryDetails && Object.keys(body.salaryDetails).length > 0) {

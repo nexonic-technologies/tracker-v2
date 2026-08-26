@@ -103,6 +103,21 @@ const EntityFormPage = ({
           onSubmit={onSubmit}
           onChange={onChange}
           data={record || {}}
+          onNextTab={() => {
+            // Advance to the next form tab (skip component-only tabs)
+            if (!tabList) return;
+            const formTabs = tabList.filter(t => !t.component);
+            const currentIdx = formTabs.findIndex(t => t.id === activeTab);
+            if (currentIdx >= 0 && currentIdx < formTabs.length - 1) {
+              setActiveTab(formTabs[currentIdx + 1].id);
+            }
+          }}
+          isLastTab={(() => {
+            if (!tabList) return true;
+            const formTabs = tabList.filter(t => !t.component);
+            const currentIdx = formTabs.findIndex(t => t.id === activeTab);
+            return currentIdx === formTabs.length - 1;
+          })()}
         />
       )}
     </FormPageLayout>

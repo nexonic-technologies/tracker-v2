@@ -39,11 +39,10 @@ export const FormLabel = ({ label, required, focused, htmlFor, className = "" })
   return (
     <label
       htmlFor={htmlFor}
-      className={`block text-[12.5px] font-semibold transition-colors duration-150 select-none mb-1.5 ${
-        focused
-          ? "text-[var(--brand-solid)]"
-          : "text-[var(--tracker-ink)]"
-      } ${className}`}
+      className={`block text-[12.5px] font-semibold transition-colors duration-150 select-none mb-1.5 ${focused
+        ? "text-[var(--brand-solid)]"
+        : "text-[var(--tracker-ink)]"
+        } ${className}`}
     >
       {label}
       {required && <span className="text-red-500 ml-1 font-bold">*</span>}
@@ -191,27 +190,27 @@ const SearchableSelect = ({ options = [], value, onChange, multiple, labelField,
           onFocus={() => setIsFocused(true)}
           onBlur={() => !open && setIsFocused(false)}
           className={`
-            w-full min-h-[42px] pl-3.5 pr-10 py-2 rounded-[var(--tracker-radius-md)] text-left flex items-center gap-1.5 flex-wrap
-            bg-[var(--tracker-surface)] cursor-pointer text-[13px]
+            w-full min-h-[36px] h-[36px] pl-3 pr-8 py-1.5 rounded-[var(--tracker-radius-md)] text-left flex items-center gap-1.5 flex-wrap
+            bg-[var(--tracker-surface)] cursor-pointer text-[12px]
             border transition-all duration-200 outline-none
             ${open || isFocused
-              ? 'border-[var(--brand-solid)] ring-3 ring-[var(--brand-solid)]/15 shadow-xs bg-[var(--tracker-surface)]'
+              ? 'border-[var(--brand-solid)] ring-2 ring-[var(--brand-solid)]/15 shadow-xs bg-[var(--tracker-surface)]'
               : 'border-[var(--tracker-border)] hover:border-[var(--tracker-ink-subtle)] hover:bg-[var(--tracker-surface-1)]/30'}
           `}
         >
           {multiple && (value || []).map((v, i) => (
-            <span key={i} className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-[var(--tracker-radius-sm)] bg-[var(--brand-solid)]/10 text-[var(--brand-solid)] text-[12px] font-medium border border-[var(--brand-solid)]/20 shadow-xs">
+            <span key={i} className="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-[var(--tracker-radius-sm)] bg-[var(--brand-solid)]/10 text-[var(--brand-solid)] text-[11px] font-medium border border-[var(--brand-solid)]/20 shadow-xs">
               {getLabel(v)}
               <span onClick={(e) => removeTag(v, e)} className="p-0.5 rounded-[3px] hover:bg-[var(--brand-solid)]/20 transition-colors cursor-pointer text-[var(--brand-solid)]">
-                <X className="h-3 w-3" />
+                <X className="h-2.5 w-2.5" />
               </span>
             </span>
           ))}
           {!multiple && isFilled && (
-            <span className="text-[13px] font-medium text-[var(--tracker-ink)]">{getLabel(value)}</span>
+            <span className="text-[12px] font-normal text-[var(--tracker-ink)] truncate">{getLabel(value)}</span>
           )}
           {!multiple && !isFilled && (
-            <span className="text-[13px] text-[var(--tracker-ink-subtle)]">
+            <span className="text-[12px] text-[var(--tracker-ink-subtle)] truncate">
               {placeholder || `Select ${label || 'an option'}...`}
             </span>
           )}
@@ -286,7 +285,7 @@ const SearchableSelect = ({ options = [], value, onChange, multiple, labelField,
 /* ════════════════════════════════════════════
    CUSTOM DROPDOWN DATE PICKER
 ════════════════════════════════════════════ */
-const CustomDatePicker = ({ value, onChange, label, required }) => {
+const CustomDatePicker = ({ value, onChange, label, required, maxDate: maxDateProp, error }) => {
   const [open, setOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(() => {
     return value ? new Date(value) : new Date();
@@ -343,7 +342,18 @@ const CustomDatePicker = ({ value, onChange, label, required }) => {
     setCurrentDate(new Date(year, month + 1, 1));
   };
 
+  // Resolve maxDate for disabling future days
+  const resolvedMaxDate = maxDateProp === "today" ? new Date() : maxDateProp ? new Date(maxDateProp) : null;
+  if (resolvedMaxDate) resolvedMaxDate.setHours(23, 59, 59, 999);
+
+  const isDayDisabled = (day) => {
+    if (!resolvedMaxDate) return false;
+    const d = new Date(year, month, day);
+    return d > resolvedMaxDate;
+  };
+
   const handleSelectDay = (day) => {
+    if (isDayDisabled(day)) return;
     const selected = new Date(year, month, day);
     const yyyy = selected.getFullYear();
     const mm = String(selected.getMonth() + 1).padStart(2, "0");
@@ -354,6 +364,7 @@ const CustomDatePicker = ({ value, onChange, label, required }) => {
 
   const handleToday = () => {
     const today = new Date();
+    if (resolvedMaxDate && today > resolvedMaxDate) return;
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, "0");
     const dd = String(today.getDate()).padStart(2, "0");
@@ -421,15 +432,15 @@ const CustomDatePicker = ({ value, onChange, label, required }) => {
             }
           }}
           className={`
-            w-full min-h-[42px] pl-3.5 pr-10 py-2 rounded-[var(--tracker-radius-md)] text-left flex items-center
-            bg-[var(--tracker-surface)] cursor-pointer text-[13px] text-[var(--tracker-ink)]
+            w-full min-h-[36px] h-[36px] pl-3 pr-8 py-1.5 rounded-[var(--tracker-radius-md)] text-left flex items-center
+            bg-[var(--tracker-surface)] cursor-pointer text-[12px] text-[var(--tracker-ink)]
             border transition-all duration-200 outline-none
             ${open
-              ? 'border-[var(--brand-solid)] ring-3 ring-[var(--brand-solid)]/15 shadow-xs'
+              ? 'border-[var(--brand-solid)] ring-2 ring-[var(--brand-solid)]/15 shadow-xs'
               : 'border-[var(--tracker-border)] hover:border-[var(--tracker-ink-subtle)]'}
           `}
         >
-          {getDisplayValue() || <span className="text-[var(--tracker-ink-subtle)] text-[13px]">Select date...</span>}
+          {getDisplayValue() || <span className="text-[var(--tracker-ink-subtle)] text-[12px]">Select date...</span>}
         </button>
         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--tracker-ink-subtle)] pointer-events-none">
           <Calendar size={15} />
@@ -517,19 +528,23 @@ const CustomDatePicker = ({ value, onChange, label, required }) => {
                   if (cell.isCurrentMonth) {
                     const selected = isSelected(cell.day);
                     const isToday = isCurrentDayToday(cell.day);
+                    const disabled = isDayDisabled(cell.day);
                     return (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => handleSelectDay(cell.day)}
+                        disabled={disabled}
                         className={`
-                          text-[11px] p-0.5 rounded-tracker-sm font-medium transition-colors cursor-pointer
+                          text-[11px] p-0.5 rounded-tracker-sm font-medium transition-colors
                           min-w-[28px] min-h-[28px] flex items-center justify-center
-                          ${selected
-                            ? 'bg-[var(--module-accent)] text-white font-bold'
-                            : isToday
-                              ? 'border border-[var(--module-accent)] text-[var(--module-accent)] bg-[var(--module-accent-light)]'
-                              : 'hover:bg-surface-1 text-ink'}
+                          ${disabled
+                            ? 'text-ink-tertiary opacity-30 cursor-not-allowed'
+                            : selected
+                              ? 'bg-[var(--module-accent)] text-white font-bold cursor-pointer'
+                              : isToday
+                                ? 'border border-[var(--module-accent)] text-[var(--module-accent)] bg-[var(--module-accent-light)] cursor-pointer'
+                                : 'hover:bg-surface-1 text-ink cursor-pointer'}
                         `}
                       >
                         {cell.day}
@@ -632,6 +647,11 @@ const CustomDatePicker = ({ value, onChange, label, required }) => {
           )}
         </div>
       )}
+
+      {/* Inline validation error */}
+      {error && (
+        <p className="mt-1 text-[11px] font-medium text-red-500 dark:text-red-400 animate-fade-in">{error}</p>
+      )}
     </div>
   );
 };
@@ -639,6 +659,65 @@ const CustomDatePicker = ({ value, onChange, label, required }) => {
 /* ════════════════════════════════════════════
    FORM RENDERER
 ════════════════════════════════════════════ */
+/* ════════════════════════════════════════════
+   FIELD VALIDATION ENGINE
+   — Declarative rule evaluation for any field config
+════════════════════════════════════════════ */
+const validateField = (field, value, formData) => {
+  if (field.type === "section" || field.type === "heading") return null;
+  const v = field.validate;
+  if (!v) return null;
+  const str = (value ?? "").toString();
+
+  // Required check (handled separately by HTML, but useful for submit gate)
+  if (field.required && (!str || str.trim() === "")) return v.message || `${field.label || field.name} is required`;
+
+  // Skip further validation if field is empty and not required
+  if (!str || str.trim() === "") return null;
+
+  // Pattern
+  if (v.pattern && !v.pattern.test(str)) return v.message || `${field.label || field.name} is invalid`;
+
+  // Max length
+  if (v.maxLength && str.length > v.maxLength) return v.message || `${field.label || field.name} must be at most ${v.maxLength} characters`;
+
+  // Min length
+  if (v.minLength && str.length < v.minLength) return v.message || `${field.label || field.name} must be at least ${v.minLength} characters`;
+
+  // Max date
+  if (v.maxDate && value) {
+    const maxD = v.maxDate === "today" ? new Date() : new Date(v.maxDate);
+    maxD.setHours(23, 59, 59, 999);
+    if (new Date(value) > maxD) return v.message || `${field.label || field.name} cannot be a future date`;
+  }
+
+  // Custom validator
+  if (typeof v.custom === "function") {
+    const err = v.custom(value, formData);
+    if (err) return err;
+  }
+
+  return null;
+};
+
+/* ════════════════════════════════════════════
+   CONDITIONAL VISIBILITY EVALUATOR
+   — Checks field.visibleWhen against current formData
+════════════════════════════════════════════ */
+const isFieldVisible = (field, formData) => {
+  if (!field.visibleWhen) return true;
+  const { field: depField, operator, value: depValue } = field.visibleWhen;
+  const currentVal = getNestedValue(formData, depField);
+  switch (operator) {
+    case "eq": return currentVal === depValue;
+    case "neq": return currentVal !== depValue;
+    case "in": return Array.isArray(depValue) && depValue.includes(currentVal);
+    case "notIn": return Array.isArray(depValue) && !depValue.includes(currentVal);
+    case "exists": return currentVal !== undefined && currentVal !== null && currentVal !== "";
+    default: return currentVal === depValue;
+  }
+};
+
 const FormRenderer = ({
   fields = [],
   fieldsByTab = null,
@@ -646,6 +725,8 @@ const FormRenderer = ({
   submitButton,
   onSubmit,
   onChange,
+  onNextTab,
+  isLastTab = true,
   data = {},
   value,
 }) => {
@@ -656,6 +737,7 @@ const FormRenderer = ({
   const [showPasswords, setShowPasswords] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [croppingField, setCroppingField] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const baselineRef = useRef(null);
   const recordId = data?._id;
 
@@ -796,14 +878,31 @@ const FormRenderer = ({
     const filled = value !== undefined && value !== null && value !== "";
 
     const inputCls = `
-      w-full h-[42px] px-3.5 py-2 rounded-[var(--tracker-radius-md)] text-[13px]
+      w-full h-[36px] px-3 py-1.5 rounded-[var(--tracker-radius-md)] text-[12px]
       bg-[var(--tracker-surface)]
       border transition-all duration-200 outline-none
-      text-[var(--tracker-ink)] placeholder:text-[var(--tracker-ink-subtle)]
+      text-[var(--tracker-ink)] placeholder:text-[var(--tracker-ink-subtle)] placeholder:text-[12px]
       ${isFocused
-        ? 'border-[var(--brand-solid)] ring-3 ring-[var(--brand-solid)]/15 shadow-xs'
+        ? 'border-[var(--brand-solid)] ring-2 ring-[var(--brand-solid)]/15 shadow-xs'
         : 'border-[var(--tracker-border)] hover:border-[var(--tracker-ink-subtle)] hover:bg-[var(--tracker-surface-1)]/20'}
     `;
+
+    /* ── Section / Group Heading ── */
+    if (field.type === "section" || field.type === "heading") {
+      return (
+        <div className="pt-3 pb-1 border-b border-[var(--tracker-border)] dark:border-slate-800 flex items-center justify-between mb-0.5">
+          <h2 className="text-[13px] font-bold text-[var(--tracker-ink)] tracking-tight flex items-center gap-2">
+            <span className="w-1 h-3.5 bg-[var(--brand-solid)] rounded-full inline-block" />
+            {field.label}
+          </h2>
+          {field.description && (
+            <span className="text-[11px] text-[var(--tracker-ink-subtle)]">
+              {field.description}
+            </span>
+          )}
+        </div>
+      );
+    }
 
     // ── Country Dropdown override ──
     const isCountry = field.name.endsWith("country") || field.name === "country" || field.label === "Country";
@@ -885,7 +984,7 @@ const FormRenderer = ({
     if (field.type === "label") {
       return (
         <FormField label={field.label} required={field.required} focused={false}>
-          <div className="w-full min-h-[42px] px-3.5 py-2 rounded-[var(--tracker-radius-md)] text-[13px] font-medium bg-[var(--tracker-surface-1)] border border-[var(--tracker-border)] text-[var(--tracker-ink)] flex items-center">
+          <div className="w-full min-h-[36px] h-[36px] px-3 py-1.5 rounded-[var(--tracker-radius-md)] text-[12px] font-normal bg-[var(--tracker-surface-1)] border border-[var(--tracker-border)] text-[var(--tracker-ink)] flex items-center">
             {field.external ? field.externalValue ?? "—" : value ?? "—"}
           </div>
         </FormField>
@@ -1168,9 +1267,17 @@ const FormRenderer = ({
       return (
         <CustomDatePicker
           value={value}
-          onChange={onFieldChange}
+          onChange={(val) => {
+            onFieldChange(val);
+            if (field.validate) {
+              const err = validateField(field, val, formData);
+              setFieldErrors(prev => ({ ...prev, [field.name]: err }));
+            }
+          }}
           label={field.label}
           required={field.required}
+          maxDate={field.validate?.maxDate}
+          error={fieldErrors[field.name]}
         />
       );
     }
@@ -1210,22 +1317,83 @@ const FormRenderer = ({
         </FormField>
       );
     }
+    /* ── Switch / Toggle ── */
+    if (field.type === "switch") {
+      const switchLabels = field.switchLabels || { on: "Enabled", off: "Disabled" };
+      // Determine boolean state — handle string "Active"/"Inactive" and true/false
+      const isOn = value === true || value === switchLabels.on || value === "Active";
+      const handleToggle = () => {
+        if (field.switchLabels) {
+          onFieldChange(isOn ? switchLabels.off : switchLabels.on);
+        } else {
+          onFieldChange(!isOn);
+        }
+      };
+      return (
+        <FormField label={field.label} required={field.required} focused={false}>
+          <div className="flex items-center gap-3 min-h-[42px]">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isOn}
+              onClick={handleToggle}
+              className={`
+                relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 cursor-pointer flex-shrink-0
+                ${isOn
+                  ? 'bg-[var(--brand-solid)]'
+                  : 'bg-[var(--tracker-border)] hover:bg-[var(--tracker-ink-subtle)]'}
+              `}
+            >
+              <span
+                className={`
+                  inline-block h-4.5 w-4.5 rounded-full bg-white shadow-sm transform transition-transform duration-200
+                  ${isOn ? 'translate-x-[22px]' : 'translate-x-[3px]'}
+                `}
+              />
+            </button>
+            <span className={`text-[12px] font-medium select-none ${isOn ? 'text-[var(--brand-solid)]' : 'text-[var(--tracker-ink-subtle)]'
+              }`}>
+              {isOn ? switchLabels.on : switchLabels.off}
+            </span>
+          </div>
+        </FormField>
+      );
+    }
 
     /* ── Default Text/Number/Email/etc ── */
+    const fieldError = fieldErrors[field.name];
     return (
       <FormField label={field.label} required={field.required} focused={isFocused}>
         <input
           type={field.type || "text"}
           value={typeof value === 'object' && value !== null ? JSON.stringify(value) : (value || "")}
           placeholder={field.placeholder || `Enter ${field.label || ""}...`}
+          maxLength={field.validate?.maxLength || undefined}
           onChange={(e) => {
-            onFieldChange(e.target.value);
-            if (field.autoFetch && e.target.value.length === 11) handleAutoFetch(field, e.target.value);
+            let val = e.target.value;
+            // Enforce digit-only input for fields with digitOnly validation
+            if (field.validate?.digitOnly) val = val.replace(/\D/g, "");
+            onFieldChange(val);
+            if (field.autoFetch && val.length === 11) handleAutoFetch(field, val);
+            // Clear error on change if corrected
+            if (fieldError) {
+              const err = validateField(field, val, formData);
+              setFieldErrors(prev => ({ ...prev, [field.name]: err }));
+            }
           }}
           onFocus={() => setFocusedField(field.name)}
-          onBlur={() => setFocusedField(null)}
-          className={inputCls}
+          onBlur={() => {
+            setFocusedField(null);
+            if (field.validate) {
+              const err = validateField(field, value, formData);
+              setFieldErrors(prev => ({ ...prev, [field.name]: err }));
+            }
+          }}
+          className={`${inputCls}${fieldError ? ' !border-red-400 dark:!border-red-500 !ring-2 !ring-red-500/10' : ''}`}
         />
+        {fieldError && (
+          <p className="mt-1 text-[10.5px] font-medium text-red-500 dark:text-red-400 animate-fade-in">{fieldError}</p>
+        )}
       </FormField>
     );
   };
@@ -1234,6 +1402,24 @@ const FormRenderer = ({
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     if (submitting) return;
+
+    // ── Run validation on all visible fields before submit ──
+    const errors = {};
+    const currentVisible = fieldsByTab && activeTab ? (fieldsByTab[activeTab] || fields) : fields;
+    for (const field of currentVisible) {
+      if (field.hidden || !isFieldVisible(field, formData)) continue;
+      if (field.validate) {
+        const val = getNestedValue(formData, field.name);
+        const err = validateField(field, val, formData);
+        if (err) errors[field.name] = err;
+      }
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(prev => ({ ...prev, ...errors }));
+      const firstErr = Object.values(errors)[0];
+      toast.error(firstErr);
+      return;
+    }
 
     const cleanData = stripMetaFields(formData);
     const isEdit = Boolean(recordId);
@@ -1282,29 +1468,61 @@ const FormRenderer = ({
   /* ═════════ RENDER ═════════ */
   return (
     <form onSubmit={onSubmitHandler} className="space-y-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-3">
         {visibleFields
-          .filter((f) => !f.hidden)
+          .filter((f) => !f.hidden && isFieldVisible(f, formData))
           .sort((a, b) => (a.orderKey ?? 999) - (b.orderKey ?? 999))
-          .map((field) => (
-            <div key={field.name} className={field.gridClass || (field.type === 'multiGroup' || field.type === 'SubForm' ? 'col-span-1 sm:col-span-2' : 'col-span-1')}>
-              {renderField(
-                field,
-                field.external ? field.externalValue : getNestedValue(formData, field.name),
-                (val) => update(field.name, val),
-                formData
-              )}
-            </div>
-          ))}
+          .map((field) => {
+            const isFullWidth = field.type === 'section' || field.type === 'heading' || field.type === 'multiGroup' || field.type === 'SubForm';
+            return (
+              <div key={field.name} className={field.gridClass || (isFullWidth ? 'col-span-1 sm:col-span-2 md:col-span-3 xl:col-span-4' : 'col-span-1')}>
+                {renderField(
+                  field,
+                  field.external ? field.externalValue : getNestedValue(formData, field.name),
+                  (val) => update(field.name, val),
+                  formData
+                )}
+              </div>
+            );
+          })}
       </div>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="tracker-btn-primary w-full h-[44px] text-[14px] cursor-pointer disabled:opacity-60"
-      >
-        {submitting ? "Saving…" : submitButton?.text || "Submit"}
-      </button>
+      {isLastTab ? (
+        <button
+          type="submit"
+          disabled={submitting}
+          className="tracker-btn-primary w-full h-[44px] text-[14px] cursor-pointer disabled:opacity-60"
+        >
+          {submitting ? "Saving…" : submitButton?.text || "Submit"}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            // Validate current tab fields before advancing
+            const errors = {};
+            const currentVisible = fieldsByTab && activeTab ? (fieldsByTab[activeTab] || fields) : fields;
+            for (const field of currentVisible) {
+              if (field.hidden || !isFieldVisible(field, formData)) continue;
+              if (field.validate) {
+                const val = getNestedValue(formData, field.name);
+                const err = validateField(field, val, formData);
+                if (err) errors[field.name] = err;
+              }
+            }
+            if (Object.keys(errors).length > 0) {
+              setFieldErrors(prev => ({ ...prev, ...errors }));
+              toast.error(Object.values(errors)[0]);
+              return;
+            }
+            onNextTab?.();
+          }}
+          className="tracker-btn-primary w-full h-[44px] text-[14px] cursor-pointer flex items-center justify-center gap-2"
+        >
+          Next
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+        </button>
+      )}
 
       {/* 1:1 Image Cropper & Matcher Modal */}
       {croppingField && (
