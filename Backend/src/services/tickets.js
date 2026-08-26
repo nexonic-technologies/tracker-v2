@@ -95,14 +95,37 @@ export default function tickets() {
       } else {
         // Handle employee-created tickets from the web dashboard
         // Map form objects to model field names
-        if (body.clientName?._id) body.clientId = body.clientName._id;
-        if (body.product?._id) body.productId = body.product._id;
+        if (body.clientName) {
+          body.clientId = body.clientName._id || body.clientName;
+          delete body.clientName;
+        }
+        if (body.clientId?._id) body.clientId = body.clientId._id;
+
+        if (body.product !== undefined) {
+          body.productId = body.product?._id || body.product || null;
+          delete body.product;
+        }
+        if (body.productId?._id) body.productId = body.productId._id;
+
         if (body.type?._id) body.type = body.type._id;
         if (body.priority?._id) body.priority = body.priority._id || body.priority.name;
 
-        // Extract ObjectIds from assignedTo array
-        if (Array.isArray(body.assignedTo)) {
-          body.assignedTo = body.assignedTo.map(a => a._id || a);
+        // Extract ObjectIds from assignedTo (single or array)
+        if (body.assignedTo) {
+          if (Array.isArray(body.assignedTo)) {
+            body.assignedTo = body.assignedTo.map(a => a._id || a).filter(Boolean);
+          } else {
+            const singleId = body.assignedTo._id || body.assignedTo;
+            body.assignedTo = singleId ? [singleId] : [];
+          }
+        }
+
+        // Validate dueDate format if provided
+        if (body.dueDate) {
+          const dateVal = new Date(body.dueDate);
+          if (isNaN(dateVal.getTime())) {
+            throw new Error('Invalid Due Date format.');
+          }
         }
 
         // Set createdBy info from session if not already set as agent
@@ -110,15 +133,6 @@ export default function tickets() {
           body.createdBy = userId;
           body.createdByModel = 'employees';
         }
-
-        // description is required in model; fall back to userStory
-        if (!body.description && body.userStory) {
-          body.description = body.userStory;
-        }
-
-        // Clean up mapped fields
-        delete body.clientName;
-        delete body.product;
       }
 
       // Check client active status
@@ -247,9 +261,39 @@ export default function tickets() {
         return { body };
       }
 
-      // Map assignedTo array of IDs (from detail page assign dropdown)
-      if (Array.isArray(body.assignedTo)) {
-        body.assignedTo = body.assignedTo.map(a => a._id || a);
+      // Normalize form payloads and nested objects
+      if (body.clientName) {
+        body.clientId = body.clientName._id || body.clientName;
+        delete body.clientName;
+      }
+      if (body.clientId?._id) body.clientId = body.clientId._id;
+
+      if (body.product !== undefined) {
+        body.productId = body.product?._id || body.product || null;
+        delete body.product;
+      }
+      if (body.productId?._id) body.productId = body.productId._id;
+
+      if (body.type?._id) body.type = body.type._id;
+      if (body.priority?._id) body.priority = body.priority._id || body.priority.name;
+
+      if (body.dueDate) {
+        const dateVal = new Date(body.dueDate);
+        if (isNaN(dateVal.getTime())) {
+          throw new Error('Invalid Due Date format.');
+        }
+      }
+
+      // Map assignedTo (single or array of IDs)
+      if (body.assignedTo !== undefined) {
+        if (Array.isArray(body.assignedTo)) {
+          body.assignedTo = body.assignedTo.map(a => a._id || a).filter(Boolean);
+        } else if (body.assignedTo) {
+          const singleId = body.assignedTo._id || body.assignedTo;
+          body.assignedTo = singleId ? [singleId] : [];
+        } else {
+          body.assignedTo = [];
+        }
       }
 
       if (body.pushTaskSync === true) {
@@ -352,14 +396,18 @@ export default function tickets() {
           });
 
           // Notify all participants about status change
+          const currentUserIdStr = (userId || effectiveUserId)?.toString() || null;
           const participants = await models.ticket_participants.find({ ticketId: docId }).lean();
-          let receiverIds = participants.map(p => p.userId.toString()).filter(id => id !== userId.toString());
+          let receiverIds = participants
+            .map(p => (p.userId?._id || p.userId)?.toString())
+            .filter(id => Boolean(id) && (currentUserIdStr ? id !== currentUserIdStr : true));
+
           if (receiverIds.length > 0) {
             await fcmService.dispatchTicketNotification({
               type: 'ticket',
               title: `Ticket Status Updated`,
               message: `Ticket status has been changed from ${oldStatus} to ${newStatus}`,
-              sender: userId,
+              sender: currentUserIdStr || effectiveUserId || null,
               meta: { model: 'tickets', modelId: docId },
               receiversArray: receiverIds
             });
@@ -368,8 +416,8 @@ export default function tickets() {
 
         // 2. Check if assignees changed
         if (body.assignedTo) {
-          const oldAssignees = (beforeDoc?.assignedTo || []).map(id => id.toString());
-          const newAssignees = (data.assignedTo || []).map(id => id.toString());
+          const oldAssignees = (beforeDoc?.assignedTo || []).map(id => (id?._id || id)?.toString()).filter(Boolean);
+          const newAssignees = (data.assignedTo || []).map(id => (id?._id || id)?.toString()).filter(Boolean);
 
           const added = newAssignees.filter(id => !oldAssignees.includes(id));
           const removed = oldAssignees.filter(id => !newAssignees.includes(id));
@@ -402,7 +450,7 @@ export default function tickets() {
               await models.ticket_assignments.create({
                 ticketId: docId,
                 assignedTo: uid,
-                assignedBy: userId,
+                assignedBy: effectiveUserId || null,
                 assignedByModel: commenterModel
               });
 
@@ -410,7 +458,7 @@ export default function tickets() {
               await models.ticket_activity_logs.create({
                 ticketId: docId,
                 action: 'assigned',
-                performedBy: userId,
+                performedBy: effectiveUserId || null,
                 performedByModel: commenterModel,
                 details: { assignedTo: uid }
               });
@@ -420,7 +468,7 @@ export default function tickets() {
                 type: 'ticket',
                 title: 'New Ticket Assigned',
                 message: `You have been assigned to ticket: ${data.title || data.ticketId}`,
-                sender: userId,
+                sender: effectiveUserId || null,
                 meta: { model: 'tickets', modelId: docId },
                 receiversArray: [uid]
               });
@@ -510,11 +558,32 @@ export default function tickets() {
               ticket.comments = ticket.comments.filter(c => c.isPublic === true);
             }
 
-            // Enrich comment capabilities (canEdit, canDelete, remainingEditTimeSeconds)
+            // Enrich comment capabilities & populate comment attachments
             if (Array.isArray(ticket.comments)) {
               const EDIT_WINDOW_MS = 15 * 60 * 1000;
               const isSuperAdmin = ctx.user?.isSuperAdmin === true || ctx.policy?.isSuperAdmin === true;
               const currentUserId = (userId || ctx.user?.id)?.toString();
+
+              // Collect unpopulated attachment IDs from comments
+              const unpopulatedAttIds = [];
+              ticket.comments.forEach(c => {
+                if (Array.isArray(c?.attachments)) {
+                  c.attachments.forEach(att => {
+                    const attId = typeof att === 'string' ? att : (att && !att.originalName && att._id ? att._id.toString() : null);
+                    if (attId) unpopulatedAttIds.push(attId);
+                  });
+                }
+              });
+
+              let attMap = {};
+              if (unpopulatedAttIds.length > 0) {
+                const attDocs = await models.ticket_attachments.find({
+                  _id: { $in: unpopulatedAttIds }
+                }).select('filename originalName mimetype size path uploadedBy uploadedByModel').lean();
+                attDocs.forEach(d => {
+                  attMap[d._id.toString()] = d;
+                });
+              }
 
               ticket.comments = ticket.comments.map(c => {
                 const comment = c && typeof c === 'object' ? (c.toObject ? c.toObject() : { ...c }) : c;
@@ -533,6 +602,14 @@ export default function tickets() {
                 comment.isAuthor = isAuthor;
                 comment.remainingEditTimeSeconds = isAuthor && !isSuperAdmin ? Math.round(remainingMs / 1000) : null;
                 comment.editWindowMinutes = 15;
+
+                if (Array.isArray(comment.attachments)) {
+                  comment.attachments = comment.attachments.map(att => {
+                    if (att && typeof att === 'object' && att.originalName) return att;
+                    const attId = (att?._id || att)?.toString();
+                    return attMap[attId] || att;
+                  });
+                }
 
                 return comment;
               });

@@ -12,7 +12,12 @@ export default function ticketCommentsService() {
     // ---------------- Before Create ----------------
     beforeCreate: async (ctx) => {
       const { role, userId, body } = ctx;
-      console.log('[TicketComments] beforeCreate body:', body);
+      
+      // Sanitize message body: strip any embedded raw base64 images so comments use attachments
+      if (body.message && typeof body.message === 'string') {
+        body.message = body.message.replace(/<img[^>]*src=["']data:image[^"']*["'][^>]*>/gi, '').trim();
+      }
+
       // 1. Enforce creator fields
       body.commentedBy = new mongoose.Types.ObjectId(userId);
 
@@ -210,9 +215,14 @@ export default function ticketCommentsService() {
         }
       }
 
-      // Restrict modification to message / attachments only
+      // Restrict modification to message / attachments only, sanitizing message
+      let cleanMessage = body.message || doc.message;
+      if (cleanMessage && typeof cleanMessage === 'string') {
+        cleanMessage = cleanMessage.replace(/<img[^>]*src=["']data:image[^"']*["'][^>]*>/gi, '').trim();
+      }
+
       const updatedBody = {
-        message: body.message || doc.message,
+        message: cleanMessage,
         attachments: body.attachments || doc.attachments,
         edited: true,
         editedAt: new Date()

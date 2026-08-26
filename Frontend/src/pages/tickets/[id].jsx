@@ -5,8 +5,6 @@ import InlineEdit from "../../components/Common/InLineEdit";
 import FileViewerModal from "../../components/Common/FileViewerModal";
 import { useAuth } from "../../context/authProvider";
 import { useNotification } from "../../context/notificationProvider";
-import ReactQuill from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
 import ProfileImage from "../../components/Common/ProfileImage.jsx";
 import {
   MessageSquare, ExternalLink, UserPlus, Check, Flag, Tag, CalendarDays,
@@ -87,14 +85,7 @@ const getInitials = (firstName = "", lastName = "", name = "") => {
   return ((firstName[0] || "") + (lastName[0] || "")).toUpperCase() || "?";
 };
 
-const quillModules = {
-  toolbar: [
-    ['bold', 'italic', 'underline', 'strike'],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    ['blockquote', 'code-block', 'link'],
-    ['clean'],
-  ],
-};
+
 
 // ── Avatar ─────────────────────────────────────────────────────────────────────
 const Avatar = ({ firstName, lastName, name, size = 32, className = "" }) => {
@@ -121,7 +112,7 @@ const Avatar = ({ firstName, lastName, name, size = 32, className = "" }) => {
 // ── EditableSection ─────────────────────────────────────────────────────────────
 // Always-visible inline textarea that saves on blur. Shows a muted placeholder
 // when the field is empty so users know it exists and can click to fill it.
-const EditableSection = ({ fieldKey, icon, label, value, placeholder, rows = 3, onSave }) => {
+const EditableSection = ({ icon, label, value, placeholder, rows = 3, onSave }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value || "");
   const [saving, setSaving] = useState(false);
@@ -235,7 +226,6 @@ const StatusSelect = ({ value, onChange }) => {
 const CommentCard = ({
   comment,
   commentReads,
-  participants,
   currentUserId,
   onViewFile,
   onEditComment,
@@ -376,12 +366,13 @@ const CommentCard = ({
           {/* Comment body */}
           {isEditing ? (
             <div className="space-y-2">
-              <div className="bg-[var(--tracker-surface)] rounded-xl border border-[var(--tracker-border-focus)] overflow-hidden">
-                <ReactQuill
-                  theme="snow"
+              <div className="bg-[var(--tracker-surface)] rounded-xl border border-[var(--tracker-border-focus)] p-2">
+                <textarea
+                  rows={3}
                   value={editMessage}
-                  onChange={setEditMessage}
-                  modules={quillModules}
+                  onChange={e => setEditMessage(e.target.value)}
+                  className="w-full text-[13px] text-[var(--tracker-ink)] bg-transparent outline-none resize-none"
+                  placeholder="Edit comment…"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -406,26 +397,57 @@ const CommentCard = ({
             </div>
           ) : (
             <div
-              className="text-[13px] text-[var(--tracker-ink)] leading-relaxed break-words ql-editor !p-0"
-              dangerouslySetInnerHTML={{ __html: comment.message || comment.comment }}
-            />
+              className="text-[13px] text-[var(--tracker-ink)] leading-relaxed break-words whitespace-pre-wrap"
+            >
+              {comment.message?.replace(/<img[^>]*src=["']data:image[^"']*["'][^>]*>/gi, '').replace(/<[^>]*>/g, '') || comment.message || comment.comment}
+            </div>
           )}
 
           {/* Attachments */}
           {comment.attachments && comment.attachments.length > 0 && !isEditing && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {comment.attachments.map((att, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => onViewFile(att)}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[var(--tracker-border)] bg-[var(--tracker-surface-1)] hover:bg-[var(--tracker-surface-2)] hover:border-[var(--module-ticket)] text-[11px] font-medium text-[var(--tracker-ink-muted)] hover:text-[var(--module-ticket)] transition-colors"
-                >
-                  {getFileIcon(att.mimetype)}
-                  <span className="max-w-[120px] truncate">{att.originalName}</span>
-                  <span className="text-[9px] opacity-50">{formatBytes(att.size)}</span>
-                </button>
-              ))}
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {comment.attachments.map((att, idx) => {
+                if (!att) return null;
+                const isImage = att.mimetype?.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(att.originalName || att.filename || "");
+                const fileUrl = att.path
+                  ? (att.path.startsWith("http") ? att.path : `${import.meta.env.VITE_API_URL || ""}${att.path.startsWith("/") ? "" : "/"}${att.path}`)
+                  : null;
+
+                if (isImage && fileUrl) {
+                  return (
+                    <div
+                      key={att._id || idx}
+                      onClick={() => onViewFile(att)}
+                      className="group/img relative rounded-xl overflow-hidden border border-[var(--tracker-border)] bg-[var(--tracker-surface-2)] cursor-pointer hover:border-[var(--module-ticket)] transition-all shadow-xs"
+                      title={att.originalName || "View image"}
+                    >
+                      <img
+                        src={fileUrl}
+                        alt={att.originalName || "Attachment"}
+                        className="h-20 w-24 object-cover rounded-xl transition-transform duration-200 group-hover/img:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1 text-white">
+                        <Eye size={13} />
+                        <span className="text-[10px] font-medium">View</span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    key={att._id || idx}
+                    type="button"
+                    onClick={() => onViewFile(att)}
+                    className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-[var(--tracker-border)] bg-[var(--tracker-surface-1)] hover:bg-[var(--tracker-surface-2)] hover:border-[var(--module-ticket)] text-[11.5px] font-medium text-[var(--tracker-ink)] hover:text-[var(--module-ticket)] transition-all cursor-pointer shadow-xs"
+                  >
+                    {getFileIcon(att.mimetype)}
+                    <span className="max-w-[150px] truncate">{att.originalName || att.filename || "Attachment"}</span>
+                    {att.size && <span className="text-[9.5px] text-[var(--tracker-ink-subtle)] font-normal">{formatBytes(att.size)}</span>}
+                    <Download size={11} className="text-[var(--tracker-ink-subtle)]" />
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -633,7 +655,7 @@ const TicketDetailPage = () => {
     fetchEmployees();
 
     return () => document.removeEventListener("mousedown", closeDropdown);
-  }, [id]);
+  }, [id, fetchTicketSilently, fetchParticipants, fetchactivity_logs]);
 
   // ── Socket ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -688,7 +710,7 @@ const TicketDetailPage = () => {
       socket.off("comment_read", onCommentRead);
       socket.off("ticket_typing", onTyping);
     };
-  }, [socket, id, participants]);
+  }, [socket, id, participants, fetchTicketSilently, fetchactivity_logs]);
 
   // Typing cleanup timer
   useEffect(() => {
@@ -743,7 +765,7 @@ const TicketDetailPage = () => {
       fetchTicketSilently();
       fetchactivity_logs();
       toast.success("Converted to task!");
-    } catch (e) {
+    } catch {
       toast.error("Failed to convert to task");
     }
   };
@@ -762,6 +784,29 @@ const TicketDetailPage = () => {
       }
     }, 2000);
   };
+
+  const handleCommentPaste = useCallback((e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const pastedFiles = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === "file") {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          const fileName = file.name && file.name !== "image.png"
+            ? file.name
+            : `comment_screenshot_${Date.now()}_${i + 1}.png`;
+          pastedFiles.push(new File([file], fileName, { type: file.type || "image/png" }));
+        }
+      }
+    }
+    if (pastedFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...pastedFiles]);
+      toast.success(`${pastedFiles.length} file${pastedFiles.length > 1 ? "s" : ""} attached from clipboard`);
+    }
+  }, []);
 
   const submitComment = async () => {
     const isEmpty = !newComment.trim() || newComment === '<p><br></p>' || newComment === '<p></p>';
@@ -1086,7 +1131,18 @@ const TicketDetailPage = () => {
               </div>
 
               {/* ── COMPOSE BOX — top so users see it immediately ─────── */}
-              <div className={`rounded-2xl border-2 overflow-hidden transition-all duration-200 ${
+              <div
+                onPaste={handleCommentPaste}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const files = Array.from(e.dataTransfer.files || []);
+                  if (files.length > 0) {
+                    setSelectedFiles(prev => [...prev, ...files]);
+                    toast.success(`${files.length} file${files.length > 1 ? "s" : ""} attached`);
+                  }
+                }}
+                className={`rounded-2xl border-2 overflow-hidden transition-all duration-200 ${
                 commentType === "internal"
                   ? "border-[hsl(38,75%,62%)] bg-[hsl(38,95%,98%)]"
                   : "border-[var(--tracker-border)] bg-[var(--tracker-surface)] focus-within:border-[var(--module-ticket)]/50 focus-within:shadow-[0_0_0_3px_var(--module-ticket)/8%]"
@@ -1126,28 +1182,32 @@ const TicketDetailPage = () => {
                   )}
                 </div>
 
-                {/* Rich text editor */}
-                <div className="px-3.5 pb-2 lmx-feed-composer">
-                  <div className="lmx-feed-composer__editor relative">
-                    <ReactQuill
-                      ref={composerRef}
-                      theme="snow"
-                      value={newComment}
-                      onChange={handleCommentInput}
-                      modules={quillModules}
-                      onBlur={() => {
-                        if (socket && isTypingRef.current) {
-                          isTypingRef.current = false;
-                          socket.emit("ticket_typing", { ticketId: id, isTyping: false });
-                        }
-                      }}
-                      placeholder={
-                        commentType === "public"
-                          ? "Write a public reply visible to the client…"
-                          : "Write an internal note for team members only…"
+                {/* Text comment composer */}
+                <div className="px-3.5 pb-2">
+                  <textarea
+                    ref={composerRef}
+                    rows={3}
+                    value={newComment}
+                    onChange={e => handleCommentInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        submitComment();
                       }
-                    />
-                  </div>
+                    }}
+                    onBlur={() => {
+                      if (socket && isTypingRef.current) {
+                        isTypingRef.current = false;
+                        socket.emit("ticket_typing", { ticketId: id, isTyping: false });
+                      }
+                    }}
+                    placeholder={
+                      commentType === "public"
+                        ? "Write a public reply visible to the client…"
+                        : "Write an internal note for team members only…"
+                    }
+                    className="w-full px-1 py-1 text-[13px] bg-transparent border-0 outline-none text-[var(--tracker-ink)] placeholder:text-[var(--tracker-ink-subtle)] resize-none"
+                  />
                 </div>
 
                 {/* Staged file chips */}
@@ -1173,14 +1233,20 @@ const TicketDetailPage = () => {
 
                 {/* Footer: attach + send */}
                 <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 border-t border-[var(--tracker-border-soft)]">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Attach File"
-                    className="w-7 h-7 inline-flex items-center justify-center rounded-lg text-[var(--tracker-ink-subtle)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-2)] transition-colors"
-                  >
-                    <Paperclip size={13} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      title="Attach file or browse (Ctrl+V to paste screenshot)"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11.5px] font-medium text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-2)] transition-colors cursor-pointer"
+                    >
+                      <Paperclip size={13} />
+                      <span className="hidden sm:inline">Attach</span>
+                    </button>
+                    <span className="text-[10px] text-[var(--tracker-ink-tertiary)] hidden sm:inline">
+                      (or paste Ctrl+V)
+                    </span>
+                  </div>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -1255,20 +1321,20 @@ const TicketDetailPage = () => {
             >
               <div className="flex border-b border-[var(--tracker-border)]">
                 {[
-                  { key: "details", label: "Details", icon: Info },
-                  { key: "participants", label: "People", icon: Users },
-                  { key: "activity", label: "Activity", icon: Activity },
-                ].map(({ key, label, icon: Icon }) => (
+                  { key: "details", label: "Details", Icon: Info },
+                  { key: "participants", label: "People", Icon: Users },
+                  { key: "activity", label: "Activity", Icon: Activity },
+                ].map((tab) => (
                   <button
-                    key={key}
-                    onClick={() => setActiveTab(key)}
-                    className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10.5px] font-bold transition-all border-b-2 ${activeTab === key
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10.5px] font-bold transition-all border-b-2 ${activeTab === tab.key
                       ? "border-[var(--module-ticket)] text-[var(--module-ticket)] bg-[var(--module-ticket-light)]"
                       : "border-transparent text-[var(--tracker-ink-subtle)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-1)]"
                     }`}
                   >
-                    <Icon size={13} />
-                    {label}
+                    <tab.Icon size={13} />
+                    {tab.label}
                   </button>
                 ))}
               </div>

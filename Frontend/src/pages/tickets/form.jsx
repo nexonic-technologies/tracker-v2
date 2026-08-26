@@ -8,7 +8,8 @@ import JarvisTicketAssist from "../../components/Jarvis/JarvisTicketAssist.jsx";
 import {
   ChevronLeft, Paperclip, X, Upload, FileIcon, FileText,
   FileSpreadsheet, FileArchive, PlayCircle, Music, ImageIcon,
-  Loader2, Save, Plus, AlertCircle, Sparkles, CheckCircle2
+  Loader2, Save, Sparkles, CheckCircle2,
+  Calendar, Trash2, Eye
 } from "lucide-react";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -48,16 +49,31 @@ const AutoCompleteField = ({ label, required, source, options: staticOpts, value
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (loaded || !source) return;
     try {
       const res = await axiosInstance.post(source);
       setOptions(res.data?.data || []);
       setLoaded(true);
     } catch (e) { console.error(e); }
-  };
+  }, [loaded, source]);
 
-  const getName = (opt) => opt?.name || opt?.title || `${opt?.basicInfo?.firstName || ""} ${opt?.basicInfo?.lastName || ""}`.trim() || "";
+  // If value is passed as string ID and options not loaded, load options to find name
+  useEffect(() => {
+    if (source && !loaded && value && (typeof value === "string" || !value.name)) {
+      load();
+    }
+  }, [source, loaded, value, load]);
+
+  const getName = (opt) => {
+    if (!opt) return "";
+    if (typeof opt === "string") {
+      const found = options.find(o => o._id === opt);
+      if (found) return getName(found);
+      return opt;
+    }
+    return opt.name || opt.title || `${opt?.basicInfo?.firstName || ""} ${opt?.basicInfo?.lastName || ""}`.trim() || "";
+  };
 
   const filtered = options.filter(o => getName(o).toLowerCase().includes(search.toLowerCase()));
 
@@ -106,7 +122,16 @@ const AutoCompleteField = ({ label, required, source, options: staticOpts, value
           </span>
         ))}
         {!multiple && displayLabel && (
-          <span className="text-[13px] text-[var(--tracker-ink)]">{displayLabel}</span>
+          <div className="flex items-center justify-between w-full">
+            <span className="text-[13px] text-[var(--tracker-ink)] font-medium">{displayLabel}</span>
+            <span
+              onClick={(e) => { e.stopPropagation(); onChange(null); }}
+              className="cursor-pointer text-[var(--tracker-ink-subtle)] hover:text-red-500 transition-colors p-0.5 rounded"
+              title="Clear selection"
+            >
+              <X size={12} />
+            </span>
+          </div>
         )}
         {!displayLabel && !multiple && (
           <span className="text-[13px] text-[var(--tracker-ink-tertiary)]">{placeholder || `Select ${label}`}</span>
@@ -137,8 +162,8 @@ const AutoCompleteField = ({ label, required, source, options: staticOpts, value
                 key={opt?._id || idx}
                 onClick={() => select(opt)}
                 className={`px-3.5 py-2.5 text-[12.5px] cursor-pointer flex items-center justify-between transition-colors ${isSelected(opt)
-                    ? "bg-[var(--module-ticket-light)] text-[var(--module-ticket)] font-semibold"
-                    : "text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-1)]"
+                  ? "bg-[var(--module-ticket-light)] text-[var(--module-ticket)] font-semibold"
+                  : "text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-1)]"
                   }`}
               >
                 {getName(opt)}
@@ -193,7 +218,7 @@ const TicketsFormPage = () => {
     type: null,
     priority: null,
     dueDate: "",
-    assignedTo: [],
+    assignedTo: null,
     impactAnalysis: "",
     url: "",
     acceptanceCriteria: "",
@@ -205,12 +230,13 @@ const TicketsFormPage = () => {
   const [existingAttachments, setExistingAttachments] = useState([]); // loaded from edit record
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const dateInputRef = useRef(null);
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState("details");
   const [viewerFile, setViewerFile] = useState(null);
+  const [deletingAttId, setDeletingAttId] = useState(null);
 
   // ── AI generation state ────────────────────────────────────────────────────
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -225,21 +251,31 @@ const TicketsFormPage = () => {
         const res = await axiosInstance.post(`/populate/read/tickets/${editId}`, {
           populateFields: {
             clientId: "name",
+            productId: "name",
             type: "name,icon,color",
             assignedTo: "basicInfo.firstName,basicInfo.lastName",
             attachments: "filename,originalName,mimetype,size,path",
           }
         });
         const d = res.data?.data || {};
+
+        let safeDueDate = "";
+        if (d.dueDate) {
+          const parsed = new Date(d.dueDate);
+          if (!isNaN(parsed.getTime())) {
+            safeDueDate = parsed.toISOString().split("T")[0];
+          }
+        }
+
         setForm({
           clientId: d.clientId || null,
-          product: d.product || null,
+          product: d.productId || d.product || null,
           title: d.title || "",
           userStory: d.userStory || "",
           type: d.type || null,
           priority: d.priority ? { _id: d.priority, name: d.priority } : null,
-          dueDate: d.dueDate ? d.dueDate.split("T")[0] : "",
-          assignedTo: d.assignedTo || [],
+          dueDate: safeDueDate,
+          assignedTo: Array.isArray(d.assignedTo) ? (d.assignedTo[0] || null) : (d.assignedTo || null),
           impactAnalysis: d.impactAnalysis || "",
           url: d.url || "",
           acceptanceCriteria: d.acceptanceCriteria || "",
@@ -255,13 +291,15 @@ const TicketsFormPage = () => {
     })();
   }, [editId, isEdit]);
 
-  // ── File handling ──────────────────────────────────────────────────────────
-  const addFiles = (files) => {
+  // ── File handling & Clipboard Paste ────────────────────────────────────────
+  const addFiles = useCallback((files) => {
     const newFiles = Array.from(files).filter(
       f => !pendingFiles.some(p => p.name === f.name && p.size === f.size)
     );
-    setPendingFiles(prev => [...prev, ...newFiles]);
-  };
+    if (newFiles.length > 0) {
+      setPendingFiles(prev => [...prev, ...newFiles]);
+    }
+  }, [pendingFiles]);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -271,6 +309,51 @@ const TicketsFormPage = () => {
 
   const removeFile = (idx) => setPendingFiles(prev => prev.filter((_, i) => i !== idx));
 
+  // Global clipboard paste listener for screenshots / copied files
+  useEffect(() => {
+    const handlePaste = (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const pastedFiles = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === "file") {
+          const file = item.getAsFile();
+          if (file) {
+            const fileName = file.name && file.name !== "image.png"
+              ? file.name
+              : `screenshot_${Date.now()}_${i + 1}.png`;
+            pastedFiles.push(new File([file], fileName, { type: file.type || "image/png" }));
+          }
+        }
+      }
+      if (pastedFiles.length > 0) {
+        addFiles(pastedFiles);
+        toast.success(`${pastedFiles.length} file${pastedFiles.length > 1 ? "s" : ""} pasted from clipboard`);
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [addFiles]);
+
+  // ── Delete Existing Attachment ─────────────────────────────────────────────
+  const handleDeleteExistingAttachment = async (attId, e) => {
+    e?.stopPropagation();
+    if (!window.confirm("Are you sure you want to remove this attachment?")) return;
+    try {
+      setDeletingAttId(attId);
+      await axiosInstance.delete(`/populate/delete/ticket_attachments/${attId}`);
+      setExistingAttachments(prev => prev.filter(a => a._id !== attId));
+      toast.success("Attachment removed");
+    } catch (err) {
+      console.error("Attachment deletion failed:", err);
+      toast.error(err.response?.data?.message || "Failed to remove attachment");
+    } finally {
+      setDeletingAttId(null);
+    }
+  };
+
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -279,18 +362,27 @@ const TicketsFormPage = () => {
       return;
     }
 
+    if (form.dueDate) {
+      const parsedDate = new Date(form.dueDate);
+      if (isNaN(parsedDate.getTime())) {
+        toast.error("Invalid Due Date format");
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       // Build payload — resolve IDs from autocomplete objects
       const payload = {
         clientId: form.clientId?._id || form.clientId || undefined,
+        productId: form.product?._id || form.product || undefined,
         product: form.product?._id || form.product || undefined,
-        title: form.title,
+        title: form.title.trim(),
         userStory: form.userStory || undefined,
         type: form.type?._id || form.type || undefined,
-        priority: form.priority?._id || form.priority || undefined,
+        priority: form.priority?._id || form.priority?.name || form.priority || undefined,
         dueDate: form.dueDate || undefined,
-        assignedTo: (form.assignedTo || []).map(a => a?._id || a),
+        assignedTo: form.assignedTo ? [form.assignedTo?._id || form.assignedTo] : [],
         impactAnalysis: form.impactAnalysis || undefined,
         url: form.url || undefined,
         acceptanceCriteria: form.acceptanceCriteria || undefined,
@@ -374,13 +466,6 @@ const TicketsFormPage = () => {
     }
   }, [form.title, form.clientId, form.product]);
 
-  // ── Tab definitions ────────────────────────────────────────────────────────
-  const TABS = [
-    { id: "details", label: "Details" },
-    { id: "spec", label: "Specification" },
-    { id: "attachments", label: `Attachments${pendingFiles.length > 0 ? ` (${pendingFiles.length})` : ""}` },
-  ];
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--tracker-canvas)] flex items-center justify-center">
@@ -392,15 +477,15 @@ const TicketsFormPage = () => {
   return (
     <div className="min-h-screen bg-[var(--tracker-canvas)]" data-module="ticket">
 
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      {/* ── Top Header Bar ── */}
       <div className="bg-[var(--tracker-surface)] border-b border-[var(--tracker-border)] sticky top-0 z-20">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => navigate("/Tickets")}
-                className="inline-flex items-center gap-1.5 text-[12px] text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] transition-colors"
+                className="inline-flex items-center gap-1.5 text-[12.5px] text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] transition-colors cursor-pointer"
               >
                 <ChevronLeft size={14} />
                 Tickets
@@ -410,96 +495,56 @@ const TicketsFormPage = () => {
                 {isEdit ? "Edit Ticket" : "New Ticket"}
               </h1>
             </div>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--module-ticket)] text-white text-[12.5px] font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
-            >
-              {submitting ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-              {isEdit ? "Update Ticket" : "Create Ticket"}
-            </button>
           </div>
         </div>
       </div>
 
-      {/* ── Body ────────────────────────────────────────────────────────────── */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
-        <form onSubmit={handleSubmit} className="space-y-5">
+      {/* ── Body: 2-Column Responsive Layout (Main Input on left, Metadata on right) ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
-          {/* Tab bar */}
-          <div className="flex border-b border-[var(--tracker-border)]">
-            {TABS.map(tab => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2.5 text-[12.5px] font-semibold transition-all border-b-2 -mb-px ${activeTab === tab.id
-                    ? "border-[var(--module-ticket)] text-[var(--module-ticket)]"
-                    : "border-transparent text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)]"
-                  }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          {/* ── LEFT COLUMN (Main content / User Input): 8 cols ── */}
+          <div className="lg:col-span-8 space-y-5">
 
-          {/* ── DETAILS TAB ─────────────────────────────────────────────────── */}
-          {activeTab === "details" && (
-            <div className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] p-5 sm:p-6 space-y-5">
-
-              {/* Client + Product */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <AutoCompleteField
-                  label="Client" required
-                  source="/populate/read/clients"
-                  value={form.clientId}
-                  onChange={v => set("clientId", v)}
-                  placeholder="Select client"
-                />
-                <AutoCompleteField
-                  label="Product" required
-                  source="/populate/read/products"
-                  value={form.product}
-                  onChange={v => set("product", v)}
-                  placeholder="Select product"
-                />
+            {/* Core Issue Section */}
+            <div className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] p-5 sm:p-6 space-y-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="text-[12px] font-bold text-[var(--tracker-ink-muted)] uppercase tracking-wider">
+                  Ticket Content
+                </h2>
+                <div className="flex items-center gap-2">
+                  {aiEngine && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-500/10 text-violet-600 border border-violet-500/20">
+                      <CheckCircle2 size={9} /> Filled by {aiEngine}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleAIGenerate}
+                    disabled={aiGenerating}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11.5px] font-bold border transition-all duration-150 cursor-pointer ${aiGenerating
+                      ? 'border-violet-300 bg-violet-50 text-violet-400 cursor-wait'
+                      : 'border-violet-400/50 bg-violet-500/8 text-violet-600 hover:bg-violet-500/15 hover:border-violet-500/60'
+                      }`}
+                  >
+                    {aiGenerating
+                      ? <Loader2 size={12} className="animate-spin" />
+                      : <Sparkles size={12} className="animate-[pulse_2s_ease-in-out_infinite]" />}
+                    {aiGenerating ? 'Generating…' : 'Fill with AI'}
+                  </button>
+                </div>
               </div>
 
-              {/* Title + AI Generate */}
-              <div className="col-span-2">
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-[11px] font-semibold text-[var(--tracker-ink-muted)] uppercase tracking-wide">
-                    Title <span className="text-red-500 ml-0.5">*</span>
-                  </label>
-                  <div className="flex items-center gap-2">
-                    {aiEngine && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-500/10 text-violet-600 border border-violet-500/20">
-                        <CheckCircle2 size={9} /> Filled by {aiEngine}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleAIGenerate}
-                      disabled={aiGenerating}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11.5px] font-bold border transition-all duration-150 cursor-pointer ${
-                        aiGenerating
-                          ? 'border-violet-300 bg-violet-50 text-violet-400 cursor-wait'
-                          : 'border-violet-400/50 bg-violet-500/8 text-violet-600 hover:bg-violet-500/15 hover:border-violet-500/60'
-                      }`}
-                    >
-                      {aiGenerating
-                        ? <Loader2 size={12} className="animate-spin" />
-                        : <Sparkles size={12} className="animate-[pulse_2s_ease-in-out_infinite]" />}
-                      {aiGenerating ? 'Generating…' : 'Fill with AI'}
-                    </button>
-                  </div>
-                </div>
+              {/* Title */}
+              <div>
+                <label className="block text-[11px] font-semibold text-[var(--tracker-ink-muted)] uppercase tracking-wide mb-1.5">
+                  Title <span className="text-red-500 ml-0.5">*</span>
+                </label>
                 <input
                   type="text"
                   value={form.title}
                   onChange={e => { set("title", e.target.value); setAiEngine(null); }}
-                  placeholder="Enter a brief title and click 'Fill with AI' to auto-populate all fields"
+                  placeholder="Enter a brief descriptive title…"
                   className={inputCls}
                 />
 
@@ -511,10 +556,7 @@ const TicketsFormPage = () => {
                   category={form.category?.name || form.category}
                   onApply={({ title: refinedTitle, description: refinedDesc, priority: refinedPriority, type: refinedType }) => {
                     if (refinedTitle) set("title", refinedTitle);
-                    if (refinedDesc) {
-                      set("userStory", refinedDesc);
-                      set("description", refinedDesc);
-                    }
+                    if (refinedDesc) set("userStory", refinedDesc);
                     if (refinedPriority) set("priority", { _id: refinedPriority, name: refinedPriority });
                     if (refinedType) set("type", { _id: refinedType, name: refinedType });
                     toast.success("Applied J.A.R.V.I.S. ticket proposal!");
@@ -522,80 +564,157 @@ const TicketsFormPage = () => {
                 />
               </div>
 
-              {/* User Story */}
-              <Field label="User Story" className="col-span-2">
-                <textarea
-                  rows={4}
-                  value={form.userStory}
-                  onChange={e => set("userStory", e.target.value)}
-                  placeholder="Describe the issue from a user's perspective…"
-                  className={`${inputCls} resize-none`}
-                />
-              </Field>
-
-              {/* Type + Priority */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <AutoCompleteField
-                  label="Type"
-                  source="/populate/read/task_types"
-                  value={form.type}
-                  onChange={v => set("type", v)}
-                  placeholder="Ticket type"
-                />
-                <AutoCompleteField
-                  label="Priority"
-                  options={PRIORITY_OPTS}
-                  value={form.priority}
-                  onChange={v => set("priority", v)}
-                  placeholder="Select priority"
-                />
-              </div>
-
-              {/* Due Date + Assignees */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Due Date">
-                  <input
-                    type="date"
-                    value={form.dueDate}
-                    onChange={e => set("dueDate", e.target.value)}
-                    className={inputCls}
+              {/* User Story / Description with embedded attachments & clipboard paste */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-semibold text-[var(--tracker-ink-muted)] uppercase tracking-wide">
+                    User Story / Description
+                  </label>
+                  <span className="text-[10.5px] text-[var(--tracker-ink-tertiary)] flex items-center gap-1">
+                    <Sparkles size={11} className="text-[var(--module-ticket)]" />
+                    Ctrl+V to paste screenshot
+                  </span>
+                </div>
+                <div
+                  onPaste={(e) => {
+                    const items = e.clipboardData?.items;
+                    if (!items) return;
+                    const pastedFiles = [];
+                    for (let i = 0; i < items.length; i++) {
+                      const item = items[i];
+                      if (item.kind === "file") {
+                        const file = item.getAsFile();
+                        if (file) {
+                          const fileName = file.name && file.name !== "image.png"
+                            ? file.name
+                            : `screenshot_${Date.now()}_${i + 1}.png`;
+                          pastedFiles.push(new File([file], fileName, { type: file.type || "image/png" }));
+                        }
+                      }
+                    }
+                    if (pastedFiles.length > 0) {
+                      addFiles(pastedFiles);
+                      toast.success(`${pastedFiles.length} file${pastedFiles.length > 1 ? "s" : ""} attached from clipboard`);
+                    }
+                  }}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={handleDrop}
+                  className={`rounded-xl border transition-all overflow-hidden ${isDragging
+                    ? "border-[var(--module-ticket)] bg-[var(--module-ticket-light)]/20"
+                    : "border-[var(--tracker-border)] bg-[var(--tracker-surface-1)] focus-within:border-[var(--module-ticket)] focus-within:bg-[var(--tracker-surface)]"
+                    }`}
+                >
+                  <textarea
+                    rows={5}
+                    value={form.userStory}
+                    onChange={e => set("userStory", e.target.value)}
+                    placeholder="Describe the issue from a user's perspective (or paste screenshots with Ctrl+V)…"
+                    className="w-full px-3.5 py-2.5 text-[13px] bg-transparent border-0 outline-none text-[var(--tracker-ink)] placeholder:text-[var(--tracker-ink-subtle)] resize-none"
                   />
-                </Field>
-                <AutoCompleteField
-                  label="Assignees"
-                  source="/populate/read/employees"
-                  value={form.assignedTo}
-                  onChange={v => set("assignedTo", v)}
-                  multiple
-                  placeholder="Assign team members"
-                />
+
+                  {/* Existing attachments chips (edit mode) */}
+                  {isEdit && existingAttachments.length > 0 && (
+                    <div className="px-3.5 py-2 border-t border-[var(--tracker-border-soft)] bg-[var(--tracker-surface)]/50 flex flex-wrap gap-2">
+                      {existingAttachments.map((att, idx) => (
+                        <div key={att._id || idx} className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border border-[var(--tracker-border)] bg-[var(--tracker-surface-1)] text-[11.5px] max-w-full">
+                          {att.mimetype?.startsWith("image/") && att.path ? (
+                            <div className="w-5 h-5 rounded overflow-hidden shrink-0">
+                              <img src={att.path} alt={att.originalName} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                            </div>
+                          ) : (
+                            getFileIcon(att.mimetype)
+                          )}
+                          <span className="font-medium text-[var(--tracker-ink)] truncate max-w-[140px]">{att.originalName}</span>
+                          <span className="text-[10px] text-[var(--tracker-ink-subtle)]">({formatBytes(att.size)})</span>
+                          <button
+                            type="button"
+                            onClick={() => setViewerFile(att)}
+                            className="text-[var(--module-ticket)] hover:underline text-[11px] font-semibold cursor-pointer ml-1"
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            disabled={deletingAttId === att._id}
+                            onClick={(e) => handleDeleteExistingAttachment(att._id, e)}
+                            title="Remove attachment"
+                            className="text-[var(--tracker-ink-subtle)] hover:text-red-500 transition-colors p-0.5 cursor-pointer disabled:opacity-50"
+                          >
+                            {deletingAttId === att._id ? <Loader2 size={10} className="animate-spin" /> : <X size={11} />}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Staged pending files chips */}
+                  {pendingFiles.length > 0 && (
+                    <div className="px-3.5 py-2 border-t border-[var(--tracker-border-soft)] bg-[var(--tracker-surface)]/50 flex flex-wrap gap-2">
+                      {pendingFiles.map((file, idx) => (
+                        <div key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--module-ticket)]/30 bg-[var(--module-ticket-light)]/40 text-[11.5px] max-w-full">
+                          {getFileIcon(file.type)}
+                          <span className="font-medium text-[var(--tracker-ink)] truncate max-w-[140px]">{file.name}</span>
+                          <span className="text-[10px] text-[var(--tracker-ink-subtle)]">({formatBytes(file.size)})</span>
+                          <button
+                            type="button"
+                            onClick={() => setViewerFile(file)}
+                            className="text-[var(--module-ticket)] hover:underline text-[11px] font-semibold cursor-pointer ml-0.5"
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(idx)}
+                            title="Remove file"
+                            className="text-[var(--tracker-ink-subtle)] hover:text-red-500 transition-colors p-0.5 cursor-pointer ml-0.5"
+                          >
+                            <X size={11} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Bottom toolbar inside User Story container */}
+                  <div className="flex items-center justify-between px-3 py-1.5 border-t border-[var(--tracker-border-soft)] bg-[var(--tracker-surface-2)]/40">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11.5px] font-medium text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-2)] transition-colors cursor-pointer"
+                        title="Attach files or screenshots"
+                      >
+                        <Paperclip size={13} className="text-[var(--module-ticket)]" />
+                        <span>Attach File</span>
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        className="hidden"
+                        onChange={e => { addFiles(e.target.files); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                      />
+                      <span className="text-[10.5px] text-[var(--tracker-ink-tertiary)] hidden sm:inline">
+                        Paste screenshot (Ctrl+V) or drag & drop
+                      </span>
+                    </div>
+
+                    {(existingAttachments.length > 0 || pendingFiles.length > 0) && (
+                      <span className="text-[10.5px] font-medium text-[var(--tracker-ink-muted)]">
+                        {existingAttachments.length + pendingFiles.length} file{existingAttachments.length + pendingFiles.length > 1 ? "s" : ""} attached
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          )}
 
-          {/* ── SPECIFICATION TAB ───────────────────────────────────────────── */}
-          {activeTab === "spec" && (
-            <div className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] p-5 sm:p-6 space-y-5">
-
-              <Field label="Impact Analysis">
-                <textarea
-                  rows={3}
-                  value={form.impactAnalysis}
-                  onChange={e => set("impactAnalysis", e.target.value)}
-                  placeholder="What areas does this issue affect?"
-                  className={`${inputCls} resize-none`}
-                />
-              </Field>
-
-              <Field label="Related URL">
-                <input
-                  type="url"
-                  value={form.url}
-                  onChange={e => set("url", e.target.value)}
-                  placeholder="https://…"
-                  className={inputCls}
-                />
-              </Field>
+            {/* Specifications Card */}
+            <div className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] p-5 sm:p-6 space-y-4 shadow-sm">
+              <h2 className="text-[12px] font-bold text-[var(--tracker-ink-muted)] uppercase tracking-wider">
+                Specifications & Context
+              </h2>
 
               <Field label="Acceptance Criteria">
                 <textarea
@@ -607,164 +726,168 @@ const TicketsFormPage = () => {
                 />
               </Field>
 
-              <Field label="Internal Description">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Impact Analysis">
+                  <textarea
+                    rows={2}
+                    value={form.impactAnalysis}
+                    onChange={e => set("impactAnalysis", e.target.value)}
+                    placeholder="What areas does this issue affect?"
+                    className={`${inputCls} resize-none`}
+                  />
+                </Field>
+
+                <Field label="Related URL">
+                  <input
+                    type="url"
+                    value={form.url}
+                    onChange={e => set("url", e.target.value)}
+                    placeholder="https://…"
+                    className={inputCls}
+                  />
+                </Field>
+              </div>
+
+              <Field label="Internal Description / Notes">
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={form.description}
                   onChange={e => set("description", e.target.value)}
-                  placeholder="Internal notes (not visible to client)…"
+                  placeholder="Internal notes (team only, not visible to client)…"
                   className={`${inputCls} resize-none`}
                 />
               </Field>
             </div>
-          )}
+          </div>
 
-          {/* ── ATTACHMENTS TAB ─────────────────────────────────────────────── */}
-          {activeTab === "attachments" && (
-            <div className="space-y-4">
+          {/* ── RIGHT COLUMN (Metadata / Classification & Actions): 4 cols ── */}
+          <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-20">
 
-              {/* Existing attachments (edit mode) */}
-              {isEdit && existingAttachments.length > 0 && (
-                <div className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] p-5">
-                  <p className="text-[11px] font-bold text-[var(--tracker-ink-subtle)] uppercase tracking-wide mb-3">
-                    Current Attachments ({existingAttachments.length})
-                  </p>
-                  <div className="space-y-2">
-                    {existingAttachments.map((att, idx) => (
-                      <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border border-[var(--tracker-border)] bg-[var(--tracker-surface-1)]">
-                        {getFileIcon(att.mimetype)}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-semibold text-[var(--tracker-ink)] truncate">{att.originalName}</p>
-                          <p className="text-[11px] text-[var(--tracker-ink-subtle)]">{formatBytes(att.size)}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setViewerFile(att)}
-                          className="text-[12px] font-medium text-[var(--module-ticket)] hover:underline shrink-0 cursor-pointer"
-                        >
-                          View
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            {/* Metadata Card */}
+            <div className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] p-5 space-y-4 shadow-sm">
+              <h2 className="text-[12px] font-bold text-[var(--tracker-ink-muted)] uppercase tracking-wider">
+                Properties
+              </h2>
 
-              {/* Drop zone */}
-              <div
-                onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`rounded-2xl border-2 border-dashed p-10 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all ${isDragging
-                    ? "border-[var(--module-ticket)] bg-[var(--module-ticket-light)]"
-                    : "border-[var(--tracker-border)] bg-[var(--tracker-surface)] hover:border-[var(--tracker-ink-muted)] hover:bg-[var(--tracker-surface-1)]"
-                  }`}
-              >
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${isDragging ? "bg-[var(--module-ticket-light)]" : "bg-[var(--tracker-surface-2)]"
-                  }`}>
-                  <Upload size={24} className={isDragging ? "text-[var(--module-ticket)]" : "text-[var(--tracker-ink-subtle)]"} />
-                </div>
-                <div className="text-center">
-                  <p className="text-[13.5px] font-semibold text-[var(--tracker-ink)]">
-                    {isDragging ? "Drop files here" : "Drag & drop files or click to browse"}
-                  </p>
-                  <p className="text-[12px] text-[var(--tracker-ink-subtle)] mt-1">
-                    Any file type accepted — PDFs, images, documents, archives
-                  </p>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={e => { addFiles(e.target.files); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+              <AutoCompleteField
+                label="Client" required
+                source="/populate/read/clients"
+                value={form.clientId}
+                onChange={v => set("clientId", v)}
+                placeholder="Select client"
+              />
+
+              <AutoCompleteField
+                label="Product" required
+                source="/populate/read/products"
+                value={form.product}
+                onChange={v => set("product", v)}
+                placeholder="Select product"
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3.5">
+                <AutoCompleteField
+                  label="Type"
+                  source="/populate/read/task_types"
+                  value={form.type}
+                  onChange={v => set("type", v)}
+                  placeholder="Ticket type"
+                />
+
+                <AutoCompleteField
+                  label="Priority"
+                  options={PRIORITY_OPTS}
+                  value={form.priority}
+                  onChange={v => set("priority", v)}
+                  placeholder="Select priority"
                 />
               </div>
 
-              {/* Note for new tickets */}
-              {!isEdit && (
-                <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200">
-                  <AlertCircle size={14} className="text-blue-600 shrink-0 mt-0.5" />
-                  <p className="text-[12px] text-blue-700 leading-snug">
-                    Attachments will be uploaded automatically after the ticket is created.
-                  </p>
-                </div>
-              )}
-
-              {/* Staged files list */}
-              {pendingFiles.length > 0 && (
-                <div className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-[11px] font-bold text-[var(--tracker-ink-subtle)] uppercase tracking-wide">
-                      Files to Upload ({pendingFiles.length})
-                    </p>
+              <Field label="Due Date">
+                <div className="relative flex items-center">
+                  <input
+                    ref={dateInputRef}
+                    type="date"
+                    value={form.dueDate}
+                    onChange={e => set("dueDate", e.target.value)}
+                    onClick={(e) => {
+                      if (typeof e.target.showPicker === "function") {
+                        try {
+                          e.target.showPicker();
+                        } catch (err) {
+                          console.debug("Date picker unsupported:", err);
+                        }
+                      }
+                    }}
+                    className={`${inputCls} pr-9 cursor-pointer`}
+                  />
+                  <div className="absolute right-2.5 flex items-center gap-1">
+                    {form.dueDate && (
+                      <button
+                        type="button"
+                        onClick={() => set("dueDate", "")}
+                        title="Clear date"
+                        className="text-[var(--tracker-ink-subtle)] hover:text-red-500 p-0.5 rounded transition-colors"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => setPendingFiles([])}
-                      className="text-[11px] text-red-500 hover:underline font-medium"
+                      onClick={() => {
+                        if (dateInputRef.current && typeof dateInputRef.current.showPicker === "function") {
+                          try {
+                            dateInputRef.current.showPicker();
+                          } catch (err) {
+                            console.debug("Date picker unsupported:", err);
+                          }
+                        } else {
+                          dateInputRef.current?.focus();
+                        }
+                      }}
+                      className="text-[var(--tracker-ink-muted)] hover:text-[var(--module-ticket)] transition-colors p-0.5"
                     >
-                      Remove all
+                      <Calendar size={14} />
                     </button>
                   </div>
-                  <div className="space-y-2">
-                    {pendingFiles.map((file, idx) => (
-                      <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border border-[var(--tracker-border)] bg-[var(--tracker-surface-1)] group">
-                        <button
-                          type="button"
-                          onClick={() => setViewerFile(file)}
-                          className="flex items-center gap-3 flex-1 min-w-0 text-left hover:opacity-85 cursor-pointer"
-                        >
-                          {getFileIcon(file.type)}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-semibold text-[var(--tracker-ink)] truncate">{file.name}</p>
-                            <p className="text-[11px] text-[var(--tracker-ink-subtle)]">{formatBytes(file.size)}</p>
-                          </div>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(idx)}
-                          className="opacity-0 group-hover:opacity-100 text-[var(--tracker-ink-subtle)] hover:text-red-500 transition-all p-1 rounded-lg hover:bg-red-50 cursor-pointer"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
                 </div>
-              )}
+              </Field>
 
-              {pendingFiles.length === 0 && (!isEdit || existingAttachments.length === 0) && (
-                <div className="text-center py-4 text-[12px] text-[var(--tracker-ink-subtle)]">
-                  No files staged yet. Use the drop zone above to add attachments.
-                </div>
-              )}
+              <AutoCompleteField
+                label="Assignee"
+                source="/populate/read/employees"
+                value={form.assignedTo}
+                onChange={v => set("assignedTo", v)}
+                placeholder="Assign team member"
+              />
             </div>
-          )}
 
-          {/* ── Submit footer ──────────────────────────────────────────────── */}
-          <div className="flex items-center justify-between pt-2">
-            <button
-              type="button"
-              onClick={() => navigate("/Tickets")}
-              className="text-[12.5px] text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[var(--module-ticket)] text-white text-[13px] font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
-            >
-              {submitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              {submitting
-                ? (pendingFiles.length > 0 ? "Saving & uploading…" : "Saving…")
-                : (isEdit ? "Update Ticket" : "Create Ticket")}
-            </button>
+            {/* Actions Card */}
+            <div className="bg-[var(--tracker-surface)] rounded-2xl border border-[var(--tracker-border)] p-4 shadow-sm flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/Tickets")}
+                className="px-4 py-2 rounded-xl text-[12.5px] font-medium text-[var(--tracker-ink-muted)] hover:text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-2)] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[var(--module-ticket)] text-white text-[13px] font-bold hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer shadow-sm"
+              >
+                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                {submitting
+                  ? (pendingFiles.length > 0 ? "Saving & uploading…" : "Saving…")
+                  : (isEdit ? "Update Ticket" : "Create Ticket")}
+              </button>
+            </div>
+
           </div>
 
         </form>
       </div>
+
       {viewerFile && (
         <FileViewerModal
           file={viewerFile}

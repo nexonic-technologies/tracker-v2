@@ -100,7 +100,7 @@ export async function syncAttendanceForTimeTracker(userId, startTime, endTime, s
             managerId: employee.professionalInfo?.reportingManager,
             date: sessionDate,
             checkIn: startTime,
-            checkOut: status === 'completed' ? endTime : null,
+            checkOut: null,
             workType: 'fixed',
             status: 'Present'
           }
@@ -120,25 +120,9 @@ export async function syncAttendanceForTimeTracker(userId, startTime, endTime, s
     if (status === 'completed') {
       const sessionHours = duration / 3600;
 
-      // If punches do not exist, we update checkIn/checkOut and workHours directly on attendance
-      if (!attendance.punches || attendance.punches.length === 0) {
-        if (!attendance.checkIn) updates.checkIn = startTime;
-        if (!attendance.checkOut) updates.checkOut = endTime;
-        if (!attendance.workHours || attendance.workHours < sessionHours) {
-          updates.workHours = Math.round(sessionHours * 100) / 100;
-        }
-      } else {
-        // If punches exist, extend the last punch's checkout to match the time tracker session end time
-        // this dynamically increases the workHours calculated by the pre('save') hook
-        const punches = [...(attendance.punches || [])];
-        if (punches.length > 0) {
-          const lastPunch = punches[punches.length - 1];
-          if (lastPunch.checkIn && (!lastPunch.checkOut || new Date(lastPunch.checkOut) < new Date(endTime))) {
-            lastPunch.checkOut = endTime;
-            updates.punches = punches;
-            updates.checkOut = endTime;
-          }
-        }
+      // Sync accumulated work hours only — do NOT check out employee from attendance
+      if (!attendance.workHours || attendance.workHours < sessionHours) {
+        updates.workHours = Math.round(sessionHours * 100) / 100;
       }
     }
 

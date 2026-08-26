@@ -4,7 +4,7 @@ const ticketSchema = new mongoose.Schema({
   ticketId: { type: String, unique: true },
   title: { type: String, required: true, maxlength: 200 },
   userStory: { type: String }, // This will be visible to external clients
-  description: { type: String, required: true }, // Agent provides description, can be used as userStory
+  description: { type: String }, // Internal description / notes
   projectTypeId: { type: mongoose.Schema.Types.ObjectId, ref: 'project_types' }, // Optional, to be selected by agent
   productId: { type: mongoose.Schema.Types.ObjectId, ref: 'products' },
   type: {
@@ -89,16 +89,11 @@ ticketSchema.virtual('attachments', {
   foreignField: 'ticketId'
 });
 
-// Auto-generate ticket ID and handle userStory fallback
+// Auto-generate ticket ID
 ticketSchema.pre('save', async function (next) {
   if (!this.ticketId) {
     const count = await this.constructor.countDocuments();
     this.ticketId = `TKT${String(count + 1).padStart(6, '0')}`;
-  }
-
-  // Use description as userStory if userStory is not provided
-  if (!this.userStory && this.description) {
-    this.userStory = this.description;
   }
 
   next();

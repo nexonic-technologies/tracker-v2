@@ -134,7 +134,7 @@ const TicketsPage = () => {
         },
         limit: 500,
       });
-      setTickets((tRes.data.data || []).map(({ professionalInfo, ...t }) => t));
+      setTickets(tRes.data.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -278,7 +278,7 @@ const TicketsPage = () => {
 
     userStory: t => (
       <span className="max-w-[220px] truncate block text-[13px] text-ink-muted" title={t.userStory}>
-        {t.userStory || t.description || "—"}
+        {t.userStory || "—"}
       </span>
     ),
 
