@@ -136,6 +136,62 @@ export class NeuralSemanticResolver {
       trace,
     };
   }
+
+  /**
+   * Evaluates and scores candidate graph edges against the utterance using neural token probabilities
+   * (Sacred Law Compliant: Pure neural log-likelihood scoring, 0 domain hardcoding)
+   */
+  scoreCandidateEdges(utterance, candidateEdges = []) {
+    if (!utterance || !Array.isArray(candidateEdges) || candidateEdges.length === 0) {
+      return [];
+    }
+
+    const promptTokens = this.tokenizer.encode(utterance.trim(), { addBos: true });
+    if (promptTokens.length === 0) return candidateEdges;
+
+    const scored = [];
+    const v = this.neuralCore.vocabSize;
+
+    for (const edge of candidateEdges) {
+      const targetStr = String(edge.target?.canonical || edge.targetCanonical || edge.value || '').trim();
+      const relStr = String(edge.relation || edge.relationCanonical || '').replace(/_/g, ' ').trim();
+      
+      if (!targetStr && !relStr) continue;
+
+      const candTokens = this.tokenizer.encode(`${relStr} ${targetStr}`.trim(), { addBos: false });
+      if (candTokens.length === 0) continue;
+
+      // Neural forward pass on sequence [Prompt, Candidate]
+      const combinedTokens = [...promptTokens, ...candTokens];
+      const { logits } = this.neuralCore.forward(combinedTokens);
+
+      let logLikelihood = 0;
+      for (let i = 0; i < candTokens.length; i++) {
+        const tokenIdx = promptTokens.length + i;
+        const targetTokenId = candTokens[i];
+        const offset = (tokenIdx - 1) * v;
+
+        let maxL = -Infinity;
+        for (let c = 0; c < v; c++) {
+          if (logits[offset + c] > maxL) maxL = logits[offset + c];
+        }
+        let sumE = 0;
+        for (let c = 0; c < v; c++) {
+          sumE += Math.exp(logits[offset + c] - maxL);
+        }
+        const prob = Math.exp(logits[offset + targetTokenId] - maxL) / (sumE || 1);
+        logLikelihood += Math.log(prob + 1e-12);
+      }
+
+      const avgProb = candTokens.length > 0 ? Math.exp(logLikelihood / candTokens.length) : 0;
+      scored.push({
+        ...edge,
+        neuralScore: avgProb,
+      });
+    }
+
+    return scored.sort((a, b) => (b.neuralScore || 0) - (a.neuralScore || 0));
+  }
 }
 
 export const defaultNeuralSemanticResolver = new NeuralSemanticResolver();

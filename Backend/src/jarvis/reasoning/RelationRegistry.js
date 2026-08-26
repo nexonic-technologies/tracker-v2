@@ -1,5 +1,12 @@
 import { defaultRelationshipGraph } from '../tokens/RelationshipGraph.js';
 import { defaultTokenRegistry, TokenType } from '../tokens/TokenRegistry.js';
+import { defaultEntityCanonicalizer } from '../tokens/EntityCanonicalizer.js';
+
+export const RelationType = {
+  FACTUAL: 'factual',
+  ASSOCIATIVE: 'associative',
+  META: 'meta',
+};
 
 /**
  * Dynamic Generative Relation Engine
@@ -12,12 +19,267 @@ export class RelationRegistry {
     this.tokenRegistry = tokenRegistry || defaultTokenRegistry;
     this.dynamicInverses = new Map();
     this.dynamicSymmetries = new Set();
+    this.dynamicTaxonomic = new Set();
+    this.dynamicHierarchical = new Set();
+    this.dynamicTransitive = new Set();
+    this.dynamicAssociative = new Set();
+    this.dynamicMeta = new Set();
     this.dynamicClusters = new Map(); // Map<clusterName, Set<string>>
+
+    // Register canonical taxonomic / meta relations
+    this.registerTaxonomic('instance_of');
+    this.registerTaxonomic('is_a');
+    this.registerTaxonomic('type_of');
+    this.registerTaxonomic('subclass_of');
+    this.registerTaxonomic('category_of');
+    this.registerTaxonomic('concept_of');
+
+    // Register canonical inverses
+    this.registerInverse('part_of', 'contains');
+    this.registerInverse('located_in', 'contains_location');
+    this.registerInverse('filmed_in', 'film_location_of');
+    this.registerInverse('has_capital', 'capital_of');
+    this.registerInverse('directed_by', 'directed');
+    this.registerInverse('starred_in', 'stars');
   }
 
   _normalize(rel) {
     if (!rel || typeof rel !== 'string') return '';
     return rel.trim().toLowerCase().replace(/[\s-]+/g, '_').replace(/[^\w]/g, '');
+  }
+
+  /**
+   * Declarative / Linguistic Relation Normalizer
+   * Normalizes natural-language verbal phrases, copulas, and prepositions to canonical snake_case relations
+   * (e.g. "forms part of" -> "part_of", "is located in" -> "located_in", "filming took place in" -> "filmed_in")
+   * @param {string} rawRel
+   * @returns {string}
+   */
+  normalizeRelation(rawRel) {
+    if (!rawRel || typeof rawRel !== 'string') return '';
+    let s = rawRel.trim().toLowerCase();
+
+    // 1. Clean syntactic decorators / passive markers
+    s = s.replace(/^(?:which|that|who)\s+/i, '');
+    s = s.replace(/^(?:is|was|are|were|has_been|have_been)\s+/i, '');
+    s = s.replace(/^(?:a|an|the)\s+/i, '');
+
+    // 2. Multi-word verbal idioms / prepositional compound patterns
+    s = s.replace(/^(?:forms\s+part\s+of|is\s+part\s+of|is\s+a\s+part\s+of|part\s+of|belongs\s+to|belonging\s+to)$/i, 'part_of');
+    s = s.replace(/^(?:is\s+located\s+in|located\s+in|lies\s+within|is\s+situated\s+in|situated\s+in|located\s+within|situated\s+within)$/i, 'located_in');
+    s = s.replace(/^(?:filmed\s+in|shot\s+in|filming\s+took\s+place\s+in|takes\s+place\s+in|was\s+filmed\s+in|was\s+shot\s+in)$/i, 'filmed_in');
+    s = s.replace(/^(?:starred\s+in|featured\s+in|acted\s+in|stars\s+in)$/i, 'starred_in');
+    s = s.replace(/^(?:directed\s+by|direction\s+by)$/i, 'directed_by');
+    s = s.replace(/^(?:capital\s+of|is\s+the\s+capital\s+of)$/i, 'has_capital');
+
+    return this._normalize(s);
+  }
+
+  registerAssociative(rel) {
+    const n = this._normalize(rel);
+    if (n) this.dynamicAssociative.add(n);
+  }
+
+  registerMeta(rel) {
+    const n = this._normalize(rel);
+    if (n) this.dynamicMeta.add(n);
+  }
+
+  registerTaxonomic(rel) {
+    const n = this._normalize(rel);
+    if (n) {
+      this.dynamicTaxonomic.add(n);
+      this.dynamicMeta.add(n);
+    }
+  }
+
+  registerHierarchical(rel) {
+    const n = this._normalize(rel);
+    if (n) this.dynamicHierarchical.add(n);
+  }
+
+  registerTransitive(rel) {
+    const n = this._normalize(rel);
+    if (n) this.dynamicTransitive.add(n);
+  }
+
+  isAssociative(rel) {
+    const n = this._normalize(rel);
+    if (!n) return false;
+    if (this.dynamicAssociative.has(n)) return true;
+    return this._checkGraphRelProperty(n, 'associative');
+  }
+
+  isMeta(rel) {
+    const n = this._normalize(rel);
+    if (!n) return false;
+    if (this.dynamicMeta.has(n)) return true;
+    return this._checkGraphRelProperty(n, 'meta');
+  }
+
+  isTaxonomic(rel) {
+    const n = this._normalize(rel);
+    if (!n) return false;
+    if (this.dynamicTaxonomic.has(n)) return true;
+    return this._checkGraphRelProperty(n, 'taxonomic');
+  }
+
+  isHierarchical(rel) {
+    const n = this._normalize(rel);
+    if (!n) return false;
+    if (this.dynamicHierarchical.has(n)) return true;
+    return this._checkGraphRelProperty(n, 'hierarchical');
+  }
+
+  isTransitive(rel) {
+    const n = this._normalize(rel);
+    if (!n) return false;
+    if (this.dynamicTransitive.has(n)) return true;
+    return this._checkGraphRelProperty(n, 'transitive');
+  }
+
+  _checkGraphRelProperty(relNorm, propertyName) {
+    if (!this.tokenRegistry || !this.graph) return false;
+    const relTok = this.tokenRegistry.lookup(relNorm);
+    if (!relTok) return false;
+    if (relTok.metadata && relTok.metadata[propertyName]) return true;
+
+    const outgoing = this.graph.getOutgoing(relTok.id);
+    return outgoing.some((e) => e.relation === propertyName || e.relation === `is_${propertyName}`);
+  }
+
+  /**
+   * Resolves whether a candidate graph node satisfies a target semantic type
+   * @param {object} node - Token object from TokenRegistry
+   * @param {string} targetType - Requested target type (e.g. 'country', 'planet', 'continent', 'state')
+   * @param {object} [graph] - Active RelationshipGraph instance
+   * @param {object} [tokenRegistry] - Active TokenRegistry instance
+   * @returns {boolean}
+   */
+  matchesTargetType(node, targetType, graph = null, tokenRegistry = null) {
+    if (!node || !targetType) return false;
+    const targetNorm = this._normalize(targetType);
+    if (!targetNorm) return false;
+
+    const g = graph || this.graph || defaultRelationshipGraph;
+    const reg = tokenRegistry || this.tokenRegistry || defaultTokenRegistry;
+
+    // 1. Direct token type check
+    const nodeType = this._normalize(node.type || '');
+    if (nodeType && (nodeType === targetNorm || this._isStemMatch(nodeType, targetNorm))) {
+      return true;
+    }
+
+    // 1b. Taxonomic category synonym equivalence check via EntityCanonicalizer
+    if (defaultEntityCanonicalizer?.taxonomyCategories) {
+      const nodeTaxon = defaultEntityCanonicalizer.taxonomyCategories.get(nodeType) || nodeType;
+      const targetTaxon = defaultEntityCanonicalizer.taxonomyCategories.get(targetNorm) || targetNorm;
+      if (nodeTaxon && targetTaxon && (nodeTaxon === targetTaxon || this._isStemMatch(nodeTaxon, targetTaxon))) {
+        return true;
+      }
+    }
+
+    // 2. Canonical / alias literal match (e.g. node itself represents the concept)
+    const canonNorm = this._normalize(node.canonical || '');
+    if (canonNorm === targetNorm || this._isStemMatch(canonNorm, targetNorm)) {
+      return true;
+    }
+    if (Array.isArray(node.aliases) && node.aliases.some((a) => {
+      const an = this._normalize(a);
+      return an === targetNorm || this._isStemMatch(an, targetNorm);
+    })) {
+      return true;
+    }
+
+    // 2b. Taxonomic phrase decomposition for canonical & aliases (e.g. "Asian continent" -> continent, "Indian Union" -> country)
+    if (defaultEntityCanonicalizer) {
+      const canonDecomp = defaultEntityCanonicalizer.decomposeTaxonomicPhrase(node.canonical);
+      if (canonDecomp?.semanticType && canonDecomp.semanticType !== 'entity' && canonDecomp.semanticType !== 'concept') {
+        const canonTaxon = defaultEntityCanonicalizer.taxonomyCategories?.get(canonDecomp.semanticType) || canonDecomp.semanticType;
+        const targetTaxon = defaultEntityCanonicalizer.taxonomyCategories?.get(targetNorm) || targetNorm;
+        if (canonTaxon && targetTaxon && (canonTaxon === targetTaxon || this._isStemMatch(canonTaxon, targetTaxon))) {
+          return true;
+        }
+      }
+
+      if (Array.isArray(node.aliases)) {
+        for (const a of node.aliases) {
+          const decomp = defaultEntityCanonicalizer.decomposeTaxonomicPhrase(a);
+          if (decomp?.semanticType && decomp.semanticType !== 'entity' && decomp.semanticType !== 'concept') {
+            const aliasTaxon = defaultEntityCanonicalizer.taxonomyCategories?.get(decomp.semanticType) || decomp.semanticType;
+            const targetTaxon = defaultEntityCanonicalizer.taxonomyCategories?.get(targetNorm) || targetNorm;
+            if (aliasTaxon && targetTaxon && (aliasTaxon === targetTaxon || this._isStemMatch(aliasTaxon, targetTaxon))) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Metadata semantic type check
+    if (node.metadata && typeof node.metadata === 'object') {
+      const metaType = this._normalize(node.metadata.semanticType || node.metadata.type || node.metadata.category || '');
+      if (metaType && (metaType === targetNorm || this._isStemMatch(metaType, targetNorm))) {
+        return true;
+      }
+    }
+
+    // 4. Graph taxonomic edge check: (node) ──[is_a | type_of | category_of | concept_of]──► (typeToken)
+    if (g && node.id !== undefined) {
+      const outgoing = g.getOutgoing(node.id);
+      const incoming = g.getIncoming(node.id);
+
+      for (const edge of outgoing) {
+        if (this.isTaxonomic(edge.relation) || this.isMeta(edge.relation)) {
+          const targetTok = reg?.getById(edge.to);
+          if (targetTok) {
+            const targetCanon = this._normalize(targetTok.canonical);
+            const targetTaxon = defaultEntityCanonicalizer?.taxonomyCategories?.get(targetCanon) || targetCanon;
+            const requestedTaxon = defaultEntityCanonicalizer?.taxonomyCategories?.get(targetNorm) || targetNorm;
+            if (targetCanon === targetNorm || targetTaxon === requestedTaxon || this._isStemMatch(targetCanon, targetNorm)) {
+              return true;
+            }
+          }
+        }
+      }
+
+      // Check incoming type edges: (targetToken) ──[has_instance | has_type | contains]──► (node)
+      for (const inEdge of incoming) {
+        if (this.isTaxonomic(inEdge.relation) || this.isMeta(inEdge.relation)) {
+          const fromTok = reg?.getById(inEdge.from);
+          if (fromTok) {
+            const fromCanon = this._normalize(fromTok.canonical);
+            const fromTaxon = defaultEntityCanonicalizer?.taxonomyCategories?.get(fromCanon) || fromCanon;
+            const requestedTaxon = defaultEntityCanonicalizer?.taxonomyCategories?.get(targetNorm) || targetNorm;
+            if (fromCanon === targetNorm || fromTaxon === requestedTaxon || this._isStemMatch(fromCanon, targetNorm)) {
+              return true;
+            }
+          }
+        }
+      }
+
+      // 5. Relational predicate role check: incoming edge predicate matches targetType (e.g. Mary ──[father_of]──► John, India ──[has_capital]──► New Delhi, Movie ──[directed_by]──► Director)
+      for (const inEdge of incoming) {
+        if (!this.isMeta(inEdge.relation) && !this.isAssociative(inEdge.relation)) {
+          const matchRes = this.areEquivalentOrInverse(inEdge.relation, targetNorm);
+          if (matchRes?.matches) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  isFactual(rel) {
+    return !this.isAssociative(rel) && !this.isMeta(rel);
+  }
+
+  getRelationType(rel) {
+    if (this.isAssociative(rel)) return RelationType.ASSOCIATIVE;
+    if (this.isMeta(rel)) return RelationType.META;
+    return RelationType.FACTUAL;
   }
 
   /**
@@ -257,6 +519,17 @@ export class RelationRegistry {
 
     if (this._isStemMatch(n1, n2)) return { matches: true, isInverse: false };
 
+    // Sub-token / compound part stem matching (e.g. won_award <-> award, won_award <-> won, release_year <-> released)
+    const parts1 = n1.split('_').filter(Boolean);
+    const parts2 = n2.split('_').filter(Boolean);
+    for (const p1 of parts1) {
+      for (const p2 of parts2) {
+        if (p1 === p2 || this._isStemMatch(p1, p2)) {
+          return { matches: true, isInverse: false };
+        }
+      }
+    }
+
     // Check dynamic synonym clusters
     for (const cluster of this.dynamicClusters.values()) {
       if (cluster.has(n1) && cluster.has(n2)) {
@@ -265,12 +538,15 @@ export class RelationRegistry {
     }
 
     // Check Graph meta-edges for synonym_of / same_as
-    if (this.tokenRegistry && this.graph) {
-      const t1 = this.tokenRegistry.lookup(n1);
-      const t2 = this.tokenRegistry.lookup(n2);
+    const reg = this.tokenRegistry || defaultTokenRegistry;
+    const g = this.graph || defaultRelationshipGraph;
+    if (reg && g) {
+      const t1 = reg.lookup(n1);
+      const t2 = reg.lookup(n2);
       if (t1 && t2) {
-        const out1 = this.graph.getOutgoing(t1.id);
-        const isSynonym = out1.some((e) => ['synonym_of', 'same_as', 'alias_of'].includes(e.relation) && e.to === t2.id);
+        const out1 = g.getOutgoing(t1.id);
+        const inc1 = g.getIncoming(t1.id);
+        const isSynonym = [...out1, ...inc1].some((e) => ['synonym_of', 'same_as', 'alias_of', 'equivalent_to'].includes(e.relation) && (e.to === t2.id || e.from === t2.id));
         if (isSynonym) return { matches: true, isInverse: false };
       }
     }

@@ -45,21 +45,23 @@ export class JarvisCore {
     if (ctx.sessionId) {
       const { defaultConversationContextTracker } = await import('../stages/ConversationContextTracker.js').catch(() => ({}));
       if (defaultConversationContextTracker) {
-        defaultConversationContextTracker.updateTurn(
-          ctx.sessionId,
-          ctx.userId,
-          ctx.utterance,
-          ctx.response,
-          {
-            recognizedTokens: ctx.semanticFact ? [
-              { id: ctx.semanticFact.subjectTokenId, canonical: ctx.semanticFact.subjectCanonical, type: 'entity' },
-              { id: ctx.semanticFact.targetTokenId, canonical: ctx.semanticFact.targetCanonical, type: 'entity' },
-            ].filter(t => t.canonical) : (ctx.tokens?.filter(t => t.type === 'entity') || []),
-            predicate: ctx.semanticFact?.relationCanonical || ctx.intent?.parameters?.relation,
-            offlineResolved: ctx.offlineResolved,
-            intent: ctx.intent,
-          }
-        ).catch(() => {});
+        try {
+          await defaultConversationContextTracker.updateTurn(
+            ctx.sessionId,
+            ctx.userId,
+            ctx.utterance,
+            ctx.response,
+            {
+              recognizedTokens: ctx.semanticFact ? [
+                { id: ctx.semanticFact.subjectTokenId, canonical: ctx.semanticFact.subjectCanonical, type: 'entity' },
+                { id: ctx.semanticFact.targetTokenId, canonical: ctx.semanticFact.targetCanonical, type: 'entity' },
+              ].filter(t => t.canonical) : (ctx.tokens?.filter(t => t.type === 'entity') || []),
+              predicate: ctx.semanticFact?.relationCanonical || ctx.intent?.parameters?.relation,
+              offlineResolved: ctx.offlineResolved,
+              intent: ctx.intent,
+            }
+          );
+        } catch {}
       }
     }
 

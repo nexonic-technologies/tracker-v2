@@ -1,6 +1,6 @@
 import { defaultMongoBrainMemoryStore } from '../providers/MongoBrainMemoryStore.js';
 import { defaultLLMManager } from '../providers/LLMManager.js';
-import { defaultTokenRegistry } from '../tokens/TokenRegistry.js';
+import { defaultTokenRegistry, TokenType, STOP_WORDS } from '../tokens/TokenRegistry.js';
 import { defaultRelationshipGraph } from '../tokens/RelationshipGraph.js';
 import { RelationRegistry } from '../reasoning/RelationRegistry.js';
 
@@ -14,7 +14,23 @@ export class LearningAnalyst {
   }
 
   /**
-   * Deterministic declarative syntactic pattern extraction for explicit facts
+   * Universal Entity Phrase Normalizer
+   * (Pure syntax rules, strips noise/copulas/prepositions universally)
+   */
+  _cleanEntityPhrase(phrase) {
+    if (!phrase || typeof phrase !== 'string') return '';
+    let s = phrase.trim();
+    s = s.replace(/^(?:the|a|an)\s+/i, '');
+    s = s.replace(/^(?:in|at|on|to|from|by|of|with|for)\s+/i, '');
+    s = s.replace(/\s+(?:is|was|are|were)(?:\s+(?:a|an|the)\s+[\w\s]+?)?\s*(?:is|was|are|were)?$/i, '');
+    s = s.replace(/\s+(?:is|was|are|were)$/i, '');
+    s = s.replace(/^["']|["']$/g, '').trim();
+    return s;
+  }
+
+  /**
+   * Deterministic declarative pattern extraction ONLY for explicit short micro-facts (e.g. "Remember: Chennai is the capital of Tamil Nadu")
+   * All complex, multi-word, or natural-language sentences are strictly delegated to LLM Teacher distillation.
    */
   _extractDeclarativeTriples(text) {
     if (!text || typeof text !== 'string') return [];
@@ -22,48 +38,117 @@ export class LearningAnalyst {
     if (!/^remember\b/i.test(trimmed) && (/[?]$/.test(trimmed) || /^(what|who|where|which|when|how|is|was|are|were|do|does|did)\b/i.test(trimmed))) {
       return [];
     }
+
     const clean = text.replace(/^remember(?:\s+this|\s+that)?(?::|\s+)\s*/i, '').replace(/[.\n\r?]+$/, '').trim();
+
+    // If the sentence contains relative pronouns, clauses, or is long (> 6 words), delegate strictly to LLM Teacher
+    if (/\b(?:that|which|who|whom|whose|where|when|among|because|although|while)\b/i.test(clean) || clean.split(/\s+/).length > 6) {
+      return [];
+    }
+
     const triples = [];
 
-    // 1. Passive pattern: "[Subject] was|is [verb]ed by [Agent]" (e.g. "The Obsidian Map was discovered by Kael Varen")
-    const passiveMatch = clean.match(/^(?:the\s+)?(.+?)\s+(?:was|is)\s+(\w+(?:ed|en|t|d))\s+by\s+(?:the\s+)?(.+)$/i);
-    if (passiveMatch) {
-      const subject = passiveMatch[1].trim();
-      const verb = passiveMatch[2].trim().toLowerCase();
-      const agent = passiveMatch[3].trim();
-      triples.push({ subject, relation: `${verb}_by`, object: agent });
-      triples.push({ subject: agent, relation: verb, object: subject });
-      return triples;
-    }
-
-    // 2. Copular property pattern: "[Object] is/was the [Property] of [Subject]" (e.g. "Chennai is the capital of Tamil Nadu")
-    const copulaOfMatch = clean.match(/^(?:the\s+)?(.+?)\s+(?:is|was)\s+(?:the\s+)?(\w+)\s+of\s+(?:the\s+)?(.+)$/i);
+    // Copular property pattern: "[Object] is/was the [Property] of [Subject]" (e.g. "Chennai is the capital of Tamil Nadu")
+    const copulaOfMatch = clean.match(/^([A-Za-z0-9\s.-]{1,30})\s+(?:is|was|are|were)\s+(?:the\s+)?(\w+)\s+of\s+([A-Za-z0-9\s.-]{1,30})$/i);
     if (copulaOfMatch) {
-      const obj = copulaOfMatch[1].trim();
+      const obj = this._cleanEntityPhrase(copulaOfMatch[1]);
       const prop = copulaOfMatch[2].trim().toLowerCase();
-      const sub = copulaOfMatch[3].trim();
-      triples.push({ subject: sub, relation: `has_${prop}`, object: obj });
-      triples.push({ subject: obj, relation: `${prop}_of`, object: sub });
-      return triples;
-    }
-
-    // 3. Active transitive pattern: "[Agent] [verb]ed [the] [Subject]" (e.g. "Lyra Venn discovered the Celestial Archive")
-    const activeMatch = clean.match(/^(?:the\s+)?([A-Z][\w\s.-]+?)\s+(\w+(?:ed|d|t))\s+(?:the\s+)?(.+)$/);
-    if (activeMatch && !/^(is|was|has|had|are|were)$/i.test(activeMatch[2])) {
-      const agent = activeMatch[1].trim();
-      const verb = activeMatch[2].trim().toLowerCase();
-      const subject = activeMatch[3].trim();
-      triples.push({ subject: agent, relation: verb, object: subject });
-      triples.push({ subject, relation: `${verb}_by`, object: agent });
-      return triples;
+      const sub = this._cleanEntityPhrase(copulaOfMatch[3]);
+      if (sub && obj && sub.split(/\s+/).length <= 3 && obj.split(/\s+/).length <= 3) {
+        triples.push({ subject: sub, relation: `has_${prop}`, object: obj });
+        return triples;
+      }
     }
 
     return triples;
   }
 
   /**
-   * Universal Background LLM Knowledge Graph Triple Distillation
-   * (Sacred Law Compliant: Zero Hardcoded Regexes / Zero Domain Role Strings)
+   * Ingests canonical entities and triples into TokenRegistry and RelationshipGraph
+   */
+  _ingestKnowledge({ entities = [], triples = [] } = {}, ctx = null) {
+    // 1. Ingest entities with explicit semantic types
+    for (const ent of entities) {
+      if (ent.name) {
+        const canonicalName = String(ent.name).trim();
+        const entityType = ent.type ? String(ent.type).trim().toLowerCase() : TokenType.ENTITY;
+        this.tokenRegistry.resolveOrRegister(canonicalName, entityType);
+      }
+    }
+
+    // 2. Ingest relational triples
+    for (const t of triples) {
+      if (t.subject && t.object && t.relation) {
+        const subName = String(t.subject).trim();
+        const objName = String(t.object).trim();
+        const relNorm = this.relationRegistry ? this.relationRegistry.normalizeRelation(t.relation) : String(t.relation).trim().toLowerCase().replace(/[\s-]+/g, '_');
+
+        const subToken = this.tokenRegistry.resolveOrRegister(subName, TokenType.ENTITY);
+        const objToken = this.tokenRegistry.resolveOrRegister(objName, TokenType.ENTITY);
+
+        if (subToken && objToken && subToken.id !== objToken.id) {
+          this.graph.addRelationship(subToken.id, relNorm, objToken.id, t.confidence || 1.0);
+
+          // Register dynamic inverse edge in graph
+          if (this.relationRegistry) {
+            const invRel = this.relationRegistry.getInverse(relNorm);
+            if (invRel && invRel !== relNorm) {
+              this.graph.addRelationship(objToken.id, invRel, subToken.id, (t.confidence || 1.0) * 0.98);
+            }
+          }
+
+          if (ctx && typeof ctx.log === 'function') {
+            ctx.log('LearningAnalyst', `Ingested knowledge: (${subToken.canonical}) ──[${relNorm}]──► (${objToken.canonical})`);
+          }
+        }
+      }
+    }
+
+    // 3. Reconcile graph to ensure global continuity
+    this.reconcileGraph();
+  }
+
+  /**
+   * Idempotent Graph Reconciliation
+   * Scans tokens and graph topology, merges equivalent surface forms into canonical nodes,
+   * repoints all incoming/outgoing edges transactionally, and preserves edge weights & provenance.
+   */
+  reconcileGraph() {
+    if (!this.tokenRegistry || !this.graph) return;
+
+    const allTokens = Array.from(this.tokenRegistry.tokensById.values());
+    for (let i = 0; i < allTokens.length; i++) {
+      const t1 = allTokens[i];
+      if (t1.status === 'merged') continue;
+
+      for (let j = i + 1; j < allTokens.length; j++) {
+        const t2 = allTokens[j];
+        if (t2.status === 'merged' || t1.id === t2.id) continue;
+
+        // Check if t1 and t2 represent the same canonical entity
+        const isEquiv = this.tokenRegistry.lookup(t2.canonical)?.id === t1.id ||
+          this.tokenRegistry.lookup(t1.canonical)?.id === t2.id;
+
+        if (isEquiv) {
+          // Keep the shorter/canonical root as target
+          const target = t1.canonical.length <= t2.canonical.length ? t1 : t2;
+          const source = target.id === t1.id ? t2 : t1;
+
+          // Merge source into target
+          try {
+            this.tokenRegistry.merge(source.id, target.id);
+            this.graph.repointNode(source.id, target.id);
+          } catch (e) {
+            // Ignore if already merged
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Universal Background LLM Knowledge Graph Triple Distillation (Epistemic Teacher Bootstrapping)
+   * (Sacred Law 9 Compliant: 0 String Hardcoding, Pure Neuro-Symbolic Distillation)
    */
   async _distillFactualTriplesViaLLM(utterance, responseText, ctx) {
     if (!utterance) return;
@@ -71,36 +156,28 @@ export class LearningAnalyst {
     // 1. Fast deterministic declarative extraction
     const directTriples = this._extractDeclarativeTriples(utterance);
     if (directTriples.length > 0) {
-      for (const t of directTriples) {
-        const subToken = this.tokenRegistry.lookup(t.subject) || this.tokenRegistry.register({ canonical: t.subject, type: 'entity' });
-        const objToken = this.tokenRegistry.lookup(t.object) || this.tokenRegistry.register({ canonical: t.object, type: 'entity' });
-        this.graph.addRelationship(subToken.id, t.relation.toLowerCase().replace(/\s+/g, '_'), objToken.id, 1.0);
-        if (ctx && typeof ctx.log === 'function') {
-          ctx.log('LearningAnalyst', `Direct declarative triple ingested: (${subToken.canonical}) ──[${t.relation}]──► (${objToken.canonical})`);
-        }
-      }
+      this._ingestKnowledge({ triples: directTriples }, ctx);
       return;
     }
 
     if (!this.llmManager) return;
 
     const systemPrompt = `You are the Universal Knowledge Graph Extraction Engine for J.A.R.V.I.S.
-Extract all concrete factual relationships, entities, roles, properties, positions, quantities, counts, and definitions from the conversation turn as semantic triples.
+Deconstruct input text into formal, atomic ontological entities and canonical semantic propositions.
 
-CRITICAL EXTRACTION GUIDELINES:
-1. Always preserve exact counts, metrics, numbers, and descriptive qualifiers inside the object target entity.
-2. Extract normalized snake_case relation names expressing the exact semantic property (e.g. has_property, count_of_items, won_award, birth_year, located_in, discovered_by, engineered_by).
-3. NEVER extract relation verbs (e.g. "discovered", "created", "built") as the object value. The object must be the target actor, entity, or value.
-4. If a passive sentence "X was [verb]ed by Y" occurs, extract subject: "X", relation: "[verb]_by", object: "Y".
+FORMAL EXTRACTION PRINCIPLES:
+1. ATOMIC NAMED ENTITIES: Extract discrete, canonical proper nouns and semantic concepts without extraneous modifiers, auxiliary verbs, or relative clauses.
+2. ONTOLOGICAL TYPING: For every extracted entity, assign its specific category/type (e.g. administrative_division, creative_work, organization, location, person, artifact, temporal).
+3. CANONICAL RELATIONAL PREDICATES: Express relational links as normalized, lower snake_case predicates (e.g. part_of, located_in, created_by, subclass_of, member_of, instance_of).
+4. NOMINALIZATION & COREFERENCE RESOLUTION: Normalize nominalized action/event expressions by resolving the primary target entity as the subject and deriving the corresponding active relational predicate.
 
 Format MUST be strict JSON:
 {
+  "entities": [
+    { "name": "Canonical Entity Name", "type": "ontological_type" }
+  ],
   "triples": [
-    {
-      "subject": "Canonical entity name string",
-      "relation": "snake_case_relation_string",
-      "object": "Target entity, metric, count, or value string"
-    }
+    { "subject": "Subject Entity", "relation": "snake_case_predicate", "object": "Object Entity or Value" }
   ]
 }`;
 
@@ -115,43 +192,24 @@ Format MUST be strict JSON:
         clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '');
       }
 
-      let triples = [];
+      let parsed = { entities: [], triples: [] };
       try {
         const jsonMatch = clean.match(/\{[\s\S]*\}/);
-        const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : clean);
-        if (Array.isArray(parsed.triples)) {
-          triples = parsed.triples;
+        if (jsonMatch) {
+          const obj = JSON.parse(jsonMatch[0]);
+          parsed.entities = Array.isArray(obj.entities) ? obj.entities : [];
+          parsed.triples = Array.isArray(obj.triples) ? obj.triples : [];
         }
       } catch (parseErr) {
-        // Fallback parser: Recover individual completed triple JSON objects from malformed or truncated LLM streams
         const regex = /"subject"\s*:\s*"([^"]+)"[\s\S]*?"relation"\s*:\s*"([^"]+)"[\s\S]*?"object"\s*:\s*"([^"]+)"/g;
         let m;
         while ((m = regex.exec(clean)) !== null) {
-          triples.push({ subject: m[1].trim(), relation: m[2].trim(), object: m[3].trim() });
+          parsed.triples.push({ subject: m[1].trim(), relation: m[2].trim(), object: m[3].trim() });
         }
       }
 
-      if (triples.length > 0) {
-        for (const t of triples) {
-          if (t.subject && t.object && t.relation) {
-            const relNorm = t.relation.toLowerCase().replace(/\s+/g, '_');
-            const subToken = this.tokenRegistry.lookup(t.subject) || this.tokenRegistry.register({ canonical: t.subject, type: 'entity' });
-            const objToken = this.tokenRegistry.lookup(t.object) || this.tokenRegistry.register({ canonical: t.object, type: 'entity' });
-            this.graph.addRelationship(subToken.id, relNorm, objToken.id, 1.0);
-
-            // Also register inverse relation edge in graph for bidirectional queries
-            if (this.relationRegistry) {
-              const invRel = this.relationRegistry.getInverse(relNorm);
-              if (invRel && invRel !== relNorm) {
-                this.graph.addRelationship(objToken.id, invRel, subToken.id, 1.0);
-              }
-            }
-
-            if (ctx && typeof ctx.log === 'function') {
-              ctx.log('LearningAnalyst', `Ingested knowledge triple: (${subToken.canonical}) ──[${relNorm}]──► (${objToken.canonical})`);
-            }
-          }
-        }
+      if (parsed.entities.length > 0 || parsed.triples.length > 0) {
+        this._ingestKnowledge(parsed, ctx);
       }
     } catch (err) {
       if (ctx && typeof ctx.log === 'function') {
@@ -216,7 +274,7 @@ Format MUST be strict JSON:
     };
 
     if (this.brainMemory && typeof this.brainMemory.storePattern === 'function') {
-      this.brainMemory.storePattern(candidate).catch(() => {});
+      this.brainMemory.storePattern(candidate).catch(() => { });
     }
 
     return candidate;

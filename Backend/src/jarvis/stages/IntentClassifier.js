@@ -1,7 +1,7 @@
 import { defaultLLMManager } from '../providers/LLMManager.js';
 import { defaultToolRegistry } from '../tools/ToolRegistry.js';
 import { defaultRelationshipGraph } from '../tokens/RelationshipGraph.js';
-import { defaultTokenRegistry, TokenType } from '../tokens/TokenRegistry.js';
+import { defaultTokenRegistry, TokenType, STOP_WORDS } from '../tokens/TokenRegistry.js';
 import { GraphReasoner } from '../reasoning/GraphReasoner.js';
 import { defaultNeuralSemanticResolver } from '../neural/NeuralSemanticResolver.js';
 import { defaultConversationContextTracker } from './ConversationContextTracker.js';
@@ -30,19 +30,58 @@ export class IntentClassifier {
 
     const lower = utterance.toLowerCase();
     const candidateTokens = this.tokenRegistry.findCandidates(utterance, { limit: 60, minScore: 0.1 });
-    const stopWords = new Set([
-      'what', 'who', 'where', 'which', 'when', 'how', 'many', 'much', 'does', 'did', 'do', 'doing',
-      'the', 'are', 'was', 'were', 'is', 'am', 'been', 'being', 'have', 'has', 'had',
-      'tell', 'about', 'from', 'with', 'into', 'that', 'this', 'these', 'those',
-      'call', 'called', 'calling', 'say', 'said', 'saying', 'make', 'made', 'making',
-      'and', 'but', 'or', 'for', 'of', 'in', 'on', 'at', 'to', 'by', 'an', 'a'
-    ]);
 
     const utteranceWords = lower
       .split(/[^a-z0-9]+/)
-      .filter((w) => w.length > 2 && !stopWords.has(w));
+      .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
 
     const isReverseQuery = /^(who|which|whose|name\s+the)\b/i.test(lower);
+
+    // 1. Prioritize Multi-Hop Cognitive Graph Reasoner & Semantic Query Planner (Zero Hardcoding)
+    if (this.reasoner) {
+      const reasoningRes = this.reasoner.solve(utterance);
+      if (reasoningRes && reasoningRes.verified && reasoningRes.answer) {
+        let customAnswer = reasoningRes.explanation;
+        if (reasoningRes.isVerification) {
+          customAnswer = `Yes, sir. ${reasoningRes.rootEntity.canonical} is connected to ${reasoningRes.targetToken.canonical} (${reasoningRes.explanation}).`;
+        }
+        return {
+          subject: reasoningRes.rootEntity,
+          relation: reasoningRes.path.map((p) => p.relationCanonical || p.relation).join(' -> '),
+          target: reasoningRes.targetToken,
+          confidence: reasoningRes.confidence,
+          value: reasoningRes.value,
+          customAnswer,
+          reasoningResult: reasoningRes,
+        };
+      }
+
+      // 2. Constellation Multi-Constraint Intersection (N(A1) ∩ N(A2))
+      if (typeof this.reasoner.solveConstellationFromUtterance === 'function') {
+        const constellation = this.reasoner.solveConstellationFromUtterance(utterance);
+        if (constellation && constellation.found && constellation.count > 0) {
+          const targetTok = constellation.targetToken;
+          return {
+            subject: targetTok,
+            relation: 'matches_constraints',
+            target: targetTok,
+            confidence: constellation.confidence || 1.0,
+            value: constellation.value,
+            customAnswer: constellation.value,
+            isConstellation: true,
+          };
+        }
+      }
+    }
+
+    // 3. Fallback to direct 1-hop matching ONLY when target type is unconstrained
+    const plan = this.reasoner?.queryParser?.parse(utterance);
+    const targetType = plan?.targetType || null;
+    if (targetType) {
+      // If a specific target type (e.g. country, continent, planet) was queried and the multi-hop reasoner
+      // found no valid path, do NOT fall back to an mismatched 1-hop entity. Return null to trigger Epistemic Gap.
+      return null;
+    }
 
     let bestMatch = null;
     let highestScore = 0;
@@ -50,12 +89,12 @@ export class IntentClassifier {
     // 1. Scan candidate entity/concept tokens retrieved via inverted index
     for (const token of candidateTokens) {
       const canonical = (token.canonical || '').toLowerCase().trim();
-      if (canonical.length < 2 || stopWords.has(canonical)) continue;
+      if (canonical.length < 2 || STOP_WORDS.has(canonical)) continue;
 
-      const canonicalWords = canonical.split(/[_\s-]+/).filter((w) => w.length > 2 && !stopWords.has(w));
+      const canonicalWords = canonical.split(/[_\s-]+/).filter((w) => w.length > 2 && !STOP_WORDS.has(w));
       const exactMatch = lower.includes(canonical);
       const aliasMatch = Array.isArray(token.aliases) && token.aliases.some((a) => lower.includes(a.toLowerCase()));
-      // Strict multi-word & typo match: For multi-word entities (e.g. "Moonstone Device", "Blackstar Device"), require >= 80% word match so single shared nouns like "Device" never collide
+      // Strict multi-word & typo match
       const matchingCanonWordsCount = canonicalWords.filter((cw) => utteranceWords.some((uw) => this._isFuzzyMatch(cw, uw) || cw === uw)).length;
       const fuzzyMultiWordMatch = canonicalWords.length > 1 &&
         (canonicalWords.length === 2 ? matchingCanonWordsCount === 2 : (matchingCanonWordsCount / canonicalWords.length) >= 0.75);
@@ -69,7 +108,7 @@ export class IntentClassifier {
         const incomingMeta = this.graph.getIncoming(token.id);
 
         for (const metaEdge of [...outgoingMeta, ...incomingMeta]) {
-          if (['has_alternate_spelling', 'same_as', 'alias_of', 'aka'].includes(metaEdge.relation)) {
+          if (this.reasoner?.relationRegistry?.isMeta(metaEdge.relation)) {
             equivalentTokenIds.add(metaEdge.from);
             equivalentTokenIds.add(metaEdge.to);
           }
@@ -84,8 +123,15 @@ export class IntentClassifier {
         }
 
         for (const edge of candidateEdges) {
-          // Skip meta-equivalence relations when answering factual questions
-          if (['has_alternate_spelling', 'same_as', 'alias_of', 'aka'].includes(edge.relation) && !lower.includes('spell')) {
+          // Skip meta-equivalence & ontology relations when answering factual questions
+          if (this.reasoner?.relationRegistry?.isMeta(edge.relation) && !lower.includes('spell')) {
+            continue;
+          }
+
+          // Distinguish factual from associative relations: skip generic associative edges unless association is explicitly queried
+          const isAssociativeEdge = Boolean(this.reasoner?.relationRegistry?.isAssociative?.(edge.relation));
+          const isAssociationQuery = /\b(related|associated|connected|link|linked|relation|relationships)\b/i.test(lower);
+          if (isAssociativeEdge && !isAssociationQuery) {
             continue;
           }
 
@@ -94,7 +140,7 @@ export class IntentClassifier {
           if (!subjectToken || !targetToken) continue;
 
           // Skip self-edges or stopword tokens
-          if (stopWords.has((subjectToken.canonical || '').toLowerCase()) || stopWords.has((targetToken.canonical || '').toLowerCase())) {
+          if (STOP_WORDS.has((subjectToken.canonical || '').toLowerCase()) || STOP_WORDS.has((targetToken.canonical || '').toLowerCase())) {
             continue;
           }
 
@@ -103,23 +149,23 @@ export class IntentClassifier {
           const subjectStr = (subjectToken.canonical || '').toLowerCase();
 
           const relationWords = relationStr.split(/[_\s-]+/).filter((w) => w.length > 2);
-          const targetWords = targetStr.split(/[_\s-]+/).filter((w) => w.length > 2 && !stopWords.has(w));
+          const targetWords = targetStr.split(/[_\s-]+/).filter((w) => w.length > 2 && !STOP_WORDS.has(w));
 
           // Compute semantic equivalences strictly for subjectToken
           const subOutgoing = this.graph.getOutgoing(subjectToken.id);
           const subIncoming = this.graph.getIncoming(subjectToken.id);
           const subEquivIds = new Set([subjectToken.id]);
           for (const me of [...subOutgoing, ...subIncoming]) {
-            if (['has_alternate_spelling', 'same_as', 'alias_of', 'aka'].includes(me.relation)) {
+            if (this.reasoner?.relationRegistry?.isMeta(me.relation)) {
               subEquivIds.add(me.from);
               subEquivIds.add(me.to);
             }
           }
 
           const subjectWords = [
-            ...subjectStr.split(/[_\s-]+/).filter((w) => w.length > 2 && !stopWords.has(w)),
-            ...(Array.isArray(subjectToken.aliases) ? subjectToken.aliases.flatMap((a) => a.toLowerCase().split(/[_\s-]+/).filter((w) => w.length > 2 && !stopWords.has(w))) : []),
-            ...Array.from(subEquivIds).map((id) => this.tokenRegistry.getById(id)?.canonical?.toLowerCase()).filter(Boolean).flatMap((c) => c.split(/[_\s-]+/).filter((w) => w.length > 2 && !stopWords.has(w)))
+            ...subjectStr.split(/[_\s-]+/).filter((w) => w.length > 2 && !STOP_WORDS.has(w)),
+            ...(Array.isArray(subjectToken.aliases) ? subjectToken.aliases.flatMap((a) => a.toLowerCase().split(/[_\s-]+/).filter((w) => w.length > 2 && !STOP_WORDS.has(w))) : []),
+            ...Array.from(subEquivIds).map((id) => this.tokenRegistry.getById(id)?.canonical?.toLowerCase()).filter(Boolean).flatMap((c) => c.split(/[_\s-]+/).filter((w) => w.length > 2 && !STOP_WORDS.has(w)))
           ];
 
           // 1. Identify entity tokens strictly (Exact & Typo Levenshtein, but NOT inflectional stem matching)
@@ -130,7 +176,8 @@ export class IntentClassifier {
             if (a === b) return true;
             if (Math.abs(a.length - b.length) > 2) return false;
             if (a.length < 4 || b.length < 4) return false;
-            return this._isFuzzyMatch(a, b) && !this._isStemMatch(a, b);
+            const isStem = Boolean(this.reasoner?.relationRegistry?._isStemMatch(a, b));
+            return this._isFuzzyMatch(a, b) && !isStem;
           };
 
           const matchingSubWords = subjectWords.filter((w) => utteranceWords.some((uw) => w === uw || isEntityWordMatch(w, uw)));
@@ -148,7 +195,7 @@ export class IntentClassifier {
           );
 
           // Strict Subject Match: Multi-word entities require full non-stopword canonical match
-          const subjectCanonicalWords = subjectStr.split(/[_\s-]+/).filter((w) => w.length > 2 && !stopWords.has(w));
+          const subjectCanonicalWords = subjectStr.split(/[_\s-]+/).filter((w) => w.length > 2 && !STOP_WORDS.has(w));
           const matchingSubCanonCount = subjectCanonicalWords.filter((cw) =>
             matchingSubWords.some((sw) => this._isFuzzyMatch(cw, sw) || cw === sw)
           ).length;
@@ -157,7 +204,7 @@ export class IntentClassifier {
             : matchingSubWords.length > 0;
 
           // Strict Target Match: Multi-word entities require full non-stopword canonical match
-          const targetCanonicalWords = targetStr.split(/[_\s-]+/).filter((w) => w.length > 2 && !stopWords.has(w));
+          const targetCanonicalWords = targetStr.split(/[_\s-]+/).filter((w) => w.length > 2 && !STOP_WORDS.has(w));
           const matchingTargetCanonCount = targetCanonicalWords.filter((cw) =>
             matchingTargetWords.some((tw) => this._isFuzzyMatch(cw, tw) || cw === tw)
           ).length;
@@ -171,6 +218,7 @@ export class IntentClassifier {
             !targetWords.some((tw) => this._isFuzzyMatch(tw, qw))
           );
           const isIdentityReverseQuery = isReverseQuery && queryNonTargetPredicateWords.length === 0;
+          const isVerificationQuery = /^(?:did|does|do|is|was|has|had|can|will)\b/i.test(lower);
 
           // Forward Query: Subject matches + Relation/Target matches
           const isForwardMatch = hasSubjectMatch && (hasRelationMatch || hasTargetMatch);
@@ -193,11 +241,6 @@ export class IntentClassifier {
             continue;
           }
 
-          // Skip meta-equivalence & ontology relations when answering factual questions
-          if (['has_alternate_spelling', 'same_as', 'alias_of', 'aka', 'inverse'].includes(edge.relation) && !lower.includes(edge.relation)) {
-            continue;
-          }
-
           let score = 0;
           let answerText = '';
           const cleanRel = edge.relation.replace(/^(?:is_|has_)/, '').replace(/_of$/, '').replace(/_/g, ' ');
@@ -205,13 +248,16 @@ export class IntentClassifier {
           // Core Intent Priority: An edge matching the explicit queried relation predicate ranks highest
           const relMatchBonus = hasRelationMatch ? 10.0 : 0.0;
 
-          if (isReverseMatch && !hasSubjectMatch) {
+          if (isVerificationQuery && isVerificationMatch) {
+            score = (matchingSubWords.length * 4.0) + (matchingTargetWords.length * 4.0) + (hasRelationMatch ? 8.0 : 2.0) + relMatchBonus;
+            answerText = `Yes, sir. ${subjectToken.canonical} ${cleanRel}: ${targetToken.canonical}.`;
+          } else if (isReverseMatch && !hasSubjectMatch) {
             score = (matchingTargetWords.length * 4.0) + (hasRelationMatch ? 8.0 : 1.0) + relMatchBonus;
             const invRel = this._formatInverseRelation(edge.relation);
             answerText = `${targetToken.canonical} ${invRel} ${subjectToken.canonical}.`;
           } else {
-            // Forward/Verification: Strongly prioritize edges that actually answer the queried relation predicate
-            score = (matchingSubWords.length * 3.5) + (matchingRelWords.length * 5.0) + (matchingTargetWords.length * 2.0) + relMatchBonus;
+            // Forward/Property: Strongly prioritize edges that actually answer the queried relation predicate
+            score = (matchingSubWords.length * 3.5) + (matchingRelWords.length * 6.0) + (matchingTargetWords.length * 2.0) + relMatchBonus;
             answerText = `${subjectToken.canonical} — ${cleanRel}: ${targetToken.canonical}.`;
           }
 
@@ -225,6 +271,7 @@ export class IntentClassifier {
               confidence: edge.confidence || 1.0,
               value: isReverseMatch && !hasSubjectMatch ? subjectToken.canonical : targetToken.canonical,
               customAnswer: answerText,
+              isVerification: isVerificationQuery && isVerificationMatch,
             };
           }
         }
@@ -233,36 +280,6 @@ export class IntentClassifier {
 
     if (bestMatch) {
       return bestMatch;
-    }
-
-    if (this.reasoner) {
-      // 2. Try Linear Multi-Hop Path Reasoning (A -> B -> C)
-      const reasoningRes = this.reasoner.solve(utterance);
-      if (reasoningRes && reasoningRes.path && reasoningRes.path.length > 1) {
-        return {
-          subject: reasoningRes.rootEntity,
-          relation: reasoningRes.path.map((p) => p.relationCanonical || p.relation).join(' -> '),
-          target: reasoningRes.targetToken,
-          confidence: reasoningRes.confidence,
-          value: reasoningRes.value,
-          customAnswer: reasoningRes.explanation,
-        };
-      }
-
-      // 3. Try Constellation Multi-Constraint Intersection (N(A1) ∩ N(A2))
-      const constellation = this.reasoner.solveConstellationFromUtterance(utterance);
-      if (constellation && constellation.found && constellation.count > 0) {
-        const targetTok = constellation.targetToken;
-        return {
-          subject: targetTok,
-          relation: 'matches_constraints',
-          target: targetTok,
-          confidence: constellation.confidence || 1.0,
-          value: constellation.value,
-          customAnswer: constellation.value,
-          isConstellation: true,
-        };
-      }
     }
 
     // 4. Discourse Context & Anaphora Resolution (Multi-Turn Conversational Memory)
@@ -285,6 +302,62 @@ export class IntentClassifier {
       }
     }
 
+    // 5. Neural Semantic Candidate Scoring & Profile Synthesis across Candidate Edges
+    if (this.neuralResolver && candidateTokens.length > 0) {
+      const entityTokens = candidateTokens.filter((t) => t.type === TokenType.ENTITY || t.type === 'entity');
+
+      for (const ent of entityTokens) {
+        const out = this.graph.getOutgoing(ent.id);
+        const validEdges = [];
+        for (const e of out) {
+          if (this.reasoner?.relationRegistry?.isMeta(e.relation)) continue;
+          if (this.reasoner?.relationRegistry?.isAssociative(e.relation)) continue;
+          const targetTok = this.tokenRegistry.getById(e.to);
+          if (targetTok) {
+            validEdges.push({
+              subject: ent,
+              relation: e.relation,
+              target: targetTok,
+              confidence: e.confidence || 1.0,
+              value: targetTok.canonical,
+            });
+          }
+        }
+
+        if (validEdges.length > 0) {
+          const scored = this.neuralResolver.scoreCandidateEdges(utterance, validEdges);
+          if (scored.length > 0 && scored[0].neuralScore > 0) {
+            const top = scored[0];
+            const cleanRel = top.relation.replace(/^(?:is_|has_)/, '').replace(/_of$/, '').replace(/_/g, ' ');
+            return {
+              subject: top.subject,
+              relation: top.relation,
+              target: top.target,
+              confidence: top.confidence,
+              value: top.value,
+              customAnswer: `${top.subject.canonical} — ${cleanRel}: ${top.value}.`,
+              neuralScored: true,
+            };
+          }
+
+          // Fallback: If no single relation dominated, return structured profile of entity
+          const lines = validEdges.map((e) => {
+            const cleanRel = e.relation.replace(/^(?:is_|has_)/, '').replace(/_of$/, '').replace(/_/g, ' ');
+            return `• ${cleanRel.charAt(0).toUpperCase() + cleanRel.slice(1)}: ${e.value}`;
+          });
+          return {
+            subject: ent,
+            relation: 'knowledge_profile',
+            target: ent,
+            confidence: 1.0,
+            value: ent.canonical,
+            customAnswer: `${ent.canonical}:\n\n${lines.join('\n')}`,
+            isEntityProfile: true,
+          };
+        }
+      }
+    }
+
     return null;
   }
 
@@ -301,28 +374,6 @@ export class IntentClassifier {
   }
 
   /**
-   * Inflectional suffix stripper for morphological root matching (Zero Hardcoded Dictionaries)
-   */
-  _stripSuffix(w) {
-    if (!w || w.length <= 3) return w;
-    return w.replace(/(?:ingly|fully|ment|tion|sion|ness|less|ship|able|ible|ical|ance|ence|ies|ied|ing|ed|er|est|ly|es|s)$/i, '');
-  }
-
-  /**
-   * Pure algorithmic morphological root stem matcher (Zero Hardcoded Dictionaries)
-   */
-  _isStemMatch(w1, w2) {
-    if (!w1 || !w2) return false;
-    const a = w1.toLowerCase();
-    const b = w2.toLowerCase();
-    if (a === b) return true;
-    const s1 = this._stripSuffix(a);
-    const s2 = this._stripSuffix(b);
-    if (s1.length >= 3 && s2.length >= 3 && s1 === s2) return true;
-    return false;
-  }
-
-  /**
    * Algorithmic typo and transposition matcher (Zero Hardcoding)
    */
   _isFuzzyMatch(w1, w2) {
@@ -330,7 +381,7 @@ export class IntentClassifier {
     const a = w1.toLowerCase();
     const b = w2.toLowerCase();
     if (a === b) return true;
-    if (this._isStemMatch(a, b)) return true;
+    if (this.reasoner?.relationRegistry?._isStemMatch(a, b)) return true;
     if (Math.abs(a.length - b.length) > 2) return false;
     // Disallow fuzzy matching on short words (< 4 chars) to prevent matching stopwords/operators
     if (a.length < 4 || b.length < 4) return false;
@@ -360,63 +411,15 @@ export class IntentClassifier {
     return dp[a.length][b.length] <= maxDiff;
   }
 
-  _stripSuffix(w) {
-    if (!w || w.length <= 3) return w;
-    return w.replace(/(?:ingly|fully|ment|tion|sion|ness|less|ship|able|ible|ical|ance|ence|ies|ied|ing|ed|er|est|ly|es|s)$/i, '');
-  }
-
-  _isStemMatch(w1, w2) {
-    if (!w1 || !w2) return false;
-    const a = w1.toLowerCase();
-    const b = w2.toLowerCase();
-    if (a === b) return true;
-    const s1 = this._stripSuffix(a);
-    const s2 = this._stripSuffix(b);
-    if (s1.length >= 3 && s2.length >= 3 && s1 === s2) return true;
-    return false;
-  }
-
   /**
-   * Graph-Driven Semantic Relation Equivalence (Zero Hardcoded Dictionaries)
+   * Graph-Driven Semantic Relation Equivalence (Delegated 100% to RelationRegistry Single Source of Truth)
    */
   _isRelationEquivalent(rel1, rel2) {
     if (!rel1 || !rel2) return false;
-    const r1 = rel1.toLowerCase().replace(/^(?:is_|has_)/, '').replace(/_of$/, '').replace(/[\s-]+/g, '_');
-    const r2 = rel2.toLowerCase().replace(/^(?:is_|has_)/, '').replace(/_of$/, '').replace(/[\s-]+/g, '_');
-
-    if (r1 === r2) return true;
-    if (this._isStemMatch(r1, r2)) return true;
-
-    // Component-level stem matching (e.g. release_year <-> released, director_of <-> direct)
-    const parts1 = r1.split('_');
-    const parts2 = r2.split('_');
-    for (const p1 of parts1) {
-      for (const p2 of parts2) {
-        if (p1 === p2 || this._isStemMatch(p1, p2)) return true;
-      }
-    }
-
-    // Check if relationRegistry equates, inverts, or resolves dynamic clusters/meta-edges
     if (this.reasoner?.relationRegistry) {
-      const eq = this.reasoner.relationRegistry.areEquivalentOrInverse(r1, r2);
-      if (eq?.matches) return true;
+      return Boolean(this.reasoner.relationRegistry.areEquivalentOrInverse(rel1, rel2)?.matches);
     }
-
-    // Check if relations are semantically linked as synonyms in the RelationshipGraph
-    if (this.tokenRegistry && this.graph) {
-      const tok1 = this.tokenRegistry.lookup(rel1);
-      const tok2 = this.tokenRegistry.lookup(rel2);
-      if (tok1 && tok2) {
-        const edges1 = this.graph.getOutgoing(tok1.id);
-        const edges2 = this.graph.getOutgoing(tok2.id);
-        const isLinked = [...edges1, ...edges2].some((e) =>
-          (e.from === tok1.id && e.to === tok2.id) ||
-          (e.from === tok2.id && e.to === tok1.id)
-        );
-        if (isLinked) return true;
-      }
-    }
-    return false;
+    return rel1.trim().toLowerCase() === rel2.trim().toLowerCase();
   }
 
   /**

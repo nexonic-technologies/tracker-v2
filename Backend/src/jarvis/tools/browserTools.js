@@ -1,3 +1,5 @@
+import { STOP_WORDS } from '../tokens/TokenRegistry.js';
+
 /**
  * Autonomous Browser & Knowledge Discovery Tool Suite
  * Provides external factual retrieval and information discovery for Epistemic Gaps.
@@ -36,15 +38,6 @@ export const browserTools = [
         };
       }
 
-      const stopWords = new Set([
-        'what', 'who', 'where', 'which', 'when', 'how', 'many', 'much', 'does', 'did', 'do', 'doing',
-        'the', 'are', 'was', 'were', 'is', 'am', 'been', 'being', 'have', 'has', 'had',
-        'tell', 'about', 'from', 'with', 'into', 'that', 'this', 'these', 'those',
-        'call', 'called', 'calling', 'say', 'said', 'saying', 'make', 'made', 'making',
-        'and', 'but', 'or', 'for', 'of', 'in', 'on', 'at', 'to', 'by', 'an', 'a',
-        'work', 'worked', 'working', 'meaning', 'definition', 'define', 'mean', 'means'
-      ]);
-
       // Build prioritized search candidates:
       // 1. Explicit subject if provided
       // 2. Proper nouns / capitalized phrases in query (e.g. "Murnal Takur")
@@ -56,7 +49,7 @@ export const browserTools = [
       }
 
       const properNouns = (q.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g) || [])
-        .filter((w) => !['How', 'What', 'Who', 'Where', 'When', 'Why', 'Which', 'Tell', 'Name'].includes(w));
+        .filter((w) => !STOP_WORDS.has(w.toLowerCase()));
       for (const pn of properNouns) {
         if (!candidates.includes(pn)) candidates.push(pn);
       }
@@ -64,7 +57,7 @@ export const browserTools = [
       const filteredKeywords = q
         .replace(/[^a-zA-Z0-9\s]/g, '')
         .split(/\s+/)
-        .filter((w) => !stopWords.has(w.toLowerCase()) && w.length > 2)
+        .filter((w) => !STOP_WORDS.has(w.toLowerCase()) && w.length > 2)
         .join(' ');
       if (filteredKeywords && !candidates.includes(filteredKeywords)) {
         candidates.push(filteredKeywords);

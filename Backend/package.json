@@ -20,7 +20,8 @@
     "db:reindex": "node -e \"import('dotenv').then(d => d.config()); import('./src/Config/ConnectDB.js').then(c => c.default()).then(() => import('./src/services/databaseIndexer.js')).then(s => s.default.createOptimalIndexes()).then(() => process.exit(0))\"",
     "test:security": "node testSecurity.js",
     "jarvis:repl": "node src/jarvis/cli.js",
-    "jarvis:test": "node src/jarvis/tests/slotMatching.test.js"
+    "jarvis:test": "node src/jarvis/tests/slotMatching.test.js",
+    "jarvis:clean": "node scripts/clearJarvisMemory.js"
   },
   "keywords": [],
   "author": "",

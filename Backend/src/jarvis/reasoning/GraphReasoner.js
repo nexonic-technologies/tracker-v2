@@ -1,204 +1,375 @@
 import { defaultRelationshipGraph } from '../tokens/RelationshipGraph.js';
-import { defaultTokenRegistry } from '../tokens/TokenRegistry.js';
+import { defaultTokenRegistry, TokenType } from '../tokens/TokenRegistry.js';
 import { defaultRelationRegistry } from './RelationRegistry.js';
-import { defaultSemanticQueryParser } from './SemanticQueryParser.js';
+import { SemanticQueryParser, defaultSemanticQueryParser } from './SemanticQueryParser.js';
 
 /**
- * GraphReasoner: Multi-Hop Variable-Binding Cognitive Graph Reasoning Engine
- * (Sacred Law Compliant: Zero hardcoding, deterministic graph traversal with formal provenance)
+ * Declarative Reasoning Engine Configuration
+ * (Sacred Law Compliant: Single Source of Truth for Cognitive Hyperparameters)
+ */
+export const REASONING_CONFIG = Object.freeze({
+  MAX_HOPS: Number(process.env.JARVIS_MAX_HOPS) || 8,
+  BEAM_WIDTH: Number(process.env.JARVIS_BEAM_WIDTH) || 16,
+  MIN_PATH_CONFIDENCE: Number(process.env.JARVIS_MIN_CONFIDENCE) || 0.20,
+  HOP_DECAY_FACTOR: Number(process.env.JARVIS_HOP_DECAY) || 0.96,
+  TARGET_MATCH_WEIGHT: 2.5,
+  TARGET_MISMATCH_WEIGHT: 0.4,
+  COHERENCE_BOOST: 0.25,
+  UNCONSTRAINED_CONFIDENCE_SCALE: 0.70,
+  MAX_UNCONSTRAINED_CONFIDENCE: 0.65,
+});
+
+/**
+ * GraphReasoner: Universal Multi-Hop Cognitive Reasoning Engine
+ * Implements Controlled Multi-Hop Beam Traversal, Direction-Aware Cycle Prevention,
+ * Dynamic Target-Type Taxonomy Resolution, and Calibrated Path Confidence Scoring.
+ * (Sacred Law Compliant: Zero Hardcoded Dictionaries, 100% Graph & Typology Driven)
  */
 export class GraphReasoner {
-  constructor({ graph, tokenRegistry, relationRegistry, queryParser } = {}) {
+  constructor({
+    graph,
+    tokenRegistry,
+    relationRegistry,
+    queryParser,
+    config = {},
+  } = {}) {
     this.graph = graph || defaultRelationshipGraph;
     this.tokenRegistry = tokenRegistry || defaultTokenRegistry;
     this.relationRegistry = relationRegistry || defaultRelationRegistry;
-    this.queryParser = queryParser || defaultSemanticQueryParser;
-  }
-
-  _isRelationMatch(edgeRel, queryRel, targetNode = null) {
-    if (!edgeRel || !queryRel) return false;
-    const e = edgeRel.toLowerCase().replace(/[\s-]+/g, '_');
-    const q = queryRel.toLowerCase().replace(/[\s-]+/g, '_');
-
-    // Generic associative edges should not satisfy specific property queries
-    if (['related_to', 'associated_with', 'connected_to'].includes(e) && !['related', 'associated', 'connected'].includes(q)) {
-      return false;
-    }
-
-    if (e === q) return true;
-    if (e === `has_${q}` || e === `${q}_of` || q === `has_${e}` || q === `${e}_of`) return true;
-
-    // Prepositional base stripping (e.g. located_in <-> located, head_of <-> head, father_of <-> father)
-    const eBase = e.replace(/^(?:has_|is_)/, '').replace(/_(?:in|of|by|at|to|from|on|for)$/, '');
-    const qBase = q.replace(/^(?:has_|is_)/, '').replace(/_(?:in|of|by|at|to|from|on|for)$/, '');
-    if (eBase.length >= 3 && eBase === qBase) return true;
-
-    // Delegate equivalence and inverse checking to RelationRegistry
-    if (this.relationRegistry) {
-      const eq = this.relationRegistry.areEquivalentOrInverse(e, q);
-      if (eq.matches) return true;
-    }
-
-    // Target node concept/type/alias matching (e.g. query specifies "department" -> node is "Engineering")
-    if (targetNode) {
-      const canon = (targetNode.canonical || '').toLowerCase();
-      const type = (targetNode.type || '').toLowerCase();
-      if (canon === q || type === q || (Array.isArray(targetNode.aliases) && targetNode.aliases.some((a) => a.toLowerCase() === q))) {
-        return true;
-      }
-    }
-
-    return false;
+    this.queryParser = queryParser || new SemanticQueryParser({
+      tokenRegistry: this.tokenRegistry,
+      relationRegistry: this.relationRegistry,
+      graph: this.graph,
+    });
+    this.config = { ...REASONING_CONFIG, ...config };
   }
 
   /**
-   * Solves a multi-hop or single-hop natural language query over the cognitive graph
-   * @param {string|object} utteranceOrAST
-   * @returns {object|null}
+   * Solves natural language query or structured QueryPlan across the cognitive graph
+   * @param {string|object} utteranceOrPlan
+   * @returns {object|null} Structured ReasoningResult
    */
-  solve(utteranceOrAST) {
-    const ast = typeof utteranceOrAST === 'string'
-      ? this.queryParser.parse(utteranceOrAST)
-      : utteranceOrAST;
+  solve(utteranceOrPlan) {
+    const plan = typeof utteranceOrPlan === 'string'
+      ? this.queryParser.parse(utteranceOrPlan)
+      : utteranceOrPlan;
 
-    if (!ast || !ast.rootEntity || !Array.isArray(ast.hops) || ast.hops.length === 0) {
+    if (!plan || !plan.anchorToken) {
       return null;
     }
 
-    const rootId = ast.rootEntity.id;
-    const relationSeq = ast.hops.map((h) => h.relation);
-    const verified = this.graph.findVerifiedPath(rootId, relationSeq, {
-      maxDepth: 10,
-      registry: this.tokenRegistry,
-      relationRegistry: this.relationRegistry,
+    const { anchorToken, targetType, targetEntityToken, relationalHints = [], isVerification = false } = plan;
+
+    console.log('\n╔══════════════════════════════════════════════════════════════════════════════╗');
+    console.log('║ 🔍 J.A.R.V.I.S. Cognitive Multi-Hop Graph Reasoner Traversal Engine          ║');
+    console.log('╠══════════════════════════════════════════════════════════════════════════════╣');
+    console.log(`║ Query Utterance    : "${plan.rawUtterance || ''}"`);
+    console.log(`║ Recognized Anchor  : ${anchorToken.canonical} (ID: ${anchorToken.id}, Type: ${anchorToken.type || 'entity'})`);
+    console.log(`║ Target SemanticType: ${targetEntityToken ? `${targetEntityToken.canonical} (${targetType || targetEntityToken.type || 'entity'})` : (targetType || '(unconstrained general query)')}`);
+    console.log(`║ Relational Hints   : [${relationalHints.join(', ')}]`);
+    console.log(`║ Search Parameters  : Max Hops: ${this.config.MAX_HOPS} | Beam Width: ${this.config.BEAM_WIDTH} | Min Conf: ${this.config.MIN_PATH_CONFIDENCE}`);
+    console.log('╚══════════════════════════════════════════════════════════════════════════════╝');
+
+    // Search multi-hop candidate paths satisfying constraints and target semantic type
+    const searchResult = this._searchMultiHopPaths({
+      anchorToken,
+      targetType,
+      targetEntityToken,
+      relationalHints,
+      maxHops: this.config.MAX_HOPS,
+      beamWidth: this.config.BEAM_WIDTH,
+      minConfidence: this.config.MIN_PATH_CONFIDENCE,
     });
 
-    if (!verified.found || !verified.validated) {
-      return null; // Path disconnected or relation mismatch
+    if (!searchResult || !searchResult.topPath) {
+      console.log('\n╔══════════════════════════════════════════════════════════════════════════════╗');
+      console.log('║ ⚠️ Multi-Hop Reasoning: No Verified Path Reached Goal                         ║');
+      console.log(`║ Anchor: ${anchorToken.canonical} | Target: ${targetEntityToken ? targetEntityToken.canonical : (targetType || 'none')} | Hops Explored: ${this.config.MAX_HOPS} ║`);
+      console.log('╚══════════════════════════════════════════════════════════════════════════════╝\n');
+      return null;
     }
 
-    const explanationParts = verified.edges.map((e, idx) => {
-      const fromName = verified.nodes[idx]?.canonical || String(e.fromId);
-      const toName = verified.nodes[idx + 1]?.canonical || String(e.toId);
-      return `${fromName} — ${e.relationCanonical.replace(/_/g, ' ')}: ${toName}`;
+    const top = searchResult.topPath;
+    const explanationParts = top.path.map((e, idx) => {
+      const fromName = top.nodes[idx]?.canonical || String(e.fromId);
+      const toName = top.nodes[idx + 1]?.canonical || String(e.toId);
+      const relName = (e.relationCanonical || e.relation || '').replace(/_/g, ' ');
+      return `${fromName} — ${relName}: ${toName}`;
     });
 
+    const targetNode = top.nodes[top.nodes.length - 1];
+
+    console.log('\n╔══════════════════════════════════════════════════════════════════════════════╗');
+    console.log('║ ✅ Multi-Hop Reasoning Chain Solved                                           ║');
+    console.log('╠══════════════════════════════════════════════════════════════════════════════╣');
+    console.log(`║ Destination Token  : ${targetNode.canonical} (ID: ${targetNode.id}, Type: ${targetNode.type || 'entity'})`);
+    console.log(`║ Total Traversal Hops: ${top.path.length} Hop(s)`);
+    console.log(`║ Reasoning Evidence : ${explanationParts.join(', ')}`);
+    console.log(`║ Calibrated Conf    : ${(top.confidence * 100).toFixed(1)}% (Path Score: ${top.score.toFixed(3)})`);
+    console.log(`║ Provenance         : local_graph (0 API Tokens)`);
+    console.log('╚══════════════════════════════════════════════════════════════════════════════╝\n');
+
     return {
-      success: true,
-      queryType: ast.queryType,
-      rootEntity: ast.rootEntity,
-      targetToken: verified.targetToken,
-      value: verified.targetToken?.canonical || String(verified.targetId),
-      path: verified.edges,
-      nodes: verified.nodes,
+      status: 'verified',
+      answer: {
+        id: targetNode.id,
+        canonical: targetNode.canonical,
+        type: targetNode.type,
+      },
+      rootEntity: anchorToken,
+      targetToken: targetNode,
+      value: targetNode.canonical,
+      path: top.path,
+      nodes: top.nodes,
+      hopCount: top.path.length,
+      targetType: targetType || targetNode.type || 'entity',
+      confidence: top.confidence,
+      score: top.score,
+      provenance: 'local_graph',
+      verified: true,
+      isVerification: Boolean(isVerification || plan.isVerificationQuery),
       explanation: explanationParts.join(', '),
-      confidence: verified.confidence || 1.0,
-      validated: true,
+      competingPaths: searchResult.competingPaths || [],
+      rawUtterance: plan.rawUtterance || '',
     };
   }
 
   /**
-   * Resolves multi-constraint constellation intersection over the graph
-   * @param {Array<{ relation: string, target?: any, targetId?: number }>} constraints
-   * @returns {object}
+   * Controlled Multi-Hop Graph Traversal Engine
+   * Explores directional graph trajectories with direction-aware cycle prevention,
+   * evaluates candidate destination nodes against targetType or targetEntityToken, and scores competing paths.
    */
-  resolveConstellation(constraints = []) {
-    const res = this.graph.findConstellationIntersection(constraints, {
-      registry: this.tokenRegistry,
-      relationRegistry: this.relationRegistry,
-    });
+  _searchMultiHopPaths({ anchorToken, targetType = null, targetEntityToken = null, relationalHints = [], maxHops = 5, beamWidth = 10, minConfidence = 0.35 }) {
+    const rootId = anchorToken.id;
+    const initialNode = this.tokenRegistry.getById(rootId) || anchorToken;
 
-    if (!res.found || res.count === 0) {
-      return { success: false, found: false, reason: 'CONSTELLATION_NOT_FOUND' };
-    }
+    // Initial frontier state
+    let beam = [{
+      currentNode: initialNode,
+      path: [],
+      nodes: [initialNode],
+      rawConfidence: 1.0,
+      visitedKeys: new Set(),
+      visitedNodeIds: new Set([rootId]),
+    }];
 
-    return {
-      success: true,
-      found: true,
-      count: res.count,
-      entities: res.entities,
-      targetToken: res.entities[0],
-      value: res.entities.map((e) => e.canonical).join(', '),
-      explanation: `Verified intersection: ${res.entities.map((e) => e.canonical).join(', ')}`,
-      validated: true,
-    };
-  }
+    const goalPaths = [];
+    const directFallbackPaths = [];
 
-  /**
-   * Automatically extracts and solves multi-constraint constellation from utterance
-   * (Sacred Law Compliant: Zero hardcoding, 100% graph topology and token-driven)
-   * @param {string} utterance
-   * @returns {object|null}
-   */
-  solveConstellationFromUtterance(utterance) {
-    if (!utterance || typeof utterance !== 'string') return null;
+    for (let hop = 1; hop <= maxHops; hop++) {
+      const nextCandidates = [];
+      console.log(`➔ [Hop ${hop}/${maxHops}] Frontier Size: ${beam.length} trajectory candidate(s)`);
 
-    const lower = utterance.toLowerCase();
-    const utteranceWords = new Set(lower.split(/[^a-z0-9]+/).filter((w) => w.length >= 2));
+      for (const state of beam) {
+        const u = state.currentNode;
+        const outgoing = this.graph.getOutgoing(u.id);
+        const incoming = this.graph.getIncoming(u.id);
 
-    // 1. Extract candidate tokens recognized in the utterance
-    const candidates = this.tokenRegistry.findCandidates(utterance, { limit: 25, minScore: 0.2 });
-    if (candidates.length < 2) return null;
+        const candidateEdges = [];
 
-    // 2. Select distinct entity & literal anchors (excluding target concept categories like 'movie')
-    const entityAnchors = [];
-    const targetConcepts = [];
-    const coveredWords = new Set();
+        // 1. Forward edges: u ──[rel]──► v
+        for (const e of outgoing) {
+          if (this.relationRegistry.isMeta(e.relation) || this.relationRegistry.isTaxonomic(e.relation)) continue;
+          if (this.relationRegistry.isAssociative(e.relation)) continue;
+          candidateEdges.push({
+            fromId: e.from,
+            toId: e.to,
+            relation: e.relation,
+            confidence: typeof e.confidence === 'number' ? e.confidence : 1.0,
+            direction: 'forward',
+          });
+        }
 
-    // Sort by canonical word length descending
-    const sortedCandidates = [...candidates]
-      .filter((c) => c.type !== 'property' && c.type !== 'action')
-      .sort((a, b) => (b.canonical?.length || 0) - (a.canonical?.length || 0));
+        // 2. Reverse / Incoming factual edges: v ──[rel]──► u
+        for (const e of incoming) {
+          if (this.relationRegistry.isMeta(e.relation) || this.relationRegistry.isTaxonomic(e.relation)) continue;
+          if (this.relationRegistry.isAssociative(e.relation)) continue;
+          const invRel = this.relationRegistry.getInverse(e.relation) || e.relation;
+          candidateEdges.push({
+            fromId: e.from,
+            toId: e.to,
+            relation: invRel,
+            confidence: (typeof e.confidence === 'number' ? e.confidence : 1.0) * 0.95,
+            direction: 'reverse',
+          });
+        }
 
-    for (const cand of sortedCandidates) {
-      const canon = (cand.canonical || '').toLowerCase().trim();
-      const canonWords = canon.split(/[^a-z0-9]+/).filter((w) => w.length >= 2);
+        for (const edge of candidateEdges) {
+          const nextNodeId = edge.direction === 'forward' ? edge.toId : edge.fromId;
+          const nextNode = this.tokenRegistry.getById(nextNodeId);
+          if (!nextNode) continue;
 
-      // Check if canonical words are present in utterance
-      const matchesUtterance = canonWords.length > 0 && canonWords.every((w) => utteranceWords.has(w));
-      const hasUncoveredWord = canonWords.some((w) => !coveredWords.has(w));
+          // Direction-Aware Edge Key: fromId:rel:toId:dir
+          const edgeKey = `${u.id}:${edge.relation}:${nextNodeId}:${edge.direction}`;
+          if (state.visitedKeys.has(edgeKey) || state.visitedNodeIds.has(nextNodeId)) {
+            continue; // Prevent cycles and inverse ping-ponging
+          }
 
-      if (matchesUtterance && hasUncoveredWord) {
-        const inc = this.graph.getIncoming(cand.id);
-        const out = this.graph.getOutgoing(cand.id);
-        const hasConnectivity = inc.length > 0 || out.length > 0;
+          const nextRawConfidence = state.rawConfidence * edge.confidence;
+          if (nextRawConfidence < minConfidence) continue;
 
-        if (hasConnectivity) {
-          if (cand.type === 'entity' || /^\d+$/.test(canon)) {
-            entityAnchors.push(cand);
-            for (const w of canonWords) coveredWords.add(w);
-          } else if (cand.type === 'concept') {
-            targetConcepts.push(cand);
+          const nextVisitedKeys = new Set(state.visitedKeys);
+          nextVisitedKeys.add(edgeKey);
+
+          const nextVisitedNodes = new Set(state.visitedNodeIds);
+          nextVisitedNodes.add(nextNodeId);
+
+          const nextPath = [
+            ...state.path,
+            {
+              fromId: u.id,
+              relationCanonical: edge.relation,
+              toId: nextNodeId,
+              confidence: edge.confidence,
+              direction: edge.direction,
+            }
+          ];
+
+          const nextNodes = [...state.nodes, nextNode];
+
+          const nextState = {
+            currentNode: nextNode,
+            path: nextPath,
+            nodes: nextNodes,
+            rawConfidence: nextRawConfidence,
+            visitedKeys: nextVisitedKeys,
+            visitedNodeIds: nextVisitedNodes,
+          };
+
+          // Determine if destination node satisfies the query goal
+          let isGoalMatch = false;
+
+          if (targetEntityToken) {
+            const isIdMatch = nextNode.id === targetEntityToken.id;
+            const isCanonMatch = targetEntityToken.canonical && nextNode.canonical &&
+              this.tokenRegistry._normalize(nextNode.canonical) === this.tokenRegistry._normalize(targetEntityToken.canonical);
+            const isAliasMatch = Array.isArray(targetEntityToken.aliases) &&
+              targetEntityToken.aliases.some((a) => this.tokenRegistry._normalize(a) === this.tokenRegistry._normalize(nextNode.canonical));
+
+            if (isIdMatch || isCanonMatch || isAliasMatch) {
+              isGoalMatch = true;
+            }
+          } else if (targetType) {
+            const matchesTarget = this.relationRegistry.matchesTargetType(nextNode, targetType, this.graph, this.tokenRegistry) ||
+              (edge && this.relationRegistry.areEquivalentOrInverse(edge.relation, targetType)?.matches === true);
+
+            if (matchesTarget) {
+              const edgeSatisfiesFirstHint = relationalHints.length === 0 ||
+                (edge && this.relationRegistry.areEquivalentOrInverse(edge.relation, relationalHints[0])?.matches === true) ||
+                this.relationRegistry.areEquivalentOrInverse(relationalHints[0], targetType)?.matches === true;
+
+              if (relationalHints.length > 1 && !edgeSatisfiesFirstHint && nextState.path.length < 2) {
+                isGoalMatch = false;
+              } else {
+                isGoalMatch = true;
+              }
+            }
+          } else if (relationalHints.length > 0 && nextState.path.length >= relationalHints.length) {
+            // General query without targetType constraint: completes when full relational trajectory is traversed
+            isGoalMatch = true;
+          }
+
+          if (isGoalMatch) {
+            const score = this._calculatePathScore(nextState, targetType, relationalHints, true);
+            console.log(`  • [${u.canonical || u.id}] ──(${edge.direction}: ${edge.relation})──► [${nextNode.canonical || nextNode.id}] (Type: ${nextNode.type || 'entity'}, Conf: ${nextRawConfidence.toFixed(3)})`);
+            console.log(`    └─ Goal Match [${targetEntityToken ? targetEntityToken.canonical : (targetType || 'relational_trajectory')}]: YES ✓ (GOAL REACHED!)`);
+
+            goalPaths.push({
+              ...nextState,
+              score,
+              confidence: this._calculateCalibratedConfidence(nextState, true),
+              targetMatched: true,
+            });
+          } else {
+            const score = this._calculatePathScore(nextState, targetType, relationalHints, false);
+            console.log(`  • [${u.canonical || u.id}] ──(${edge.direction}: ${edge.relation})──► [${nextNode.canonical || nextNode.id}] (Type: ${nextNode.type || 'entity'}, Conf: ${nextRawConfidence.toFixed(3)})`);
+            console.log(`    └─ Goal Match [${targetType || 'relational_trajectory'}]: NO ✗ (expanding beam...)`);
+
+            if (!targetType) {
+              directFallbackPaths.push({
+                ...nextState,
+                score,
+                confidence: this._calculateCalibratedConfidence(nextState, false),
+                targetMatched: false,
+              });
+            }
+            nextCandidates.push({ ...nextState, score });
           }
         }
       }
+
+      if (goalPaths.length > 0) {
+        break; // Reached valid semantic target! Terminate search.
+      }
+
+      // Prune beam to top-K scoring candidate trajectories
+      nextCandidates.sort((a, b) => b.score - a.score);
+      beam = nextCandidates.slice(0, beamWidth);
+      if (beam.length === 0) break;
     }
 
-    if (entityAnchors.length < 2) return null;
-
-    // 3. Deterministic Topological Intersection across active entity anchors
-    const anchorIds = entityAnchors.map((a) => a.id);
-    const intersection = this.graph.findAnchorIntersection(anchorIds, { registry: this.tokenRegistry });
-
-    if (intersection && intersection.found && intersection.primaryEntity) {
-      const entity = intersection.primaryEntity;
+    // Rank goal paths
+    if (goalPaths.length > 0) {
+      goalPaths.sort((a, b) => b.score - a.score);
       return {
-        found: true,
-        count: intersection.count,
-        targetToken: entity,
-        value: entity.canonical,
-        candidateIds: intersection.candidateIds,
-        entities: intersection.entities,
-        anchors: intersection.anchors,
-        targetConcepts,
-        confidence: intersection.confidence,
-        rankedCandidates: intersection.rankedCandidates || [],
-        competingHypotheses: intersection.competingHypotheses || [],
-        margin: intersection.margin !== undefined ? intersection.margin : intersection.confidence,
+        topPath: goalPaths[0],
+        competingPaths: goalPaths.slice(1),
+        allGoalPaths: goalPaths,
+      };
+    }
+
+    // Fallback for general unconstrained queries
+    if (!targetType && directFallbackPaths.length > 0) {
+      directFallbackPaths.sort((a, b) => b.score - a.score);
+      return {
+        topPath: directFallbackPaths[0],
+        competingPaths: directFallbackPaths.slice(1),
+        allGoalPaths: directFallbackPaths,
       };
     }
 
     return null;
+  }
+
+  /**
+   * Multi-Hop Path Scoring Formulation
+   * pathScore = prod(edgeConf) * (hopDecay)^(k-1) * typeMatchWeight * relationalCoherence
+   */
+  _calculatePathScore(state, targetType, relationalHints = [], isTargetMatch = false) {
+    const hopCount = state.path.length;
+    const decay = Math.pow(this.config.HOP_DECAY_FACTOR, Math.max(0, hopCount - 1));
+    const baseConf = state.rawConfidence;
+
+    let typeMatchWeight = 1.0;
+    if (targetType) {
+      typeMatchWeight = isTargetMatch ? this.config.TARGET_MATCH_WEIGHT : this.config.TARGET_MISMATCH_WEIGHT;
+    }
+
+    let coherenceBonus = 1.0;
+    if (Array.isArray(relationalHints) && relationalHints.length > 0) {
+      const pathRelWords = state.path.map((p) => p.relationCanonical.toLowerCase());
+      const destNodeCanon = (state.currentNode?.canonical || '').toLowerCase();
+      for (const hint of relationalHints) {
+        if (pathRelWords.some((r) => r.includes(hint) || hint.includes(r))) {
+          coherenceBonus += this.config.COHERENCE_BOOST;
+        }
+        if (destNodeCanon.includes(hint)) {
+          coherenceBonus += this.config.COHERENCE_BOOST;
+        }
+      }
+    }
+
+    return baseConf * decay * typeMatchWeight * coherenceBonus;
+  }
+
+  /**
+   * Calibrated Multi-Hop Path Confidence
+   */
+  _calculateCalibratedConfidence(state, isTargetMatch = false) {
+    const hopCount = state.path.length;
+    const decay = Math.pow(this.config.HOP_DECAY_FACTOR, Math.max(0, hopCount - 1));
+    const base = state.rawConfidence * decay;
+    return Math.min(1.0, base);
   }
 }
 

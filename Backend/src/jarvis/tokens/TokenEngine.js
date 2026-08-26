@@ -128,25 +128,20 @@ export class TokenEngine {
       const next = resolvedTokens[i + 1];
 
       if (current.id !== next.id) {
-        const outgoing = this.graph.getOutgoing(current.id);
-        const existingEdge = outgoing.find((e) => e.to === next.id);
-
-        if (existingEdge) {
-          turnRelationships.push(existingEdge);
-        } else {
-          let relation = 'related_to';
-          if (current.type === TokenType.ENTITY && next.type === TokenType.ACTION) {
-            relation = 'performs';
-          } else if (current.type === TokenType.ACTION && next.type === TokenType.CONCEPT) {
-            relation = 'acts_on';
-          }
-
-          const newEdge = this.graph.addRelationship(current.id, relation, next.id, {
-            confidence: 0.7,
-            metadata: { inferred: true },
-          });
-          turnRelationships.push(newEdge);
+        let relation = 'related_to';
+        if (current.type === TokenType.ENTITY && next.type === TokenType.ACTION) {
+          relation = 'performs';
+        } else if (current.type === TokenType.ACTION && next.type === TokenType.CONCEPT) {
+          relation = 'acts_on';
         }
+
+        // Return ephemeral utterance features without mutating the persistent RelationshipGraph
+        turnRelationships.push({
+          from: current.id,
+          relation,
+          to: next.id,
+          ephemeral: true,
+        });
       }
     }
 

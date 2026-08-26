@@ -153,6 +153,44 @@ export class RelationshipGraph {
     return this.reverseAdjacency.get(Number(toId)) || [];
   }
 
+  /**
+   * Repoints all edges connected to sourceId so they point to targetId
+   * (Used during entity alias merging & reconciliation)
+   * @param {number} sourceId
+   * @param {number} targetId
+   */
+  repointNode(sourceId, targetId) {
+    const sId = Number(sourceId);
+    const tId = Number(targetId);
+    if (sId === tId) return;
+
+    // 1. Repoint outgoing edges from sourceId -> to targetId
+    const outgoing = [...this.getOutgoing(sId)];
+    for (const edge of outgoing) {
+      if (edge.to !== tId) {
+        this.add(tId, edge.relation, edge.to, edge.confidence, edge.metadata);
+      }
+    }
+    this.adjacency.delete(sId);
+
+    // 2. Repoint incoming edges to sourceId -> to targetId
+    const incoming = [...this.getIncoming(sId)];
+    for (const edge of incoming) {
+      if (edge.from !== tId) {
+        this.add(edge.from, edge.relation, tId, edge.confidence, edge.metadata);
+      }
+    }
+    this.reverseAdjacency.delete(sId);
+
+    // 3. Clean up memory edges array
+    this.edges = this.edges.filter((e) => e.from !== sId && e.to !== sId);
+
+    // 4. Update MongoDB persistence if model exists
+    if (this.model && this.model.db?.readyState === 1) {
+      this.model.deleteMany({ $or: [{ from: sId }, { to: sId }] }).catch(() => {});
+    }
+  }
+
   hasEdge(from, relation, to) {
     const fromId = Number(from);
     const toId = Number(to);

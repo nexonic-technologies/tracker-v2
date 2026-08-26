@@ -1,4 +1,5 @@
 import { getGlobalModels } from '../../models/global/index.js';
+import { defaultEntityCanonicalizer } from './EntityCanonicalizer.js';
 
 export const TokenType = {
   CONCEPT: 'concept',
@@ -371,6 +372,9 @@ export class TokenRegistry {
       return this.tokensById.get(identifier) || { id: identifier, canonical: `Token #${identifier}`, type: defaultType };
     }
     if (typeof identifier === 'object' && identifier.id !== undefined) {
+      if (defaultType && defaultType !== TokenType.ENTITY && (identifier.type === TokenType.ENTITY || identifier.type === TokenType.CONCEPT)) {
+        identifier.type = defaultType;
+      }
       return identifier;
     }
     const str = String(identifier).trim();
@@ -379,13 +383,73 @@ export class TokenRegistry {
     if (/^\d+$/.test(str)) {
       const numId = Number(str);
       const existing = this.tokensById.get(numId);
-      if (existing) return existing;
+      if (existing) {
+        if (defaultType && defaultType !== TokenType.ENTITY && (existing.type === TokenType.ENTITY || existing.type === TokenType.CONCEPT)) {
+          existing.type = defaultType;
+        }
+        return existing;
+      }
     }
 
-    const found = this.lookup(str);
-    if (found) return found;
+    // 1. Direct canonical / alias lookup
+    const direct = this.lookup(str);
+    if (direct) {
+      if (defaultType && defaultType !== TokenType.ENTITY && (direct.type === TokenType.ENTITY || direct.type === TokenType.CONCEPT)) {
+        direct.type = defaultType;
+      }
+      return direct;
+    }
 
-    return this.register({ canonical: str, type: defaultType });
+    // 2. Taxonomic Decomposition & Morphological Derivation
+    const decomp = defaultEntityCanonicalizer.decomposeTaxonomicPhrase(str, defaultType);
+    const candidateCanon = decomp.canonical;
+    const targetType = decomp.semanticType || defaultType;
+
+    // 3. Look up by decomposed canonical root
+    if (candidateCanon && candidateCanon.toLowerCase() !== str.toLowerCase()) {
+      const existingRoot = this.lookup(candidateCanon);
+      if (existingRoot) {
+        // Validate boundary / semantic equivalence
+        if (defaultEntityCanonicalizer.areSemanticallyEquivalent(existingRoot, { canonical: candidateCanon, type: targetType })) {
+          if (targetType && targetType !== TokenType.ENTITY && (existingRoot.type === TokenType.ENTITY || existingRoot.type === TokenType.CONCEPT)) {
+            existingRoot.type = targetType;
+          }
+          this._attachAlias(existingRoot, str);
+          for (const alias of decomp.aliases) {
+            this._attachAlias(existingRoot, alias);
+          }
+          return existingRoot;
+        }
+      }
+    }
+
+    // 4. Register new canonical entity with proper aliases & type
+    return this.register({
+      canonical: candidateCanon || str,
+      type: targetType,
+      aliases: decomp.aliases,
+    });
+  }
+
+  _attachAlias(token, aliasStr) {
+    if (!token || !aliasStr) return;
+    const cleanAlias = defaultEntityCanonicalizer.cleanSurfaceForm(aliasStr);
+    if (!cleanAlias || cleanAlias.toLowerCase() === (token.canonical || '').toLowerCase()) return;
+
+    if (!Array.isArray(token.aliases)) {
+      token.aliases = [];
+    }
+    const normAlias = this._normalize(cleanAlias);
+    if (!token.aliases.some((a) => this._normalize(a) === normAlias)) {
+      token.aliases.push(cleanAlias);
+      this.aliases.set(normAlias, token.id);
+      this._addIndexTerms(cleanAlias, token.id);
+      this._persistRecord(token);
+    }
+  }
+
+  _cleanCanonical(str) {
+    return defaultEntityCanonicalizer.cleanSurfaceForm(str) || (str ? str.trim() : '');
   }
 
   register({
@@ -400,8 +464,18 @@ export class TokenRegistry {
       throw new Error('Canonical concept name is required.');
     }
 
-    const existing = this.lookup(canonical);
+    const decomp = defaultEntityCanonicalizer.decomposeTaxonomicPhrase(canonical, type);
+    const cleanCanonical = decomp.canonical || this._cleanCanonical(canonical);
+    const finalType = decomp.semanticType || type;
+
+    const existing = this.lookup(cleanCanonical) || this.lookup(canonical);
     if (existing) {
+      if (finalType && finalType !== TokenType.ENTITY && (existing.type === TokenType.ENTITY || existing.type === TokenType.CONCEPT)) {
+        existing.type = finalType;
+      }
+      for (const a of [...aliases, ...decomp.aliases, canonical]) {
+        this._attachAlias(existing, a);
+      }
       return existing;
     }
 
@@ -413,12 +487,18 @@ export class TokenRegistry {
       id = this.getNextId();
     }
 
+    const combinedAliases = Array.from(new Set([
+      ...aliases.map((a) => this._cleanCanonical(a)),
+      ...decomp.aliases.map((a) => this._cleanCanonical(a)),
+      this._cleanCanonical(canonical),
+    ])).filter((a) => a && a.toLowerCase() !== cleanCanonical.toLowerCase());
+
     const record = {
       id,
-      canonical: canonical.trim(),
-      type,
+      canonical: cleanCanonical,
+      type: finalType,
       status,
-      aliases: aliases.map((a) => a.trim()),
+      aliases: combinedAliases,
       metadata,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

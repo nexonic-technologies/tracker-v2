@@ -64,6 +64,9 @@ export async function runTurn(utterance, { showTrace = false, mode = activeExecu
   console.log('╔══════════════════════════════════════════════════════════════════════════════╗');
   console.log(`║ Mode: ${mode.toUpperCase().padEnd(7)} | Latency: ${duration.padEnd(8)} ms | Cost: ${ctx.offlineResolved ? '0 TOKENS (Offline)' : 'LLM Billed'} ║`);
   console.log(`║ Execution Pathway  : ${(ctx.intent?.type || 'dynamic_query').padEnd(20)} | Source: ${(ctx.intent?.source || 'graph_engine').padEnd(15)} ║`);
+  if (ctx.intent?.reasoningResult) {
+    console.log(`║ Traversal Depth    : ${String(ctx.intent.reasoningResult.hopCount + ' Hop(s)').padEnd(20)} | Target Type: ${String(ctx.intent.reasoningResult.targetType || 'entity').padEnd(14)} ║`);
+  }
   if (ctx.intent?.customAnswer) {
     console.log(`║ Graph Provenance   : ${ctx.intent.customAnswer.slice(0, 56).padEnd(56)} ║`);
   }

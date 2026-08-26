@@ -35,6 +35,10 @@ export class NeuralResponseRealizer {
   _decomposeRelation(relation) {
     const rel = (relation || '').toLowerCase();
     
+    if (this.relationRegistry?.isAssociative?.(rel)) {
+      return { baseVerb: 'related to', preposition: 'to', isAgentive: false, isAssociative: true };
+    }
+
     if (rel.endsWith('_by')) {
       const verb = rel.slice(0, -3).replace(/_/g, ' ');
       return { baseVerb: verb, preposition: 'by', isAgentive: true };
@@ -48,7 +52,10 @@ export class NeuralResponseRealizer {
       return { baseVerb: noun, preposition: 'of', isAgentive: false };
     }
 
-    if (rel.endsWith('ed') || rel.endsWith('d') || ['owns', 'heads', 'leads', 'wrote', 'powers'].includes(rel)) {
+    // Dynamic token type check or past participle / verb ending (Zero Hardcoded Word Arrays)
+    const relToken = this.tokenRegistry?.lookup?.(rel);
+    const isActionToken = relToken?.type === 'action' || relToken?.metadata?.isAction === true;
+    if (isActionToken || rel.endsWith('ed') || rel.endsWith('d')) {
       return { baseVerb: this._cleanRelation(rel), preposition: '', isAgentive: true, isVerb: true };
     }
 
@@ -93,10 +100,23 @@ export class NeuralResponseRealizer {
 
     if (!s || !r || !t) return null;
 
-    const { baseVerb, preposition, isAgentive, isVerb } = this._decomposeRelation(r);
+    const { baseVerb, preposition, isAgentive, isVerb, isAssociative } = this._decomposeRelation(r);
     const cleanRel = this._cleanRelation(r);
     const prep = userUtterance.includes(' in ') || r.includes('_in') ? 'in' : (preposition || 'of');
     const sFormatted = this._formatSubject(s, semanticFact, userUtterance);
+
+    // Defense in depth: Safe realization for associative relations
+    if (isAssociative) {
+      return `${sFormatted} is ${cleanRel} ${t}.`;
+    }
+
+    // Verification queries ("did X ... Y?", "does X ... Y?")
+    if (semanticFact.isVerification || /^(?:did|does|do|is|was|has|have|can)\b/i.test(userUtterance)) {
+      if (isVerb) {
+        return `Yes, sir. ${sFormatted} ${baseVerb} ${t}.`;
+      }
+      return `Yes, sir. ${sFormatted} ${cleanRel}: ${t}.`;
+    }
 
     switch (style) {
       case 'passive': {
@@ -121,6 +141,9 @@ export class NeuralResponseRealizer {
 
       case 'conversational': {
         if (isAgentive) {
+          if (isVerb) {
+            return `According to my records, ${sFormatted} ${baseVerb} ${t}.`;
+          }
           return `According to my records, ${t} was responsible for ${baseVerb.endsWith('e') ? baseVerb.slice(0, -1) + 'ing' : baseVerb.endsWith('ed') ? baseVerb.slice(0, -2) + 'ing' : baseVerb + 'ing'} ${sFormatted}.`;
         }
         return `According to my records, the ${cleanRel} ${prep} ${sFormatted} is ${t}.`;
@@ -164,6 +187,11 @@ export class NeuralResponseRealizer {
     }
 
     const u = (utterance || '').toLowerCase().trim();
+
+    // 0. Verification Query
+    if (semanticFact.isVerification || /^(?:did|does|do|is|was|has|had|can)\b/i.test(u)) {
+      return this.realize(semanticFact, { style: 'passive', userUtterance: u });
+    }
 
     // 1. Passive Question: "Who was the Eclipse Engine engineered by?" / "By whom..."
     if (/who was .* (?:by|\bby\b)/i.test(u) || /^by whom/i.test(u) || /\bwas\b.*\bby\b/i.test(u)) {

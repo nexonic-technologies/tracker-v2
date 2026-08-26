@@ -15,12 +15,13 @@ export class LLMManager {
 
   _refreshKeys() {
     this.openRouterKey = this._clean(process.env.OPENROUTER_API_KEY);
-    this.openRouterModel = this._clean(process.env.OPENROUTER_MODEL) || 'openrouter/auto';
+    this.openRouterModel = this._clean(process.env.OPENROUTER_MODEL) || 'meta-llama/llama-3.3-70b-instruct:free';
 
     this.openAiKey = this._clean(process.env.OPENAI_API_KEY);
     this.openAiModel = this._clean(process.env.OPENAI_MODEL) || 'gpt-4o-mini';
 
     this.geminiKey = this._clean(process.env.GEMINI_API_KEY);
+    this.geminiModel = this._clean(process.env.GEMINI_MODEL) || 'gemini-1.5-flash';
   }
 
   isAvailable() {
@@ -102,7 +103,7 @@ export class LLMManager {
     return data.choices?.[0]?.message?.content?.trim() || '';
   }
 
-  async _callGemini({ systemPrompt, userMessage, history = [] }) {
+  async _callGemini({ systemPrompt, userMessage, history = [], model }) {
     this._refreshKeys();
     const key = this.geminiKey;
     if (!key) throw new Error('Gemini API key not configured');
@@ -119,7 +120,8 @@ export class LLMManager {
     }
     contents.push({ role: 'user', parts: [{ text: userMessage }] });
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+    const targetModel = model || this.geminiModel || 'gemini-1.5-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${key}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -129,6 +131,10 @@ export class LLMManager {
 
     if (!response.ok) {
       const errText = await response.text();
+      // If 1.5-flash failed, auto-fallback to 2.0-flash
+      if (targetModel !== 'gemini-2.0-flash') {
+        return this._callGemini({ systemPrompt, userMessage, history, model: 'gemini-2.0-flash' });
+      }
       throw new Error(`Gemini error (${response.status}): ${errText}`);
     }
 
@@ -146,6 +152,8 @@ export class LLMManager {
     const defaultSystemPrompt = `You are J.A.R.V.I.S., an elite, highly intelligent AI assistant for Workhub HRMS ERP. Speak concisely, clearly, and address the user with British wit, professionalism, and respect ("sir" or "ma'am").`;
     const activeSystemPrompt = systemPrompt || defaultSystemPrompt;
 
+    const providerErrors = [];
+
     // 1. Try OpenRouter
     if (this.openRouterKey) {
       try {
@@ -157,7 +165,8 @@ export class LLMManager {
         });
         if (text) return { text, providerName: 'OpenRouter' };
       } catch (err) {
-        // Fall through to next provider
+        console.warn('[LLMManager] OpenRouter error:', err.message);
+        providerErrors.push(`OpenRouter: ${err.message}`);
       }
     }
 
@@ -171,7 +180,8 @@ export class LLMManager {
         });
         if (text) return { text, providerName: 'Gemini' };
       } catch (err) {
-        // Fall through to next provider
+        console.warn('[LLMManager] Gemini error:', err.message);
+        providerErrors.push(`Gemini: ${err.message}`);
       }
     }
 
@@ -186,16 +196,18 @@ export class LLMManager {
         });
         if (text) return { text, providerName: 'OpenAI' };
       } catch (err) {
-        // Fall through to offline fallback
+        console.warn('[LLMManager] OpenAI error:', err.message);
+        providerErrors.push(`OpenAI: ${err.message}`);
       }
     }
 
-    // 3. Graceful offline fallback
+    // 4. Graceful offline fallback
     if (activeSystemPrompt.includes('JSON')) {
       if (activeSystemPrompt.includes('Knowledge Graph Extraction') || activeSystemPrompt.includes('triples')) {
         return {
           text: JSON.stringify({ triples: [] }),
           providerName: 'OfflineFallback',
+          error: providerErrors.join(' | '),
         };
       }
       if (activeSystemPrompt.includes('Intent Classification')) {
@@ -209,18 +221,23 @@ export class LLMManager {
             confidence: 0.5,
           }),
           providerName: 'OfflineFallback',
+          error: providerErrors.join(' | '),
         };
       }
       return {
         text: JSON.stringify({ success: true }),
         providerName: 'OfflineFallback',
+        error: providerErrors.join(' | '),
       };
     }
 
     const cleanMsg = userMessage.length > 80 ? userMessage.slice(0, 80) + '...' : userMessage;
+    const errorDetails = providerErrors.length > 0 ? ` (${providerErrors.join('; ')})` : ' (No external LLM API keys configured)';
+
     return {
-      text: `Understood, sir. Operating in local offline resilience mode for: "${cleanMsg}".`,
+      text: `External LLM request failed${errorDetails}. Operating in local offline resilience mode for: "${cleanMsg}".`,
       providerName: 'OfflineFallback',
+      error: providerErrors.join(' | '),
     };
   }
 }
