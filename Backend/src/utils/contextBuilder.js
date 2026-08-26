@@ -298,19 +298,38 @@ export async function buildUserContext(userId, roleId) {
       }));
     } else {
       // Fetch role with capabilities populated
-      const role = await RoleModel.findById(roleMeta.id)
-        .populate('capabilities')
-        .lean();
+      let role = null;
+      if (roleMeta.id && mongoose.Types.ObjectId.isValid(roleMeta.id)) {
+        role = await RoleModel.findById(roleMeta.id)
+          .populate('capabilities')
+          .lean();
+      }
+      if (!role && roleMeta.name) {
+        role = await RoleModel.findOne({ name: roleMeta.name })
+          .populate('capabilities')
+          .lean();
+      }
 
       if (role && role.capabilities && role.capabilities.length > 0) {
         roleCapabilities = role.capabilities
-          .filter(cap => cap && cap.status === 'active')
-          .map(cap => ({
-            _id: cap._id?.toString(),
-            key: cap.key,
-            action: cap.action || '',
-            description: cap.description || ''
-          }));
+          .filter(cap => cap && (typeof cap === 'string' || cap.status === 'active'))
+          .map(cap => {
+            if (typeof cap === 'string') {
+              return { key: cap, action: cap.includes(':') ? cap.split(':')[1] : '', description: '' };
+            }
+            return {
+              _id: cap._id?.toString(),
+              key: cap.key,
+              action: cap.action || '',
+              description: cap.description || ''
+            };
+          });
+      } else if (Array.isArray(roleMeta.capabilities) && roleMeta.capabilities.length > 0) {
+        roleCapabilities = roleMeta.capabilities.map(k => ({
+          key: typeof k === 'string' ? k : (k.key || ''),
+          action: typeof k === 'string' ? (k.includes(':') ? k.split(':')[1] : '') : (k.action || ''),
+          description: typeof k === 'string' ? '' : (k.description || '')
+        }));
       }
     }
   } catch (error) {
@@ -321,7 +340,7 @@ export async function buildUserContext(userId, roleId) {
   return {
     user: {
       id: userId,
-      name: `${user.basicInfo?.firstName || ""} ${user.basicInfo?.lastName || ""}`.trim(),
+      name: `${user.basicInfo?.firstName || ""}` + (user.basicInfo?.lastName ? ` ${user.basicInfo.lastName}` : '').trim(),
       email: user.basicInfo?.email,
       profileImage: user.basicInfo?.profileImage,
       empId: user.professionalInfo?.empId,
@@ -334,7 +353,8 @@ export async function buildUserContext(userId, roleId) {
         isSuperAdmin
       }
     },
-    capabilities: roleCapabilities, // User capabilities for visibility check
+    capabilities: roleCapabilities, // User capabilities for visibility check (CBAC UI Gateway)
+    permissions, // Model permissions map (ABAC)
     navigation,
     _v: currentVersion,
     _cachedAt: new Date().toISOString()

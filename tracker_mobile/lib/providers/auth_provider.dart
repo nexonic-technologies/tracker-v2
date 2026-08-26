@@ -22,10 +22,54 @@ class AuthProvider extends ChangeNotifier {
   Set<String> get capabilities => _capabilities;
 
   bool hasCapability(String cap) {
-    if (_user?.role == 'superadmin' || _user?.userType == 'superadmin') {
+    if (_user?.role == 'superadmin' || _user?.userType == 'superadmin' || _user?.isSuperAdmin == true) {
       return true;
     }
-    return _capabilities.contains(cap);
+    final normalized = _normalizeCap(cap);
+    return _capabilities.any((c) => _normalizeCap(c) == normalized || c.toLowerCase().trim() == cap.toLowerCase().trim());
+  }
+
+  String _normalizeCap(String cap) {
+    if (cap.isEmpty) return '';
+    final key = cap.toLowerCase().trim();
+    if (key.contains(':')) {
+      final parts = key.split(':');
+      var module = parts[0].trim();
+      if (module.endsWith('s') && module != 'hrms' && module != 'crm' && module != 'status') {
+        module = module.substring(0, module.length - 1);
+      }
+      return '$module:${parts[1].trim()}';
+    }
+    return key;
+  }
+
+  bool can(String action, String resource) {
+    if (_user?.role == 'superadmin' || _user?.userType == 'superadmin' || _user?.isSuperAdmin == true) {
+      return true;
+    }
+    final act = action.toLowerCase().trim();
+    final res = resource.toLowerCase().trim();
+    final resSingular = res.endsWith('s') && res != 'hrms' && res != 'crm' && res != 'status'
+        ? res.substring(0, res.length - 1)
+        : res;
+    final resPlural = '${resSingular}s';
+
+    final actionCandidates = [act];
+    if (act == 'read') actionCandidates.add('view');
+    if (act == 'view') actionCandidates.add('read');
+    if (act == 'create') actionCandidates.addAll(['mark', 'add']);
+    if (act == 'update') actionCandidates.addAll(['edit', 'modify']);
+
+    final resourceCandidates = [res, resSingular, resPlural];
+
+    for (final r in resourceCandidates) {
+      for (final a in actionCandidates) {
+        if (hasCapability('$r:$a')) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   AuthProvider() {
@@ -254,7 +298,12 @@ class AuthProvider extends ChangeNotifier {
         final data = response.data['data'];
         if (data != null && data['capabilities'] != null) {
           final capsList = List<dynamic>.from(data['capabilities']);
-          _capabilities = capsList.map((c) => c.toString()).toSet();
+          _capabilities = capsList.map((c) {
+            if (c is Map) {
+              return (c['key'] ?? c['name'] ?? '').toString();
+            }
+            return c.toString();
+          }).where((s) => s.isNotEmpty).toSet();
           notifyListeners();
         }
       }

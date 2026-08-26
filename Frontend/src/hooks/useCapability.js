@@ -10,19 +10,21 @@ import { usePermission } from '../context/permissionProvider';
  * @returns {Object} Capability checking functions
  */
 export function useCapability() {
-  const { uiCapabilities, isSuperAdmin, canRenderMenu } = usePermission();
+  const { uiCapabilities, isSuperAdmin, canRenderMenu, hasCapability: ctxHasCapability } = usePermission();
 
   /**
    * Check if user has a specific capability
-   * @param {string} capabilityKey - Capability key (e.g., "Ticket:view")
+   * @param {string} capabilityKey - Capability key (e.g., "Ticket:view", "attendance:create")
    * @returns {boolean} Whether user has the capability
    */
   const hasCapability = (capabilityKey) => {
+    if (ctxHasCapability) return ctxHasCapability(capabilityKey);
     if (isSuperAdmin) return true;
     if (!uiCapabilities || !Array.isArray(uiCapabilities)) {
       return false;
     }
-    return uiCapabilities.includes(capabilityKey);
+    const normalizedKey = (capabilityKey || '').toLowerCase().trim();
+    return uiCapabilities.some(c => (typeof c === 'string' ? c : c?.key || '').toLowerCase().trim() === normalizedKey);
   };
 
   /**
@@ -32,10 +34,8 @@ export function useCapability() {
    */
   const hasAnyCapability = (capabilityKeys) => {
     if (isSuperAdmin) return true;
-    if (!uiCapabilities || !Array.isArray(uiCapabilities)) {
-      return false;
-    }
-    return capabilityKeys.some(key => uiCapabilities.includes(key));
+    if (!Array.isArray(capabilityKeys)) return false;
+    return capabilityKeys.some(key => hasCapability(key));
   };
 
   /**
@@ -45,10 +45,8 @@ export function useCapability() {
    */
   const hasAllCapabilities = (capabilityKeys) => {
     if (isSuperAdmin) return true;
-    if (!uiCapabilities || !Array.isArray(uiCapabilities)) {
-      return false;
-    }
-    return capabilityKeys.every(key => uiCapabilities.includes(key));
+    if (!Array.isArray(capabilityKeys)) return false;
+    return capabilityKeys.every(key => hasCapability(key));
   };
 
   /**
@@ -60,8 +58,11 @@ export function useCapability() {
     if (!uiCapabilities || !Array.isArray(uiCapabilities)) {
       return [];
     }
-    const regex = new RegExp(pattern.replace('*', '.*'));
-    return uiCapabilities.filter(key => regex.test(key));
+    const regex = new RegExp(pattern.replace('*', '.*'), 'i');
+    return uiCapabilities.filter(key => {
+      const capKey = typeof key === 'string' ? key : key?.key || '';
+      return regex.test(capKey);
+    });
   };
 
   return {

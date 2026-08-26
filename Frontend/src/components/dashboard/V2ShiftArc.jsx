@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@context/authProvider';
 import { useGenericAPI } from '@components/useGenericAPI';
+import { usePermissions } from '../../hooks/usePermissions';
 import { Play, Square, Pause, Pin, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getBrowserLocation } from '@utils/geolocation';
@@ -68,9 +69,13 @@ const ShiftProgressArc = ({ progress = 0, displayState = 'not_started', size = 9
 
 export default function V2ShiftArc({ attendance: propAttendance, refresh }) {
   const { user } = useAuth();
+  const { can } = usePermissions();
   const { create, read, update } = useGenericAPI();
   const [busy, setBusy] = useState(false);
   const [localAttendance, setLocalAttendance] = useState(null);
+
+  const canPunchIn = can('create', 'attendances');
+  const canPunchOut = can('update', 'attendances');
 
   const attendance = localAttendance || propAttendance;
 
@@ -140,8 +145,10 @@ export default function V2ShiftArc({ attendance: propAttendance, refresh }) {
       ? 'border-l-4 border-red-500'
       : 'border border-hairline-soft';
 
+  const canAction = isCheckedIn ? canPunchOut : canPunchIn;
+
   const handleClockAction = async () => {
-    if (busy || !user) return;
+    if (busy || !user || !canAction) return;
     setBusy(true);
     try {
       const locRes = await getBrowserLocation();
@@ -266,22 +273,25 @@ export default function V2ShiftArc({ attendance: propAttendance, refresh }) {
         <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
           <button
             onClick={handleClockAction}
-            disabled={busy}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl cursor-pointer flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-xs ${
-              isCheckedIn
-                ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400 border border-red-200/50'
-                : 'tracker-btn-brand'
+            disabled={busy || !canAction}
+            title={!canAction ? (isCheckedIn ? 'Clock-out managed by Admin' : 'Clock-in managed by Admin') : undefined}
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xs ${
+              !canAction
+                ? 'bg-surface-2 text-ink-muted border border-hairline'
+                : isCheckedIn
+                ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400 border border-red-200/50 cursor-pointer'
+                : 'tracker-btn-brand cursor-pointer'
             }`}
           >
             {isCheckedIn ? (
               <>
                 <Square className="h-3.5 w-3.5 fill-current" />
-                <span>Clock Out</span>
+                <span>{canPunchOut ? 'Clock Out' : 'Clock Out (Managed by Admin)'}</span>
               </>
             ) : (
               <>
                 <Play className="h-3.5 w-3.5 fill-current" />
-                <span>Clock In</span>
+                <span>{canPunchIn ? 'Clock In' : 'Clock In (Managed by Admin)'}</span>
               </>
             )}
           </button>

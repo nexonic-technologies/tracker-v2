@@ -507,54 +507,66 @@ class _AttendancePageState extends State<AttendancePage> {
                   ],
                 ),
               ),
-            ],
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          GestureDetector(
-            onTap: _actionBusy
-                ? null
-                : (isCurrentlyCheckedIn
-                    ? _handleCheckOut
-                    : () => _handleCheckIn(user?.id ?? '', user?.name ?? '')),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_actionBusy)
-                    const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  else ...[
-                    Icon(
-                      isCurrentlyCheckedIn ? Icons.logout_rounded : Icons.login_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      isCurrentlyCheckedIn ? 'Check out' : 'Check in',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+          Builder(
+            builder: (context) {
+              final auth = context.watch<AuthProvider>();
+              final canPunchIn = auth.can('create', 'attendances');
+              final canPunchOut = auth.can('update', 'attendances');
+              final canPerformAction = isCurrentlyCheckedIn ? canPunchOut : canPunchIn;
+
+              return GestureDetector(
+                onTap: (_actionBusy || !canPerformAction)
+                    ? null
+                    : (isCurrentlyCheckedIn
+                        ? _handleCheckOut
+                        : () => _handleCheckIn(user?.id ?? '', user?.name ?? '')),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: !canPerformAction
+                        ? (isDark ? AppColors.darkSurface1 : const Color(0xFFE2E8F0))
+                        : const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_actionBusy)
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      else ...[
+                        Icon(
+                          isCurrentlyCheckedIn ? Icons.logout_rounded : Icons.login_rounded,
+                          color: !canPerformAction ? AppColors.inkMuted : Colors.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          !canPerformAction
+                              ? (isCurrentlyCheckedIn ? 'Check out (Managed by Admin)' : 'Check in (Managed by Admin)')
+                              : (isCurrentlyCheckedIn ? 'Check out' : 'Check in'),
+                          style: TextStyle(
+                            color: !canPerformAction ? AppColors.inkMuted : Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
