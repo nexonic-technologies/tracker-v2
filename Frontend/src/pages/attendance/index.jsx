@@ -719,6 +719,15 @@ const AttendancePage = () => {
                       Shift in progress
                     </span>
                   )
+                ) : canPunchIn ? (
+                  <button
+                    onClick={handleCheckIn}
+                    disabled={actionBusy}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                  >
+                    {actionBusy ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />}
+                    Clock In Again
+                  </button>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface-2 text-ink-muted">
                     <CheckCircle size={13} className="text-emerald-500" /> Shift Completed

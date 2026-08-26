@@ -215,20 +215,119 @@ export const PermissionProvider = ({ children }) => {
     return () => clearInterval(poll);
   }, [user]);
 
-  // ── Permission check helpers ──
+  const normalizeCap = (cap) => {
+    if (!cap) return '';
+    let key = (typeof cap === 'string' ? cap : (cap.key || cap.name || '')).toLowerCase().trim();
+    if (key.includes(':')) {
+      const parts = key.split(':');
+      let module = parts[0].trim();
+      if (module.endsWith('s') && module !== 'hrms' && module !== 'crm' && module !== 'status') {
+        module = module.slice(0, -1);
+      }
+      return `${module}:${parts[1].trim()}`;
+    }
+    return key;
+  };
+
+  /**
+   * Check if the current user has a specific UI capability (CBAC).
+   * Use this for in-page button/feature visibility controlled by the
+   * Designation Permissions page (not access_policies).
+   *
+   * @param {string} capabilityKey - e.g. "Sidebar:create", "attendance:create"
+   * @returns {boolean}
+   */
+  const hasCapability = useCallback(
+    (capabilityKey) => {
+      if (state.isSuperAdmin) return true;
+      if (!capabilityKey) return false;
+      const normalizedKey = normalizeCap(capabilityKey);
+      const userCaps = state.uiCapabilities?.map(normalizeCap) || [];
+      if (userCaps.includes(normalizedKey)) return true;
+
+      // Also check raw string matching if needed
+      if (state.uiCapabilities && state.uiCapabilities.includes(capabilityKey)) return true;
+      if (Array.isArray(state.capabilities)) {
+        return state.capabilities.some((c) => {
+          if (!c) return false;
+          const k = typeof c === 'string' ? c : (c.key || c.name || '');
+          return normalizeCap(k) === normalizedKey || k === capabilityKey;
+        });
+      }
+      return false;
+    },
+    [state.uiCapabilities, state.capabilities, state.isSuperAdmin]
+  );
 
   /**
    * Check if the current user can perform an action on a resource.
+   * Primary UI Gateway for dynamic capability (CBAC) and permission (ABAC) evaluation.
+   *
    * @param {string} action   - e.g. "read", "create", "update", "delete", "approve", "export"
-   * @param {string} resource - e.g. "tickets", "employees", "leaves"
+   * @param {string} resource - e.g. "tickets", "employees", "leaves", "attendances"
    * @returns {boolean}
    */
   const can = useCallback(
     (action, resource) => {
       if (state.isSuperAdmin) return true;
-      return !!state.permissions[resource]?.[action];
+      if (!action) return false;
+
+      // Single argument provided (e.g. capability key or dashboard stat ID)
+      if (!resource) {
+        return hasCapability(action);
+      }
+
+      const act = action.toLowerCase().trim();
+      const res = resource.toLowerCase().trim();
+
+      const resSingular = res.endsWith('s') && res !== 'hrms' && res !== 'crm' && res !== 'status'
+        ? res.slice(0, -1)
+        : res;
+      const resPlural = `${resSingular}s`;
+
+      // 1. Dynamic UI Capabilities resolution (Primary UI Security Gateway)
+      const actionCandidates = [act];
+      if (act === 'read') actionCandidates.push('view');
+      if (act === 'view') actionCandidates.push('read');
+      if (act === 'create') actionCandidates.push('mark', 'add');
+      if (act === 'update') actionCandidates.push('edit', 'modify');
+
+      const resourceCandidates = [res, resSingular, resPlural];
+
+      for (const r of resourceCandidates) {
+        for (const a of actionCandidates) {
+          if (hasCapability(`${r}:${a}`)) {
+            return true;
+          }
+        }
+      }
+
+      // Check capabilities array by action property
+      if (Array.isArray(state.capabilities)) {
+        const hasMatchedCap = state.capabilities.some((cap) => {
+          if (!cap) return false;
+          const capAction = (cap.action || '').toLowerCase().trim();
+          const capKey = (cap.key || '').toLowerCase().trim();
+          const capModule = (cap.module || (capKey.includes(':') ? capKey.split(':')[0] : '')).toLowerCase().trim();
+          const moduleMatches = resourceCandidates.includes(capModule);
+          const actionMatches = actionCandidates.includes(capAction) || actionCandidates.some((a) => capKey.endsWith(`:${a}`));
+          return moduleMatches && actionMatches;
+        });
+        if (hasMatchedCap) return true;
+      }
+
+      // 2. Direct match in permissions map if available
+      for (const r of resourceCandidates) {
+        for (const a of actionCandidates) {
+          if (state.permissions?.[r]?.[a] === true) {
+            return true;
+          }
+        }
+      }
+
+      return false;
     },
-    [state.permissions, state.isSuperAdmin]
+    [state.permissions, state.capabilities, state.isSuperAdmin, hasCapability]
   );
 
   /**
@@ -240,9 +339,10 @@ export const PermissionProvider = ({ children }) => {
   const canAny = useCallback(
     (actions, resource) => {
       if (state.isSuperAdmin) return true;
-      return actions.some((action) => !!state.permissions[resource]?.[action]);
+      if (!Array.isArray(actions)) return false;
+      return actions.some((action) => can(action, resource));
     },
-    [state.permissions, state.isSuperAdmin]
+    [can, state.isSuperAdmin]
   );
 
   /**
@@ -254,41 +354,10 @@ export const PermissionProvider = ({ children }) => {
   const canAll = useCallback(
     (actions, resource) => {
       if (state.isSuperAdmin) return true;
-      return actions.every((action) => !!state.permissions[resource]?.[action]);
+      if (!Array.isArray(actions)) return false;
+      return actions.every((action) => can(action, resource));
     },
-    [state.permissions, state.isSuperAdmin]
-  );
-
-  const normalizeCap = (cap) => {
-    if (!cap) return '';
-    let key = (typeof cap === 'string' ? cap : (cap.key || cap.name || '')).toLowerCase().trim();
-    if (key.includes(':')) {
-      const parts = key.split(':');
-      let module = parts[0];
-      if (module.endsWith('s') && module !== 'hrms' && module !== 'crm' && module !== 'status') {
-        module = module.slice(0, -1);
-      }
-      return `${module}:${parts[1]}`;
-    }
-    return key;
-  };
-
-  /**
-   * Check if the current user has a specific UI capability (CBAC).
-   * Use this for in-page button/feature visibility controlled by the
-   * Designation Permissions page (not access_policies).
-   *
-   * @param {string} capabilityKey - e.g. "Sidebar:create", "Feed:view"
-   * @returns {boolean}
-   */
-  const hasCapability = useCallback(
-    (capabilityKey) => {
-      if (state.isSuperAdmin) return true;
-      const normalizedKey = normalizeCap(capabilityKey);
-      const userCaps = state.uiCapabilities?.map(normalizeCap) || [];
-      return userCaps.includes(normalizedKey);
-    },
-    [state.uiCapabilities, state.isSuperAdmin]
+    [can, state.isSuperAdmin]
   );
 
   const canRenderMenu = useCallback(

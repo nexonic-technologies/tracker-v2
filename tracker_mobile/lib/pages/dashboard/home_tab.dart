@@ -450,24 +450,34 @@ class _HomeTabState extends State<HomeTab> {
                     const SizedBox(height: AppSpacing.md),
 
                     // Action button
-                    if (!isCurrentlyCheckedIn)
-                      _GradientButton(
-                        label: 'Check In',
-                        icon: Icons.login_rounded,
-                        busy: _actionBusy,
-                        onTap: () =>
-                            _handleCheckIn(user?.id ?? '', user?.name ?? ''),
-                      )
-                    else
-                      _GradientButton(
-                        label: 'Check Out',
-                        icon: Icons.logout_rounded,
-                        busy: _actionBusy,
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF059669), Color(0xFF34D399)],
-                        ),
-                        onTap: _handleCheckOut,
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final auth = context.watch<AuthProvider>();
+                        final canPunchIn = auth.can('create', 'attendances');
+                        final canPunchOut = auth.can('update', 'attendances');
+
+                        if (!isCurrentlyCheckedIn) {
+                          return _GradientButton(
+                            label: canPunchIn ? 'Check In' : 'Check In Managed by Admin',
+                            icon: Icons.login_rounded,
+                            busy: _actionBusy,
+                            onTap: canPunchIn
+                                ? () => _handleCheckIn(user?.id ?? '', user?.name ?? '')
+                                : null,
+                          );
+                        } else {
+                          return _GradientButton(
+                            label: canPunchOut ? 'Check Out' : 'Check Out Managed by Admin',
+                            icon: Icons.logout_rounded,
+                            busy: _actionBusy,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF059669), Color(0xFF34D399)],
+                            ),
+                            onTap: canPunchOut ? _handleCheckOut : null,
+                          );
+                        }
+                      },
+                    ),
                   ],
                 ],
               ),
@@ -704,40 +714,45 @@ class _GradientButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool busy;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Gradient? gradient;
   const _GradientButton({
     required this.label,
     required this.icon,
     required this.busy,
-    required this.onTap,
+    this.onTap,
     this.gradient,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDisabled = onTap == null;
     return GestureDetector(
-      onTap: busy ? null : onTap,
+      onTap: (busy || isDisabled) ? null : onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 13),
         decoration: BoxDecoration(
-          gradient:
-              gradient ??
-              const LinearGradient(
-                colors: [AppColors.brandFrom, AppColors.brandTo],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+          color: isDisabled ? const Color(0xFF64748B) : null,
+          gradient: isDisabled
+              ? null
+              : (gradient ??
+                  const LinearGradient(
+                    colors: [AppColors.brandFrom, AppColors.brandTo],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )),
           borderRadius: BorderRadius.circular(AppRadius.md),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.brandSolid.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: isDisabled
+              ? null
+              : [
+                  BoxShadow(
+                    color: AppColors.brandSolid.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
