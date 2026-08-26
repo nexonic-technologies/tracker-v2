@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { registerWidget } from '../registry/widgetRegistry';
 import { WIDGET_CATEGORIES } from '../registry/widgetManifest';
 import { useAuth } from '../../../context/authProvider';
+import { usePermissions } from '../../../hooks/usePermissions';
 import axiosInstance from '../../../api/axiosInstance';
 import toast from 'react-hot-toast';
 import {
@@ -22,7 +23,11 @@ import {
 function AttendancePunchWidget({ config, data }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { can } = usePermissions();
   const userId = user?.id || user?._id;
+
+  const canPunchIn = can('create', 'attendances');
+  const canPunchOut = can('update', 'attendances');
 
   const [loading, setLoading] = useState(false);
   const [attRecord, setAttRecord] = useState(data?.attendance || (data?.checkIn ? data : null));
@@ -54,6 +59,7 @@ function AttendancePunchWidget({ config, data }) {
   // Extract check-in state
   const checkInTime = attRecord?.checkIn ? new Date(attRecord.checkIn) : null;
   const isCheckedIn = Boolean(checkInTime && !attRecord?.checkOut);
+  const canAction = isCheckedIn ? canPunchOut : canPunchIn;
 
   // Live timer for working duration
   useEffect(() => {
@@ -78,6 +84,14 @@ function AttendancePunchWidget({ config, data }) {
   const handlePunch = async () => {
     if (!userId) {
       toast.error('Authentication required');
+      return;
+    }
+    if (isCheckedIn && !canPunchOut) {
+      toast.error('Check-out managed by Admin');
+      return;
+    }
+    if (!isCheckedIn && !canPunchIn) {
+      toast.error('Check-in managed by Admin');
       return;
     }
     setLoading(true);
@@ -140,23 +154,26 @@ function AttendancePunchWidget({ config, data }) {
       {/* Hero punch action button */}
       <button
         onClick={handlePunch}
-        disabled={loading}
+        disabled={loading || !canAction}
         type="button"
-        className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-[var(--tracker-radius-md)] text-xs font-bold text-white transition-all shadow-sm cursor-pointer disabled:opacity-50 ${
-          isCheckedIn
-            ? 'bg-[var(--tracker-danger)] hover:bg-red-600 shadow-red-500/20'
-            : 'bg-[var(--tracker-success)] hover:bg-emerald-600 shadow-emerald-500/20'
+        title={!canAction ? (isCheckedIn ? 'Check-out managed by Admin' : 'Check-in managed by Admin') : undefined}
+        className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-[var(--tracker-radius-md)] text-xs font-bold transition-all shadow-sm disabled:opacity-50 ${
+          !canAction
+            ? 'bg-surface-2 text-ink-muted border border-hairline cursor-not-allowed'
+            : isCheckedIn
+            ? 'bg-[var(--tracker-danger)] hover:bg-red-600 text-white shadow-red-500/20 cursor-pointer'
+            : 'bg-[var(--tracker-success)] hover:bg-emerald-600 text-white shadow-emerald-500/20 cursor-pointer'
         }`}
       >
         {loading ? (
           <Loader2 size={16} className="animate-spin" />
         ) : isCheckedIn ? (
           <>
-            <LogOut size={16} /> Check Out Now
+            <LogOut size={16} /> {canPunchOut ? 'Check Out Now' : 'Check Out Managed by Admin'}
           </>
         ) : (
           <>
-            <LogIn size={16} /> Check In Now
+            <LogIn size={16} /> {canPunchIn ? 'Check In Now' : 'Check In Managed by Admin'}
           </>
         )}
       </button>

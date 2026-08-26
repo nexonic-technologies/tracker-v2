@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { registerWidget } from '../registry/widgetRegistry';
 import { WIDGET_CATEGORIES } from '../registry/widgetManifest';
 import { useAuth } from '../../../context/authProvider';
+import { usePermissions } from '../../../hooks/usePermissions';
 import axiosInstance from '../../../api/axiosInstance';
 import toast from 'react-hot-toast';
 import {
@@ -40,7 +41,11 @@ const ALL_ACTIONS = [
 function QuickActionWidget({ config, data }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { can } = usePermissions();
   const userId = user?.id || user?._id;
+
+  const canPunchIn = can('create', 'attendances');
+  const canPunchOut = can('update', 'attendances');
 
   const [punchLoading, setPunchLoading] = useState(false);
   const [isCheckedIn, setIsCheckedIn] = useState(false);
@@ -75,6 +80,14 @@ function QuickActionWidget({ config, data }) {
   const handlePunch = async () => {
     if (!userId) {
       toast.error('Authentication required');
+      return;
+    }
+    if (isCheckedIn && !canPunchOut) {
+      toast.error('Check-out managed by Admin');
+      return;
+    }
+    if (!isCheckedIn && !canPunchIn) {
+      toast.error('Check-in managed by Admin');
       return;
     }
     setPunchLoading(true);
@@ -130,15 +143,20 @@ function QuickActionWidget({ config, data }) {
     <div className={`grid ${actionList.length <= 2 ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-2'} gap-2.5 h-full items-center`}>
       {actionList.map((act, idx) => {
         const isPunch = act.type === 'punch' || act.id === 'punch';
+        const canPunch = isCheckedIn ? canPunchOut : canPunchIn;
+        const isActionDisabled = isPunch ? (punchLoading || !canPunch) : false;
         const IconComponent = act.icon ? (typeof act.icon === 'string' ? ICON_MAP[act.icon] : act.icon) : Plus;
 
         return (
           <button
             key={act.id || idx}
             onClick={() => handleActionClick(act)}
-            disabled={isPunch && punchLoading}
+            disabled={isActionDisabled}
+            title={isPunch && !canPunch ? (isCheckedIn ? 'Check-out managed by Admin' : 'Check-in managed by Admin') : undefined}
             type="button"
-            className="group relative flex items-center gap-3 p-3 rounded-[var(--tracker-radius-md)] bg-[var(--tracker-surface-1)] hover:bg-[var(--tracker-surface-2)] border border-[var(--tracker-border)] hover:border-[var(--brand-solid)] transition-all duration-200 text-left text-xs font-semibold text-[var(--tracker-ink)] shadow-xs hover:shadow-sm cursor-pointer disabled:opacity-50"
+            className={`group relative flex items-center gap-3 p-3 rounded-[var(--tracker-radius-md)] bg-[var(--tracker-surface-1)] hover:bg-[var(--tracker-surface-2)] border border-[var(--tracker-border)] hover:border-[var(--brand-solid)] transition-all duration-200 text-left text-xs font-semibold text-[var(--tracker-ink)] shadow-xs hover:shadow-sm ${
+              isActionDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            }`}
           >
             <div className="p-2 rounded-xl bg-[var(--tracker-surface)] text-[var(--brand-solid)] group-hover:bg-[var(--brand-solid)] group-hover:text-white transition-colors duration-200 flex-shrink-0">
               {isPunch && punchLoading ? (
@@ -148,9 +166,13 @@ function QuickActionWidget({ config, data }) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <span className="block truncate font-medium">{act.label || 'Action'}</span>
+              <span className="block truncate font-medium">
+                {isPunch && !canPunch
+                  ? (isCheckedIn ? 'Check Out (Admin)' : 'Check In (Admin)')
+                  : (act.label || 'Action')}
+              </span>
               <span className="block text-[10px] text-[var(--tracker-ink-subtle)] font-normal truncate">
-                {isPunch ? 'Quick Punch' : 'Direct Action'}
+                {isPunch ? (isPunch && !canPunch ? 'Managed by Admin' : 'Quick Punch') : 'Direct Action'}
               </span>
             </div>
             <ArrowRight size={12} className="text-[var(--tracker-ink-subtle)] opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all" />
