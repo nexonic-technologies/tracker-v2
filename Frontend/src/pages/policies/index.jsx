@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/authProvider";
 import { useUserRole } from "../../hooks/useUserRole";
+import { useCapability } from "../../hooks/useCapability";
 import useGenericAPI from "../../components/useGenericAPI";
 import {
   FileText, CheckCircle, ShieldAlert, Calendar,
