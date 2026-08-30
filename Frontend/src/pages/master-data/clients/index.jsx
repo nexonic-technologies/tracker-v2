@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import PolicyGuard from "../../../components/Common/PolicyGuard";
-import { useUserRole } from "../../../hooks/useUserRole";
+import { useCapability } from "../../../hooks/useCapability";
 import { entityFormPath } from "../../../utils/formRoutes";
 import { clientsConfig } from "../../../components/MasterData/configs/clients";
 
@@ -81,10 +81,9 @@ const EmptyState = ({ query }) => (
 // ── Main ─────────────────────────────────────────────────────
 const Clients = () => {
   const navigate           = useNavigate();
-  const { userRole, policies } = useUserRole();
-  const roleLower          = (userRole || "").toLowerCase();
-  const canUpdate          = roleLower === "super admin" || roleLower === "admin" || policies?.clients?.update;
-  const canDelete          = roleLower === "super admin" || roleLower === "admin" || policies?.clients?.delete;
+  const { isSuperAdmin, hasCapability } = useCapability();
+  const canUpdate          = isSuperAdmin || hasCapability('clients:update');
+  const canDelete          = isSuperAdmin || hasCapability('clients:delete');
 
   const [clientsData, setClientsData] = useState([]);
   const [agentsData,  setAgentsData]  = useState([]);

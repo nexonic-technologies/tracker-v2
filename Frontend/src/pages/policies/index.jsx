@@ -20,13 +20,13 @@ const CATEGORIES = [
   "General"
 ];
 
-// Category color mapping for visual identity per category
+// Category color mappings
 const CATEGORY_COLORS = {
-  "Leave Policy":     { dot: "bg-blue-500",   badge: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/40" },
-  "Code of Conduct":  { dot: "bg-violet-500", badge: "bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-300 border-violet-200/60 dark:border-violet-800/40" },
-  "Attendance":       { dot: "bg-amber-500",  badge: "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/40" },
-  "Compensation":     { dot: "bg-emerald-500",badge: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/40" },
-  "Benefits":         { dot: "bg-teal-500",   badge: "bg-teal-50 text-teal-700 dark:bg-teal-950/30 dark:text-teal-300 border-teal-200/60 dark:border-teal-800/40" },
+  "Leave & Attendance": { dot: "bg-blue-500",   badge: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/40" },
+  "Code of Conduct":  { dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/40" },
+  "Compensation":     { dot: "bg-amber-500",   badge: "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/40" },
+  "IT & Security":    { dot: "bg-indigo-500",  badge: "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40" },
+  "Health & Safety":  { dot: "bg-teal-500",    badge: "bg-teal-50 text-teal-700 dark:bg-teal-950/30 dark:text-teal-300 border-teal-200/60 dark:border-teal-800/40" },
   "Performance":      { dot: "bg-rose-500",   badge: "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300 border-rose-200/60 dark:border-rose-800/40" },
   "General":          { dot: "bg-slate-400",  badge: "bg-slate-50 text-slate-600 dark:bg-slate-800/30 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/40" },
 };
@@ -37,7 +37,7 @@ function getCategoryStyle(cat) {
 
 export default function PoliciesPage() {
   const { user } = useAuth();
-  const { userRole } = useUserRole();
+  const { isSuperAdmin, hasAnyCapability } = useCapability();
   const { read, update, loading } = useGenericAPI();
   const navigate = useNavigate();
 
@@ -46,8 +46,8 @@ export default function PoliciesPage() {
   const [selectedCategory, setSelectedCategory] = useState("All Policies");
   const [acknowledging, setAcknowledging] = useState(false);
 
-  // Admin roles allowed to configure/manage policies
-  const isAdmin = ["hr admin", "admin", "developer"].includes(userRole?.toLowerCase());
+  // Dynamic capability check
+  const isAdmin = isSuperAdmin || hasAnyCapability(['hr_policies:create', 'hr_policies:update', 'hr_policies:delete', 'policies:create', 'policies:update']);
 
   useEffect(() => {
     fetchPolicies();

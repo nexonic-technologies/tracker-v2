@@ -3,22 +3,15 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import TableGenerator from "../../../components/Common/TableGenerator";
 import PolicyGuard from "../../../components/Common/PolicyGuard";
-import { useUserRole } from "../../../hooks/useUserRole";
+import { useCapability } from "../../../hooks/useCapability";
 import { entityFormPath } from "../../../utils/formRoutes";
 import { productsConfig } from "../../../components/MasterData/configs/products";
 
 const Products = () => {
     const navigate = useNavigate();
-    const { userRole, policies } = useUserRole();
-    const roleLower = (userRole || "").toLowerCase();
-    const canUpdate =
-      roleLower === "super admin" ||
-      roleLower === "admin" ||
-      (policies?.products?.update);
-    const canDelete =
-      roleLower === "super admin" ||
-      roleLower === "admin" ||
-      (policies?.products?.delete);
+    const { isSuperAdmin, hasCapability } = useCapability();
+    const canUpdate = isSuperAdmin || hasCapability('products:update');
+    const canDelete = isSuperAdmin || hasCapability('products:delete');
   
     const [productsData, setProductsData] = useState([]);
     const basePath = productsConfig.basePath;

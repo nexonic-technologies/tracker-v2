@@ -71,6 +71,10 @@ export class PayrollService {
     const response = await axiosInstance.post(req.url, req.payload);
     return response.data;
   }
+  static async emailPayslip(payrollId, targetEmail = null) {
+    const response = await axiosInstance.post(`/config/payroll/email-payslip/${payrollId}`, { targetEmail });
+    return response.data;
+  }
 }
 
 export class TaskService {

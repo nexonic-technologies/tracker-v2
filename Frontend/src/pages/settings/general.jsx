@@ -113,7 +113,7 @@ export default function general_settingsPage() {
               scheduledEnd: ''
             },
             taskETA: doc.taskETA || { enabled: true, multiplier: 3 },
-            payroll: doc.payroll || { pfCeiling: 15000, pfPercent: 12, esiThreshold: 21000, esiPercent: 0.75 },
+            payroll: doc.payroll || { pfCeiling: 15000, pfPercent: 12, esiThreshold: 21000, esiPercent: 0.75, roundOff: true },
             attendance: doc.attendance || { workingHours: 8, lateGraceMinutes: 15 },
             notification: doc.notification || {
               enabled: true,
@@ -481,6 +481,25 @@ export default function general_settingsPage() {
                           value={settings.payroll?.esiPercent || 0}
                           onChange={e => handleUpdate('payroll.esiPercent', Number(e.target.value))}
                         />
+                      </div>
+                      <div className="sm:col-span-2 md:col-span-4 pt-3 border-t border-hairline-soft flex items-center justify-between">
+                        <div>
+                          <label className="block text-xs font-semibold text-ink uppercase tracking-wide">
+                            Round Off Salary & Line Items
+                          </label>
+                          <p className="text-[11px] text-ink-muted mt-0.5">
+                            Automatically round off calculated Net Salary, Gross Earnings, and Deductions to the nearest whole rupee (e.g. ₹3,266 instead of ₹3,265.85).
+                          </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={settings.payroll?.roundOff !== false}
+                            onChange={e => handleUpdate('payroll.roundOff', e.target.checked)}
+                          />
+                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-accent"></div>
+                        </label>
                       </div>
                     </div>
                   </div>

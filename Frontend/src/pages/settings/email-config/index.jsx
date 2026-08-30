@@ -40,13 +40,33 @@ const email_config = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      const response = await api.post('/populate/create/email_configs', config);
-      if (response.data.success) {
-        setMessage('Email configuration saved successfully');
-        setTimeout(() => setMessage(''), 3000);
+      const sanitized = {
+        ...config,
+        username: config.username?.trim().toLowerCase(),
+        password: config.password?.trim().replace(/\s+/g, ''),
+        host: config.host?.trim(),
+        fromEmail: config.fromEmail?.trim().toLowerCase(),
+        fromName: config.fromName?.trim()
+      };
+
+      if (config._id) {
+        const { _id, createdAt, updatedAt, __v, ...payload } = sanitized;
+        const response = await api.put(`/populate/update/email_configs/${_id}`, payload);
+        if (response.data.success) {
+          setMessage('Email configuration updated successfully');
+          setTimeout(() => setMessage(''), 3000);
+          fetchemail_config();
+        }
+      } else {
+        const response = await api.post('/populate/create/email_configs', sanitized);
+        if (response.data.success) {
+          setMessage('Email configuration saved successfully');
+          setTimeout(() => setMessage(''), 3000);
+          fetchemail_config();
+        }
       }
     } catch (error) {
-      setMessage('Failed to save email configuration');
+      setMessage(error?.response?.data?.message || 'Failed to save email configuration');
       setTimeout(() => setMessage(''), 3000);
       console.error('Save error:', error);
     } finally {
@@ -96,7 +116,18 @@ const email_config = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">Email Service</label>
               <select
                 value={config.service}
-                onChange={(e) => handleChange('service', e.target.value)}
+                onChange={(e) => {
+                  const s = e.target.value;
+                  if (s === 'gmail') {
+                    setConfig(prev => ({ ...prev, service: s, host: 'smtp.gmail.com', port: 587, secure: false }));
+                  } else if (s === 'outlook') {
+                    setConfig(prev => ({ ...prev, service: s, host: 'smtp.office365.com', port: 587, secure: false }));
+                  } else if (s === 'yahoo') {
+                    setConfig(prev => ({ ...prev, service: s, host: 'smtp.mail.yahoo.com', port: 465, secure: true }));
+                  } else {
+                    setConfig(prev => ({ ...prev, service: s }));
+                  }
+                }}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               >
@@ -120,11 +151,14 @@ const email_config = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">SMTP Port</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">SMTP Port (587 for STARTTLS, 465 for SSL)</label>
               <input
                 type="number"
                 value={config.port}
-                onChange={(e) => handleChange('port', parseInt(e.target.value))}
+                onChange={(e) => {
+                  const port = parseInt(e.target.value);
+                  setConfig(prev => ({ ...prev, port, secure: port === 465 }));
+                }}
                 placeholder="587"
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
@@ -132,7 +166,7 @@ const email_config = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-gray-700">Use SSL/TLS</label>
+              <label className="text-sm font-medium text-gray-700">Direct SSL/TLS (Required only for Port 465)</label>
               <input
                 type="checkbox"
                 checked={config.secure}
@@ -154,15 +188,20 @@ const email_config = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email Password / App Password</label>
               <input
                 type="password"
                 value={config.password}
                 onChange={(e) => handleChange('password', e.target.value)}
-                placeholder="Enter password or app password"
+                placeholder={config.service === 'gmail' ? '16-character Google App Password (e.g. abcd efgh ijkl mnop)' : 'Enter SMTP password'}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
+              {config.service === 'gmail' && (
+                <p className="text-[11px] text-gray-500 mt-1">
+                  💡 <strong>Gmail Note:</strong> Use a 16-character <em>App Password</em> generated in Google Account &gt; Security &gt; 2-Step Verification &gt; App Passwords (not your normal Google account password).
+                </p>
+              )}
             </div>
 
             <div>

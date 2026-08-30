@@ -90,18 +90,36 @@ const SearchableSelect = ({ options = [], value, onChange, multiple, labelField,
 
   const getLabel = (opt) => {
     if (opt === undefined || opt === null) return "";
-    if (typeof opt === 'object') {
-      return opt?.[labelField] || opt?.[fieldName] || opt?.name || opt?.title || opt?.label || opt?._id || opt?.value || "";
-    }
+
+    const optId = typeof opt === 'object' ? (opt?._id || opt?.id || opt?.value) : opt;
+
+    // 1. Try finding in options first (best source of human label)
     const match = options.find(o => {
       if (typeof o === 'object' && o !== null) {
-        return (o?._id || o?.id || o?.value || o?.name || o?.label) === opt || (o?._id || o?.id || o?.value || o?.name || o?.label)?.toString() === opt?.toString();
+        const oId = o?._id || o?.id || o?.value;
+        return oId === optId || (oId && optId && oId.toString() === optId.toString());
       }
-      return o === opt || o?.toString() === opt?.toString();
+      return o === optId || (o && optId && o.toString() === optId.toString());
     });
+
     if (match && typeof match === 'object') {
-      return match[labelField] || match[fieldName] || match.name || match.title || match.label || opt;
+      return match[labelField] || match[fieldName] || match.label || match.name || match.title || (match.basicInfo ? `${match.basicInfo.firstName || ''} ${match.basicInfo.lastName || ''}`.trim() : match.value) || optId;
     }
+
+    // 2. If object has direct human readable keys
+    if (typeof opt === 'object') {
+      if (opt.label) return opt.label;
+      if (opt.name) return opt.name;
+      if (opt.title) return opt.title;
+      if (opt.basicInfo?.firstName || opt.basicInfo?.lastName) {
+        return `${opt.basicInfo.firstName || ''} ${opt.basicInfo.lastName || ''}`.trim();
+      }
+      if (opt.firstName || opt.lastName) {
+        return `${opt.firstName || ''} ${opt.lastName || ''}`.trim();
+      }
+      return opt?.[labelField] || opt?.[fieldName] || "";
+    }
+
     return String(opt);
   };
 

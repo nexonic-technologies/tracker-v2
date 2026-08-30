@@ -52,8 +52,14 @@ const email_configSchema = new mongoose.Schema({
   collection: 'email_configs'
 });
 
-// Ensure only one email config exists
+// Ensure only one email config exists and sanitize credentials
 email_configSchema.pre('save', async function (next) {
+  if (this.password) {
+    this.password = this.password.trim().replace(/\s+/g, '');
+  }
+  if (this.username) {
+    this.username = this.username.trim().toLowerCase();
+  }
   if (this.isNew) {
     await this.constructor.deleteMany({});
   }

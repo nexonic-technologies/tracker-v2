@@ -1,13 +1,24 @@
 import { useState, useEffect, useCallback } from "react";
 import { PayrollService } from "@services";
 import toast from "react-hot-toast";
-import { Calendar, Lock, Unlock, Eye, Plus, X, Loader2, AlertCircle } from "lucide-react";
+import {
+  Calendar,
+  Lock,
+  Unlock,
+  Eye,
+  Plus,
+  Loader2,
+  AlertCircle,
+  ArrowLeft,
+  ShieldCheck
+} from "lucide-react";
+import { useCapability } from "@hooks/useCapability";
 
 const STATUS_CHIP = {
-  Open: "bg-emerald-100 text-emerald-700 text-[11px] font-semibold px-2.5 py-1 rounded-full",
-  'In Progress': "bg-amber-100 text-amber-700 text-[11px] font-semibold px-2.5 py-1 rounded-full",
-  Closed: "bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-full",
-  Reopened: "bg-rose-100 text-rose-700 text-[11px] font-semibold px-2.5 py-1 rounded-full"
+  Open: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 text-[11px] font-semibold px-2.5 py-1 rounded-full",
+  'In Progress': "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 text-[11px] font-semibold px-2.5 py-1 rounded-full",
+  Closed: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-[11px] font-semibold px-2.5 py-1 rounded-full",
+  Reopened: "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 text-[11px] font-semibold px-2.5 py-1 rounded-full"
 };
 
 const MODULE_LABELS = {
@@ -27,11 +38,15 @@ function formatCurrency(amount) {
   return `₹${(amount || 0).toLocaleString("en-IN")}`;
 }
 
-export default function period_closuresTab() {
+export default function PeriodClosuresTab() {
+  const { isSuperAdmin, hasAnyCapability } = useCapability();
+  const canCreate = isSuperAdmin || hasAnyCapability(['period_closures:create']);
+  const canUpdate = isSuperAdmin || hasAnyCapability(['period_closures:update']);
+
+  const [view, setView] = useState("list"); // "list" | "create" | "detail"
   const [closures, setClosures] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [detailClosure, setDetailClosure] = useState(null);
+  const [selectedClosure, setSelectedClosure] = useState(null);
   const [filterStatus, setFilterStatus] = useState("");
   const [filterFY, setFilterFY] = useState("");
 
@@ -60,32 +75,99 @@ export default function period_closuresTab() {
     fetchClosures();
   }, [fetchClosures]);
 
+  const handleQuickClose = async (closureId) => {
+    try {
+      await PayrollService.updatePeriodClosure(closureId, { status: 'Closed' });
+      toast.success("Period closed successfully");
+      fetchClosures();
+      if (selectedClosure && selectedClosure._id === closureId) {
+        setSelectedClosure(prev => ({ ...prev, status: 'Closed' }));
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to close period");
+    }
+  };
+
+  const handleReopen = async (closureId) => {
+    const reason = prompt("Please provide a reason for reopening this period:");
+    if (!reason) return;
+
+    try {
+      await PayrollService.updatePeriodClosure(closureId, {
+        status: 'Reopened',
+        reopenReason: reason
+      });
+      toast.success("Period reopened successfully");
+      fetchClosures();
+      if (selectedClosure && selectedClosure._id === closureId) {
+        setSelectedClosure(prev => ({ ...prev, status: 'Reopened', reopenReason: reason }));
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to reopen period");
+    }
+  };
+
   const stats = [
-    { label: "Total Periods", value: closures.length, color: "var(--module-payroll)" },
-    { label: "Open", value: closures.filter(c => c.status === "Open").length, color: "#10b981" },
-    { label: "In Progress", value: closures.filter(c => c.status === "In Progress").length, color: "#f59e0b" },
-    { label: "Closed", value: closures.filter(c => c.status === "Closed").length, color: "#64748b" }
+    { label: "Total Periods", value: closures.length },
+    { label: "Open", value: closures.filter(c => c.status === "Open").length },
+    { label: "In Progress", value: closures.filter(c => c.status === "In Progress").length },
+    { label: "Closed", value: closures.filter(c => c.status === "Closed").length }
   ];
 
-  if (loading) {
+  if (loading && closures.length === 0) {
     return (
-      <div className="flex items-center justify-center h-48">
-        <Loader2 size={24} className="animate-spin" style={{ color: "var(--module-payroll)" }} />
+      <div className="flex items-center justify-center h-48 pay-card">
+        <Loader2 size={24} className="animate-spin text-brand-solid" />
       </div>
     );
   }
 
+  /* ─────────────────────────────────────────────────────────────
+   * VIEW: CREATE (2026-Grade In-Page Period Closure Creator)
+   * ───────────────────────────────────────────────────────────── */
+  if (view === "create") {
+    return (
+      <PeriodClosureCreateView
+        onBack={() => setView("list")}
+        onCreated={() => {
+          setView("list");
+          fetchClosures();
+        }}
+      />
+    );
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+   * VIEW: DETAIL (2026-Grade Period Closure Detail & Audit View)
+   * ───────────────────────────────────────────────────────────── */
+  if (view === "detail" && selectedClosure) {
+    return (
+      <PeriodClosureDetailView
+        closure={selectedClosure}
+        canUpdate={canUpdate}
+        onClosePeriod={() => handleQuickClose(selectedClosure._id)}
+        onReopenPeriod={() => handleReopen(selectedClosure._id)}
+        onBack={() => setView("list")}
+      />
+    );
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+   * VIEW: LIST
+   * ───────────────────────────────────────────────────────────── */
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((stat, idx) => (
-          <div key={idx} className="pay-stat-card">
-            <p className="pay-stat-card__label">{stat.label}</p>
-            <p className="pay-stat-card__value" style={{ color: stat.color }}>{stat.value}</p>
+    <div className="space-y-4 animate-fadeIn">
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {stats.map(s => (
+          <div key={s.label} className="pay-card p-3.5">
+            <p className="text-[11px] font-semibold text-ink-subtle uppercase tracking-wider">{s.label}</p>
+            <p className="text-[22px] font-bold text-ink leading-tight mt-0.5">{s.value}</p>
           </div>
         ))}
       </div>
 
+      {/* Controls Bar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <select
@@ -106,37 +188,58 @@ export default function period_closuresTab() {
             className="lmx-input text-[12px]"
           >
             <option value="">All Financial Years</option>
-            {[...new Set(closures.map(c => c.financialYearLabel))].map(fy => (
+            {[...new Set(closures.map(c => c.financialYearLabel))].filter(Boolean).map(fy => (
               <option key={fy} value={fy}>{fy}</option>
             ))}
           </select>
         </div>
 
-        <button onClick={() => setShowCreate(true)} className="tracker-btn-accent flex items-center gap-2">
-          <Plus size={14} /> New Period Closure
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setView("create")}
+            className="tracker-btn-brand flex items-center gap-2 text-[13px] py-2 px-4 shadow-sm"
+          >
+            <Plus size={15} />
+            <span>New Period Closure</span>
+          </button>
+        )}
       </div>
 
+      {/* Listing Cards */}
       <div className="space-y-3">
         {closures.length === 0 && (
-          <div className="pay-card p-8 text-center">
-            <Calendar size={32} className="mx-auto mb-3 lmx-icon-tile" />
-            <p className="text-[14px] font-semibold text-ink">No period closures yet</p>
-            <p className="text-[13px] text-ink-muted mt-1">Click "New Period Closure" to create your first period</p>
+          <div className="pay-card p-12 text-center flex flex-col items-center justify-center gap-3">
+            <div className="p-3 rounded-2xl bg-surface-1 text-ink-subtle">
+              <Calendar size={32} />
+            </div>
+            <div>
+              <h3 className="text-[15px] font-semibold text-ink">No Period Closures Defined</h3>
+              <p className="text-[13px] text-ink-muted mt-1 max-w-md mx-auto">
+                Create accounting and payroll period closures to lock past transactional records.
+              </p>
+            </div>
+            {canCreate && (
+              <button
+                onClick={() => setView("create")}
+                className="tracker-btn-brand text-[13px] py-2 px-4 flex items-center gap-2 mt-2"
+              >
+                <Plus size={15} /> Add First Period Closure
+              </button>
+            )}
           </div>
         )}
 
         {closures.map(closure => (
-          <div key={closure._id} className="pay-card p-4">
+          <div key={closure._id} className="pay-card p-4 border border-hairline hover:border-brand-solid/25 transition">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
-                <div className="lmx-icon-tile">
-                  <Calendar size={18} />
+                <div className="p-2.5 rounded-xl bg-brand-solid/10 text-brand-solid">
+                  <Calendar size={20} />
                 </div>
                 <div>
-                  <p className="text-[14px] font-semibold text-ink">{closure.periodLabel}</p>
+                  <p className="text-[15px] font-bold text-ink">{closure.periodLabel}</p>
                   <p className="text-[12px] text-ink-muted">
-                    {formatDate(closure.startDate)} - {formatDate(closure.endDate)}
+                    {formatDate(closure.startDate)} – {formatDate(closure.endDate)}
                     <span className="mx-2">·</span>
                     {closure.financialYearLabel}
                   </p>
@@ -148,13 +251,17 @@ export default function period_closuresTab() {
               </div>
             </div>
 
+            {/* Modules Pill Grid */}
             <div className="mt-3 pt-3 border-t border-hairline-soft">
               <div className="flex flex-wrap gap-2">
                 {Object.entries(closure.modules || {}).map(([moduleName, moduleData]) => (
                   <div
                     key={moduleName}
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] ${moduleData.closed ? 'bg-slate-100 text-slate-600' : 'bg-emerald-50 text-emerald-600'
-                      }`}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold ${
+                      moduleData.closed
+                        ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                        : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                    }`}
                   >
                     {moduleData.closed ? <Lock size={11} /> : <Unlock size={11} />}
                     {MODULE_LABELS[moduleName] || moduleName}
@@ -163,109 +270,79 @@ export default function period_closuresTab() {
               </div>
             </div>
 
+            {/* Summary Metrics */}
             {closure.summary && (
               <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-2 text-[11px] text-ink-muted">
-                <div>
+                <div className="p-2 rounded-lg bg-surface-1">
                   <span className="block text-ink-subtle">Payroll Records</span>
-                  <span className="font-medium text-ink">{closure.summary.totalPayrollRecords || 0}</span>
+                  <span className="font-bold text-ink">{closure.summary.totalPayrollRecords || 0}</span>
                 </div>
-                <div>
+                <div className="p-2 rounded-lg bg-surface-1">
                   <span className="block text-ink-subtle">Expenses</span>
-                  <span className="font-medium text-ink">{formatCurrency(closure.summary.totalExpenseAmount)}</span>
+                  <span className="font-bold text-ink">{formatCurrency(closure.summary.totalExpenseAmount)}</span>
                 </div>
-                <div>
+                <div className="p-2 rounded-lg bg-surface-1">
                   <span className="block text-ink-subtle">Attendance</span>
-                  <span className="font-medium text-ink">{closure.summary.totalAttendanceRecords || 0}</span>
+                  <span className="font-bold text-ink">{closure.summary.totalAttendanceRecords || 0}</span>
                 </div>
-                <div>
+                <div className="p-2 rounded-lg bg-surface-1">
                   <span className="block text-ink-subtle">Time Tracking</span>
-                  <span className="font-medium text-ink">{closure.summary.totalTimeTrackingHours || 0}h</span>
+                  <span className="font-bold text-ink">{closure.summary.totalTimeTrackingHours || 0}h</span>
                 </div>
-                <div>
+                <div className="p-2 rounded-lg bg-surface-1">
                   <span className="block text-ink-subtle">Quotations</span>
-                  <span className="font-medium text-ink">{closure.summary.totalQuotations || 0}</span>
+                  <span className="font-bold text-ink">{closure.summary.totalQuotations || 0}</span>
                 </div>
               </div>
             )}
 
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-hairline-soft">
+            <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-hairline-soft">
               <button
-                onClick={() => setDetailClosure(closure)}
-                className="tracker-btn-ghost flex items-center gap-1.5 text-[12px] py-1.5"
+                onClick={() => {
+                  setSelectedClosure(closure);
+                  setView("detail");
+                }}
+                className="tracker-btn-ghost flex items-center gap-1.5 text-[12px] py-1.5 px-3 border border-hairline"
               >
-                <Eye size={13} /> View Details
+                <Eye size={13} /> View Period Audit
               </button>
-              {closure.status === 'Open' && (
-                <button
-                  onClick={() => handleQuickClose(closure)}
-                  className="tracker-btn-accent flex items-center gap-1.5 text-[12px] py-1.5 px-3"
-                >
-                  <Lock size={13} /> Close Period
-                </button>
-              )}
-              {closure.status === 'Closed' && (
-                <button
-                  onClick={() => handleReopen(closure)}
-                  className="tracker-btn-secondary flex items-center gap-1.5 text-[12px] py-1.5 px-3"
-                >
-                  <Unlock size={13} /> Reopen
-                </button>
-              )}
+
+              <div className="flex items-center gap-2">
+                {closure.status === 'Open' && canUpdate && (
+                  <button
+                    onClick={() => handleQuickClose(closure._id)}
+                    className="tracker-btn-accent flex items-center gap-1.5 text-[12px] py-1.5 px-3.5 shadow-xs"
+                  >
+                    <Lock size={13} /> Close Period
+                  </button>
+                )}
+                {closure.status === 'Closed' && canUpdate && (
+                  <button
+                    onClick={() => handleReopen(closure._id)}
+                    className="tracker-btn-secondary flex items-center gap-1.5 text-[12px] py-1.5 px-3.5 shadow-xs"
+                  >
+                    <Unlock size={13} /> Reopen Period
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
-
-      {showCreate && (
-        <CreateClosureModal
-          onClose={() => setShowCreate(false)}
-          onCreated={() => { setShowCreate(false); fetchClosures(); }}
-        />
-      )}
-
-      {detailClosure && (
-        <ClosureDetailDrawer
-          closure={detailClosure}
-          onClose={() => setDetailClosure(null)}
-          onUpdated={() => { setDetailClosure(null); fetchClosures(); }}
-        />
-      )}
     </div>
   );
-
-  async function handleQuickClose(closure) {
-    try {
-      await PayrollService.updatePeriodClosure(closure._id, { status: 'Closed' });
-      toast.success("Period closed successfully");
-      fetchClosures();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to close period");
-    }
-  }
-
-  async function handleReopen(closure) {
-    const reason = prompt("Please provide a reason for reopening this period:");
-    if (!reason) return;
-
-    try {
-      await PayrollService.updatePeriodClosure(closure._id, {
-        status: 'Reopened',
-        reopenReason: reason
-      });
-      toast.success("Period reopened successfully");
-      fetchClosures();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to reopen period");
-    }
-  }
 }
 
-function CreateClosureModal({ onClose, onCreated }) {
+/* ─────────────────────────────────────────────────────────────────────────
+ * 2026-GRADE CREATE PERIOD CLOSURE PAGE VIEW (No Modal Popup!)
+ * ───────────────────────────────────────────────────────────────────────── */
+function PeriodClosureCreateView({ onBack, onCreated }) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!startDate || !endDate) {
       toast.error("Please select both start and end dates");
       return;
@@ -289,248 +366,223 @@ function CreateClosureModal({ onClose, onCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 tracker-overlay z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-surface rounded-tracker-xl w-full max-w-md overflow-hidden"
-        style={{ boxShadow: "var(--tracker-shadow-overlay)" }}>
-        <div className="pay-gradient-hero px-6 py-5 text-white flex items-center justify-between rounded-t-[16px]">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-white/70">NEW PERIOD CLOSURE</p>
-            <p className="text-[17px] font-semibold mt-0.5">Define Period</p>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-4">
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-muted mb-1.5">Start Date</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="lmx-input"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-muted mb-1.5">End Date</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="lmx-input"
-            />
-          </div>
-
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 flex gap-2">
-            <AlertCircle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
-            <p className="text-[12px] text-amber-800">
-              Financial year will be automatically derived from the start date based on your organization settings.
-            </p>
-          </div>
-        </div>
-
-        <div className="px-5 py-4 border-t border-hairline-soft flex items-center justify-end gap-3">
-          <button onClick={onClose} className="tracker-btn-secondary">Cancel</button>
+    <div className="space-y-4 animate-fadeIn max-w-3xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-hairline">
+        <div className="flex items-center gap-3">
           <button
+            onClick={onBack}
+            className="p-2 rounded-xl border border-hairline bg-surface hover:bg-surface-1 text-ink transition shadow-xs"
+            title="Back to closures"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="lmx-page-eyebrow">PAYROLL / CLOSURES</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-solid/10 text-brand-solid">
+                NEW LOCK PERIOD
+              </span>
+            </div>
+            <h2 className="text-[20px] font-bold text-ink tracking-tight flex items-center gap-2">
+              <Calendar size={18} className="text-brand-solid" />
+              Define New Period Closure
+            </h2>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onBack}
+            className="tracker-btn-ghost text-[13px] py-2 px-4 border border-hairline"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="tracker-btn-accent flex items-center gap-2 disabled:opacity-60"
+            className="tracker-btn-brand flex items-center gap-2 text-[13px] py-2 px-5 shadow-sm"
           >
-            {submitting ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-            {submitting ? "Creating..." : "Create Closure"}
+            {submitting ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+            <span>{submitting ? "Creating…" : "Create Period"}</span>
           </button>
         </div>
       </div>
+
+      {/* Form Card */}
+      <form onSubmit={handleSubmit} className="pay-card p-6 border border-hairline space-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-1.5">
+              Period Start Date <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="date"
+              required
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              className="lmx-input w-full text-[13px]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-1.5">
+              Period End Date <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="date"
+              required
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+              className="lmx-input w-full text-[13px]"
+            />
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-surface-1 border border-hairline space-y-2">
+          <p className="text-[12px] font-bold text-ink">Modules to be Locked upon Closure:</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[12px] text-ink-muted">
+            <span className="flex items-center gap-1.5">✓ Payroll Processing</span>
+            <span className="flex items-center gap-1.5">✓ Attendance Records</span>
+            <span className="flex items-center gap-1.5">✓ Travel Expenses</span>
+            <span className="flex items-center gap-1.5">✓ Time Tracking Logs</span>
+            <span className="flex items-center gap-1.5">✓ Sales Quotations</span>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full tracker-btn-brand py-2.5 text-[13px] flex items-center justify-center gap-2 shadow-md"
+        >
+          {submitting ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />}
+          <span>{submitting ? "Creating Period Closure…" : "Initialize Period Closure"}</span>
+        </button>
+      </form>
     </div>
   );
 }
 
-function ClosureDetailDrawer({ closure, onClose, onUpdated }) {
-  const [closingModule, setClosingModule] = useState(null);
-  const [moduleRemarks, setModuleRemarks] = useState("");
-
-  const handleModuleClose = async (moduleName) => {
-    try {
-      await PayrollService.updatePeriodClosure(closure._id, {
-        [`modules.${moduleName}.closed`]: true,
-        [`modules.${moduleName}.closedAt`]: new Date().toISOString(),
-        [`modules.${moduleName}.remarks`]: moduleRemarks
-      });
-      toast.success(`${MODULE_LABELS[moduleName]} closed successfully`);
-      setClosingModule(null);
-      setModuleRemarks("");
-      onUpdated();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to close module");
-    }
-  };
-
+/* ─────────────────────────────────────────────────────────────────────────
+ * 2026-GRADE PERIOD CLOSURE DETAIL AUDIT VIEW (No Modal Popup!)
+ * ───────────────────────────────────────────────────────────────────────── */
+function PeriodClosureDetailView({ closure, canUpdate, onClosePeriod, onReopenPeriod, onBack }) {
   return (
-    <div className="fixed inset-0 tracker-overlay z-50 flex items-end sm:items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-surface rounded-tracker-xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
-        style={{ boxShadow: "var(--tracker-shadow-overlay)" }}>
-        <div className="pay-gradient-hero px-6 py-5 text-white flex items-center justify-between rounded-t-[16px]">
+    <div className="space-y-4 animate-fadeIn">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-hairline">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="p-2 rounded-xl border border-hairline bg-surface hover:bg-surface-1 text-ink transition shadow-xs"
+            title="Back to closures"
+          >
+            <ArrowLeft size={16} />
+          </button>
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-white/70">PERIOD DETAILS</p>
-            <p className="text-[17px] font-semibold mt-0.5">{closure.periodLabel}</p>
-            <p className="text-[13px] text-white/70 mt-0.5">
-              {formatDate(closure.startDate)} - {formatDate(closure.endDate)} · {closure.financialYearLabel}
+            <div className="flex items-center gap-2">
+              <span className="lmx-page-eyebrow">PAYROLL / CLOSURE AUDIT</span>
+              <span className={STATUS_CHIP[closure.status] || STATUS_CHIP.Open}>{closure.status}</span>
+            </div>
+            <h2 className="text-[20px] font-bold text-ink tracking-tight">
+              {closure.periodLabel} ({closure.financialYearLabel})
+            </h2>
+            <p className="text-[12px] text-ink-muted">
+              {formatDate(closure.startDate)} to {formatDate(closure.endDate)}
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors">
-            <X size={18} />
-          </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 p-5 space-y-5">
-          <div className="flex items-center justify-between p-4 bg-surface-1 rounded-lg">
-            <div>
-              <p className="text-[11px] text-ink-subtle uppercase tracking-[0.4px]">Overall Status</p>
-              <p className="text-[15px] font-semibold text-ink mt-1">{closure.status}</p>
-            </div>
-            <span className={STATUS_CHIP[closure.status] || STATUS_CHIP.Open}>{closure.status}</span>
-          </div>
-
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-muted mb-3">Module Controls</p>
-            <div className="space-y-2">
-              {Object.entries(closure.modules || {}).map(([moduleName, moduleData]) => (
-                <div key={moduleName} className="flex items-center justify-between p-3 border border-hairline rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {moduleData.closed ? <Lock size={16} className="text-slate-500" /> : <Unlock size={16} className="text-emerald-500" />}
-                    <div>
-                      <p className="text-[13px] font-medium text-ink">{MODULE_LABELS[moduleName] || moduleName}</p>
-                      {moduleData.closedAt && (
-                        <p className="text-[11px] text-ink-muted">
-                          Closed {formatDate(moduleData.closedAt)}
-                          {moduleData.closedBy?.name && ` by ${moduleData.closedBy.name}`}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {!moduleData.closed && closure.status !== 'Closed' && (
-                    <button
-                      onClick={() => setClosingModule(moduleName)}
-                      className="tracker-btn-ghost text-[12px] py-1.5 px-3"
-                    >
-                      Close
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {closure.summary && (
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-muted mb-3">Period Summary</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-surface-1 rounded-lg">
-                  <p className="text-[11px] text-ink-subtle">Payroll Records</p>
-                  <p className="text-[16px] font-semibold text-ink mt-1">{closure.summary.totalPayrollRecords || 0}</p>
-                </div>
-                <div className="p-3 bg-surface-1 rounded-lg">
-                  <p className="text-[11px] text-ink-subtle">Total Expenses</p>
-                  <p className="text-[16px] font-semibold text-ink mt-1">{formatCurrency(closure.summary.totalExpenseAmount)}</p>
-                </div>
-                <div className="p-3 bg-surface-1 rounded-lg">
-                  <p className="text-[11px] text-ink-subtle">Attendance Records</p>
-                  <p className="text-[16px] font-semibold text-ink mt-1">{closure.summary.totalAttendanceRecords || 0}</p>
-                </div>
-                <div className="p-3 bg-surface-1 rounded-lg">
-                  <p className="text-[11px] text-ink-subtle">Time Tracking Hours</p>
-                  <p className="text-[16px] font-semibold text-ink mt-1">{closure.summary.totalTimeTrackingHours || 0}h</p>
-                </div>
-                <div className="p-3 bg-surface-1 rounded-lg col-span-2">
-                  <p className="text-[11px] text-ink-subtle">Quotations</p>
-                  <p className="text-[16px] font-semibold text-ink mt-1">{closure.summary.totalQuotations || 0}</p>
-                </div>
-              </div>
-            </div>
+        <div className="flex items-center gap-2">
+          {closure.status === 'Open' && canUpdate && (
+            <button
+              onClick={onClosePeriod}
+              className="tracker-btn-accent flex items-center gap-1.5 text-[13px] py-2 px-4 shadow-sm"
+            >
+              <Lock size={14} /> Close Period
+            </button>
           )}
 
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-muted mb-3">Audit Trail</p>
-            <div className="space-y-2 text-[12px]">
-              <div className="flex justify-between">
-                <span className="text-ink-muted">Created</span>
-                <span className="text-ink">{formatDate(closure.createdAt)}</span>
-              </div>
-              {closure.createdBy?.name && (
-                <div className="flex justify-between">
-                  <span className="text-ink-muted">Created By</span>
-                  <span className="text-ink">{closure.createdBy.name}</span>
-                </div>
-              )}
-              {closure.closedAt && (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">Closed</span>
-                    <span className="text-ink">{formatDate(closure.closedAt)}</span>
-                  </div>
-                  {closure.closedBy?.name && (
-                    <div className="flex justify-between">
-                      <span className="text-ink-muted">Closed By</span>
-                      <span className="text-ink">{closure.closedBy.name}</span>
-                    </div>
-                  )}
-                </>
-              )}
-              {closure.reopenedAt && (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">Reopened</span>
-                    <span className="text-ink">{formatDate(closure.reopenedAt)}</span>
-                  </div>
-                  {closure.reopenReason && (
-                    <div className="flex justify-between">
-                      <span className="text-ink-muted">Reason</span>
-                      <span className="text-ink">{closure.reopenReason}</span>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
+          {closure.status === 'Closed' && canUpdate && (
+            <button
+              onClick={onReopenPeriod}
+              className="tracker-btn-secondary flex items-center gap-1.5 text-[13px] py-2 px-4 shadow-sm"
+            >
+              <Unlock size={14} /> Reopen Period
+            </button>
+          )}
         </div>
-
-        <div className="px-5 py-4 border-t border-hairline-soft flex justify-end">
-          <button onClick={onClose} className="tracker-btn-secondary">Close</button>
-        </div>
-
-        {closingModule && (
-          <div className="absolute inset-0 bg-surface/95 flex items-center justify-center p-4">
-            <div className="w-full max-w-sm space-y-4">
-              <p className="text-[14px] font-semibold text-ink">
-                Close {MODULE_LABELS[closingModule]} Module
-              </p>
-              <textarea
-                placeholder="Add remarks (optional)"
-                value={moduleRemarks}
-                onChange={(e) => setModuleRemarks(e.target.value)}
-                className="lmx-input resize-none h-20"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setClosingModule(null); setModuleRemarks(""); }}
-                  className="tracker-btn-secondary flex-1"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleModuleClose(closingModule)}
-                  className="tracker-btn-accent flex-1"
-                >
-                  Confirm Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Modules Locking Status Grid */}
+      <div className="pay-card p-5 border border-hairline space-y-4">
+        <h3 className="text-[14px] font-bold text-ink pb-2 border-b border-hairline">
+          Module Locking & Audit Status
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {Object.entries(closure.modules || {}).map(([moduleName, moduleData]) => (
+            <div key={moduleName} className="p-3.5 rounded-xl border border-hairline bg-surface-1/40 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[13px] text-ink">{MODULE_LABELS[moduleName] || moduleName}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  moduleData.closed
+                    ? 'bg-slate-200 text-slate-700'
+                    : 'bg-emerald-100 text-emerald-800'
+                }`}>
+                  {moduleData.closed ? 'LOCKED' : 'UNLOCKED'}
+                </span>
+              </div>
+              <p className="text-[11px] text-ink-muted">
+                {moduleData.closed ? `Locked on ${formatDate(moduleData.closedAt)}` : 'Active for edits and entries'}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Summary Metrics */}
+      {closure.summary && (
+        <div className="pay-card p-5 border border-hairline space-y-3">
+          <h3 className="text-[14px] font-bold text-ink pb-2 border-b border-hairline">
+            Snapshot at Closure
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-[13px]">
+            <div className="p-3 rounded-xl bg-surface-1">
+              <p className="text-[11px] text-ink-subtle uppercase">Payroll Runs</p>
+              <p className="text-[18px] font-bold text-ink mt-0.5">{closure.summary.totalPayrollRecords || 0}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-surface-1">
+              <p className="text-[11px] text-ink-subtle uppercase">Expenses Payout</p>
+              <p className="text-[18px] font-bold text-ink mt-0.5">{formatCurrency(closure.summary.totalExpenseAmount)}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-surface-1">
+              <p className="text-[11px] text-ink-subtle uppercase">Attendance Logs</p>
+              <p className="text-[18px] font-bold text-ink mt-0.5">{closure.summary.totalAttendanceRecords || 0}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-surface-1">
+              <p className="text-[11px] text-ink-subtle uppercase">Logged Hours</p>
+              <p className="text-[18px] font-bold text-ink mt-0.5">{closure.summary.totalTimeTrackingHours || 0}h</p>
+            </div>
+            <div className="p-3 rounded-xl bg-surface-1">
+              <p className="text-[11px] text-ink-subtle uppercase">Quotations</p>
+              <p className="text-[18px] font-bold text-ink mt-0.5">{closure.summary.totalQuotations || 0}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reopening Audit Log */}
+      {closure.reopenReason && (
+        <div className="pay-card p-4 border border-hairline bg-rose-50/50 dark:bg-rose-950/20 text-[13px] space-y-1">
+          <p className="font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+            <AlertCircle size={15} /> Reopened Audit Note
+          </p>
+          <p className="text-ink-muted pl-5">{closure.reopenReason}</p>
+        </div>
+      )}
     </div>
   );
 }

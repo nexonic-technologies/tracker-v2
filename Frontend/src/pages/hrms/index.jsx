@@ -22,8 +22,11 @@ const STAGE_META = {
   Rejected: { bg: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/20 dark:text-rose-300 dark:border-rose-800", dot: "bg-rose-500" },
 };
 
+import { useCapability } from "@hooks/useCapability";
+
 export default function HRMSDashboard() {
   const { read, create, update } = useGenericAPI();
+  const { isSuperAdmin, hasAnyCapability } = useCapability();
   const [activeTab, setActiveTab] = useState("dashboard"); // dashboard, jobs, pipeline, onboarding
 
   // Data States
@@ -307,11 +310,11 @@ export default function HRMSDashboard() {
       {/* ─── TABS ─── */}
       <div className="flex items-center gap-1 border-b border-hairline pb-1.5 flex-shrink-0">
         {[
-          { id: "dashboard", label: "Overview", icon: ClipboardList },
-          { id: "jobs", label: "Job Openings", icon: Briefcase },
-          { id: "pipeline", label: "Recruitment Pipeline", icon: Kanban },
-          { id: "onboarding", label: "Onboarding Checklist", icon: ListTodo }
-        ].map(t => {
+          (isSuperAdmin || hasAnyCapability(['hrms_dashboard:view', 'hrms_overview:view'])) && { id: "dashboard", label: "Overview", icon: ClipboardList },
+          (isSuperAdmin || hasAnyCapability(['job_openings:view', 'job_openings:create'])) && { id: "jobs", label: "Job Openings", icon: Briefcase },
+          (isSuperAdmin || hasAnyCapability(['recruitment_pipeline:view', 'candidates:view'])) && { id: "pipeline", label: "Recruitment Pipeline", icon: Kanban },
+          (isSuperAdmin || hasAnyCapability(['onboarding_checklist:view', 'onboardings:view'])) && { id: "onboarding", label: "Onboarding Checklist", icon: ListTodo }
+        ].filter(Boolean).map(t => {
           const Icon = t.icon;
           return (
             <button
