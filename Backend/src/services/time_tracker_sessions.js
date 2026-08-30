@@ -336,6 +336,116 @@ export default function time_tracker_sessions() {
           });
         }
       }
+    },
+
+    /**
+     * Time Tracking, Labor Cost Burn & Utilization Report Generator
+     */
+    async beforeReport(ctx) {
+      const { getModel } = await import('../utils/appRegistry.js');
+      const EmployeeModel = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('employees') : getModel('employees');
+      const TimeSessionModel = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('time_tracker_sessions') : (time_tracker_session || getModel('time_tracker_sessions'));
+      const SalaryStructureModel = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('salary_structures') : models.salary_structures;
+
+      const dateStr = ctx.query?.date || ctx.body?.date || ctx.filter?.date;
+      const month = Number(ctx.query?.month || ctx.body?.month || (new Date().getMonth() + 1));
+      const year = Number(ctx.query?.year || ctx.body?.year || new Date().getFullYear());
+      const departmentId = ctx.query?.departmentId || ctx.body?.departmentId || ctx.filter?.departmentId;
+      const validDeptId = departmentId && departmentId !== 'all' && departmentId !== 'undefined' ? departmentId : null;
+
+      let startDate, endDate;
+      if (dateStr) {
+        const d = new Date(dateStr);
+        startDate = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+        endDate = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+      } else {
+        startDate = new Date(year, month - 1, 1, 0, 0, 0, 0);
+        endDate = new Date(year, month, 0, 23, 59, 59, 999);
+      }
+
+      const empQuery = { status: 'Active', isDeleted: false };
+      if (validDeptId) {
+        empQuery['professionalInfo.department'] = validDeptId;
+      }
+
+      const employees = await EmployeeModel.find(empQuery)
+        .populate('professionalInfo.department', 'name')
+        .populate('professionalInfo.designation', 'title name')
+        .lean();
+
+      // Query sessions for the period
+      const sessions = await TimeSessionModel.find({
+        startTime: { $gte: startDate, $lte: endDate }
+      }).populate('taskId', 'title isBillable taskCode').lean();
+
+      // Group sessions by employee
+      const empSessionsMap = new Map();
+      sessions.forEach(s => {
+        const empId = (s.userId || s.employeeId || s.user)?._id?.toString() || (s.userId || s.employeeId || s.user)?.toString();
+        if (!empId) return;
+        if (!empSessionsMap.has(empId)) {
+          empSessionsMap.set(empId, []);
+        }
+        empSessionsMap.get(empId).push(s);
+      });
+
+      // Query salary structures for resolving real hourly loaded rates
+      const salaries = SalaryStructureModel ? await SalaryStructureModel.find({ isDeleted: false }).lean() : [];
+      const salaryMap = new Map();
+      salaries.forEach(s => {
+        if (s.employeeId) salaryMap.set(s.employeeId.toString(), s);
+      });
+
+      const rows = employees.map(emp => {
+        const empIdStr = emp._id.toString();
+        const userSessions = empSessionsMap.get(empIdStr) || [];
+
+        let totalSeconds = 0;
+        let billableSeconds = 0;
+        let nonBillableSeconds = 0;
+        let activeTaskTitle = '-';
+
+        userSessions.forEach(s => {
+          const duration = Number(s.duration) || 0;
+          totalSeconds += duration;
+          if (s.isBillable || s.taskId?.isBillable) {
+            billableSeconds += duration;
+          } else {
+            nonBillableSeconds += duration;
+          }
+          if (s.status === 'in_progress' && s.taskId?.title) {
+            activeTaskTitle = s.taskId.title;
+          }
+        });
+
+        const totalHours = Math.round((totalSeconds / 3600) * 10) / 10;
+        const billableHours = Math.round((billableSeconds / 3600) * 10) / 10;
+        const nonBillableHours = Math.round((nonBillableSeconds / 3600) * 10) / 10;
+
+        // Resolve hourly rate
+        const sal = salaryMap.get(empIdStr);
+        const ctc = sal?.ctc || emp.salaryDetails?.ctc || 600000;
+        const resolvedHourlyRate = Math.round((ctc / 2080) * 100) / 100;
+        const totalLaborCostBurn = Math.round(totalHours * resolvedHourlyRate);
+        const utilization = totalHours > 0 ? Math.round((billableHours / totalHours) * 100) : 0;
+
+        return {
+          empId: emp.professionalInfo?.empId || emp.empId || '-',
+          employeeName: `${emp.basicInfo?.firstName || ''} ${emp.basicInfo?.lastName || ''}`.trim() || 'Employee',
+          department: emp.professionalInfo?.department?.name || '-',
+          designation: emp.professionalInfo?.designation?.title || emp.professionalInfo?.designation?.name || '-',
+          totalSessions: userSessions.length,
+          totalLoggedHours: `${totalHours} hrs`,
+          billableHours: `${billableHours} hrs`,
+          nonBillableHours: `${nonBillableHours} hrs`,
+          hourlyCostRate: `₹${resolvedHourlyRate.toLocaleString('en-IN')}/hr`,
+          totalLaborCostBurn: `₹${totalLaborCostBurn.toLocaleString('en-IN')}`,
+          utilizationRate: `${utilization}%`,
+          activeTask: activeTaskTitle
+        };
+      });
+
+      return { data: rows };
     }
   };
 }

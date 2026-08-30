@@ -105,7 +105,9 @@ export async function populateHelper(req, res, next) {
         fields,
         filter: optionsSource.filter || filter || {},
         populateFields: rawPopulateFields,
-        body: req.body,
+        body: req.body || {},
+        query: req.query || {},
+        optionsSource,
         user: req.user,
         tenantContext: req.tenantContext
       });

@@ -29,7 +29,7 @@ export default function ReportsHub() {
     { id: 'mis', label: '⭐ MIS Executive Cockpit', icon: Award },
     { id: 'daily', label: 'Daily Operations', icon: Calendar },
     { id: 'payroll', label: 'Payroll & Statutory', icon: DollarSign },
-    { id: 'tasks', label: 'Tasks & Velocity', icon: CheckCircle2 },
+    { id: 'tasks', label: '⏱️ Time & Tasks Velocity', icon: CheckCircle2 },
     { id: 'assets', label: 'Assets & Stock', icon: Briefcase },
     { id: 'crm', label: 'CRM & Pipeline', icon: Users },
     { id: 'audit', label: 'HR Analytics & Audit', icon: ShieldCheck }
@@ -112,40 +112,40 @@ export default function ReportsHub() {
   const columns = reportData.length > 0 ? Object.keys(reportData[0]) : [];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100">
+    <div className="w-full px-4 py-3 space-y-3 text-slate-800 dark:text-slate-100">
       {/* 2026-Grade Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-              <BarChart3 className="w-6 h-6" />
+            <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              <BarChart3 className="w-5 h-5" />
             </span>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
               Enterprise ERP Report Center
             </h1>
           </div>
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
             Department-scoped executive cockpits, statutory exports, operational logs, and data analytics.
           </p>
         </div>
 
         {/* Command-Grade Search & Export Controls */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[260px]">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[240px]">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2 text-slate-400" />
             <input
               type="text"
               placeholder="Search reports or dataset... (⌘K)"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold"
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-lg focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold"
             />
           </div>
 
           {activeTab !== 'mis' && (
             <button
               onClick={handleDownloadCSV}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs rounded-lg shadow-xs transition-all cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               Export CSV
@@ -169,7 +169,7 @@ export default function ReportsHub() {
       />
 
       {/* Domain Navigation Menu Bar */}
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+      <div className="flex flex-wrap gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-2">
         {categories.map(tab => {
           const Icon = tab.icon;
           return (
@@ -180,7 +180,7 @@ export default function ReportsHub() {
                 const firstOption = DYNAMIC_REPORT_CATALOG.find(r => r.category === tab.id);
                 if (firstOption) setActiveReport(firstOption.id);
               }}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${activeTab === tab.id
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === tab.id
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
                 }`}
@@ -196,9 +196,9 @@ export default function ReportsHub() {
       {activeTab === 'mis' ? (
         <MISReportCockpit />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
           {/* Dynamic Report Catalog Menu Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="xl:col-span-3">
             <ReportCatalogSidebar
               reports={filteredCatalog}
               activeReport={activeReport}
@@ -207,7 +207,7 @@ export default function ReportsHub() {
           </div>
 
           {/* Report Data Grid */}
-          <div className="lg:col-span-3">
+          <div className="xl:col-span-9">
             <ReportDataGrid
               loading={loading}
               error={error}

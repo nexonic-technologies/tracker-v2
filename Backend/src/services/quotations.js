@@ -173,20 +173,19 @@ export default function quotations() {
     },
 
     async afterUpdate(ctx) {
-      if (ctx.createRevisionPayload) {
-        const { default: models } = await import('../models/Collection.js');
-        await models.quotation_revisions.create(ctx.createRevisionPayload);
-      }
-    },
-
-    async beforeDelete(ctx) {
-      const { role, docId } = ctx;
-      // Intentionally left blank - keep extensibility point
-    },
-
-    async afterUpdate(ctx) {
       const { body, data: quotation } = ctx;
-      // If quotation is accepted/converted, activate the client (backwards-compatible logic)
+
+      // 1. Revision save when moving to Revision Requested
+      if (ctx.createRevisionPayload) {
+        try {
+          const { default: models } = await import('../models/Collection.js');
+          await models.quotation_revisions.create(ctx.createRevisionPayload);
+        } catch (err) {
+          console.error('[quotations service] Error saving quotation revision:', err.message);
+        }
+      }
+
+      // 2. If quotation is accepted/converted, activate the client (backwards-compatible logic)
       if (body.status === 'Accepted' || body.status === 'Client Approved' || body.status === 'Converted to Order') {
         try {
           const clientId = quotation.clientId;
@@ -211,9 +210,25 @@ export default function quotations() {
       }
     },
 
+    async beforeDelete(ctx) {
+      // Intentionally left blank - keep extensibility point
+    },
+
     async afterRead({ role, data }) {
       // Preserve existing behaviour; leave as pass-through for now
       return data;
+    },
+
+    /**
+     * C-02: Quotation Conversion Ledger Report
+     */
+    async beforeReport(ctx) {
+      const { default: reportService } = await import('./business/reportService.js');
+      const startDate = ctx.query?.startDate || ctx.body?.startDate || null;
+      const endDate = ctx.query?.endDate || ctx.body?.endDate || null;
+
+      const data = await reportService.getQuotationConversionLedgerReport(startDate, endDate);
+      return { data };
     }
   };
 }

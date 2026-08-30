@@ -184,7 +184,7 @@ const CRMQuotations = () => {
     client: q.clientId?.name || "Unknown Client",
     contact: q.contactId ? `${q.contactId.firstName} ${q.contactId.lastName || ""}`.trim() : "None",
     rev: `Rev ${q.revisionNumber || 0}`,
-    total: `$${(q.grandTotal || 0).toLocaleString()}`,
+    total: `₹${(q.grandTotal || 0).toLocaleString()}`,
     status: q.status,
     expiry: q.validUntil ? new Date(q.validUntil).toLocaleDateString() : "30 days default",
     quoteData: q
@@ -369,18 +369,18 @@ const CRMQuotations = () => {
                   <div key={idx} className="flex justify-between py-2 border-b text-sm">
                     <div>
                       <p className="font-semibold">{item.description || "Quoted Service"}</p>
-                      <p className="text-xs text-gray-500">Qty: {item.quantity} x ${item.unitPrice}</p>
+                      <p className="text-xs text-gray-500">Qty: {item.quantity} x ₹{item.unitPrice}</p>
                     </div>
-                    <span className="font-bold">${item.lineTotal?.toLocaleString()}</span>
+                    <span className="font-bold">₹{item.lineTotal?.toLocaleString()}</span>
                   </div>
                 ))}
               </div>
 
               <div className="mt-4 space-y-1 text-right text-sm">
-                <p>Subtotal: <span className="font-semibold">${selectedQuotation.subtotal?.toLocaleString()}</span></p>
-                <p>Tax: <span className="font-semibold">${selectedQuotation.totalTax?.toLocaleString()}</span></p>
-                <p>Discount: <span className="font-semibold">-${selectedQuotation.totalDiscount?.toLocaleString()}</span></p>
-                <p className="text-lg font-bold">Grand Total: <span className="text-indigo-600">${selectedQuotation.grandTotal?.toLocaleString()}</span></p>
+                <p>Subtotal: <span className="font-semibold">₹{selectedQuotation.subtotal?.toLocaleString()}</span></p>
+                <p>Tax: <span className="font-semibold">₹{selectedQuotation.totalTax?.toLocaleString()}</span></p>
+                <p>Discount: <span className="font-semibold">-₹{selectedQuotation.totalDiscount?.toLocaleString()}</span></p>
+                <p className="text-lg font-bold">Grand Total: <span className="text-indigo-600">₹{selectedQuotation.grandTotal?.toLocaleString()}</span></p>
               </div>
             </div>
 

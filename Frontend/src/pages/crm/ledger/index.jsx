@@ -73,8 +73,8 @@ const CRMClientLedger = () => {
     reference: entry.referenceModel === "order_acknowledgements" ? "Order Acknowledgement" : "Payment Journal",
     description: entry.description || "N/A",
     narration: entry.narration || "N/A",
-    amount: `$${(entry.amount || 0).toLocaleString()}`,
-    balance: `$${(entry.runningBalance || 0).toLocaleString()}`
+    amount: `₹${(entry.amount || 0).toLocaleString()}`,
+    balance: `₹${(entry.runningBalance || 0).toLocaleString()}`
   }));
 
   return (
@@ -106,18 +106,18 @@ const CRMClientLedger = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
               <h4 className="text-sm font-semibold text-gray-500 uppercase">Total Billed (Credit)</h4>
-              <p className="text-3xl font-bold text-gray-900 mt-1">${summary.totalBilled.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">₹{summary.totalBilled.toLocaleString()}</p>
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
               <h4 className="text-sm font-semibold text-gray-500 uppercase">Total Paid (Debit)</h4>
-              <p className="text-3xl font-bold text-gray-900 mt-1">${summary.totalPaid.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">₹{summary.totalPaid.toLocaleString()}</p>
             </div>
 
             <div className={`bg-white p-6 rounded-lg shadow border-l-4 ${summary.outstanding > 0 ? 'border-red-500' : 'border-gray-500'}`}>
               <h4 className="text-sm font-semibold text-gray-500 uppercase">Outstanding Balance</h4>
               <p className={`text-3xl font-bold mt-1 ${summary.outstanding > 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                ${summary.outstanding.toLocaleString()}
+                ₹{summary.outstanding.toLocaleString()}
               </p>
             </div>
           </div>

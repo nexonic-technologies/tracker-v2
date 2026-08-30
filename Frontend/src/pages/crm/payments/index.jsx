@@ -105,11 +105,12 @@ const CRMPayments = () => {
     receipt: p.receiptNumber,
     client: p.clientId?.name || "Unknown Client",
     order: p.orderId?.orderNumber || "Direct Payment",
-    amount: `$${(p.amount || 0).toLocaleString()}`,
+    amount: `₹${(p.amount || 0).toLocaleString()}`,
     date: new Date(p.paymentDate).toLocaleDateString(),
     mode: p.paymentMode,
     ref: p.referenceNumber || "N/A",
     status: p.status,
+    action: p.status,
     paymentData: p
   }));
 
@@ -145,12 +146,16 @@ const CRMPayments = () => {
           receipt: (row) => (
             <span className="font-semibold text-gray-900">{row.receipt}</span>
           ),
-          interactions: (row) => (
+          action: (row) => (
             <div className="flex gap-2">
               {row.status === "Draft" && (
                 <button
-                  onClick={() => verifyPayment(row.paymentData)}
-                  className="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    verifyPayment(row.paymentData);
+                  }}
+                  className="px-2.5 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 font-semibold shadow-xs"
                 >
                   Verify Payment
                 </button>

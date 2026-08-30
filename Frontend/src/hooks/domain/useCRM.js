@@ -11,6 +11,8 @@ export function useCRM(initialOptions = {}) {
   const [orders, setOrders] = useState([]);
   const [payments, setPayments] = useState([]);
   const [contacts, setContacts] = useState([]);
+  const [opportunities, setOpportunities] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -59,6 +61,36 @@ export function useCRM(initialOptions = {}) {
     }
   }, [initialOptions]);
 
+  const fetchOpportunities = useCallback(async (options = initialOptions) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await CRMService.getOpportunities(options);
+      setOpportunities(data?.data || data || []);
+    } catch (err) {
+      console.error('useCRM fetchOpportunities error:', err);
+      setError(err);
+      toast.error('Failed to load opportunities');
+    } finally {
+      setLoading(false);
+    }
+  }, [initialOptions]);
+
+  const fetchInvoices = useCallback(async (options = initialOptions) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await CRMService.getInvoices(options);
+      setInvoices(data?.data || data || []);
+    } catch (err) {
+      console.error('useCRM fetchInvoices error:', err);
+      setError(err);
+      toast.error('Failed to load invoices');
+    } finally {
+      setLoading(false);
+    }
+  }, [initialOptions]);
+
   useEffect(() => {
     fetchQuotations();
   }, [fetchQuotations]);
@@ -68,10 +100,14 @@ export function useCRM(initialOptions = {}) {
     orders,
     payments,
     contacts,
+    opportunities,
+    invoices,
     loading,
     error,
     fetchQuotations,
     fetchOrders,
     fetchContacts,
+    fetchOpportunities,
+    fetchInvoices,
   };
 }

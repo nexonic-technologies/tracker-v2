@@ -64,6 +64,7 @@ export default async function buildReportQuery(ctx) {
 
     if (typeof serviceInstance?.beforeReport === "function") {
       const hook = await serviceInstance.beforeReport(ctx);
+      if (hook?.data !== undefined) return hook.data;
       if (hook?.filter) filter = hook.filter;
       if (hook?.pipeline) ctx.pipeline = hook.pipeline;
       if (hook?.fields) fields = hook.fields;

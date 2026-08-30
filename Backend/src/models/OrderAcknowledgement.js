@@ -10,6 +10,7 @@ const OrderModuleSchema = new mongoose.Schema({
 const order_acknowledgementsSchema = new mongoose.Schema({
   orderNumber: { type: String, unique: true },
   quotationId: { type: mongoose.Schema.Types.ObjectId, ref: 'quotations', required: true, index: true },
+  opportunityId: { type: mongoose.Schema.Types.ObjectId, ref: 'opportunities', index: true },
   clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'clients', required: true, index: true },
 
   modules: [OrderModuleSchema],

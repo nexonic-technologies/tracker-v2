@@ -1,7 +1,16 @@
+const VALID_TRANSITIONS = {
+  New: ['Qualified', 'Closed Lost'],
+  Qualified: ['Proposal', 'Closed Lost'],
+  Proposal: ['Negotiation', 'Closed Lost'],
+  Negotiation: ['Closed Won', 'Closed Lost'],
+  'Closed Won': [],
+  'Closed Lost': ['New', 'Qualified']
+};
+
 export default function clients() {
   return {
     async beforeUpdate(ctx) {
-      const { body, data: client, role, docId } = ctx;
+      const { body, data: client, docId } = ctx;
       const { default: models } = await import('../models/Collection.js');
 
       // Ensure we have the client document
@@ -10,7 +19,7 @@ export default function clients() {
         clientDoc = await models.clients.findById(docId).lean();
       }
 
-      // 1. Validate lead status transition (existing rule)
+      // 1. Validate lead status transition (declarative state machine)
       if (body.leadStatus && clientDoc && body.leadStatus !== clientDoc.leadStatus) {
         const allowed = VALID_TRANSITIONS[clientDoc.leadStatus] || [];
         if (!allowed.includes(body.leadStatus)) {
@@ -20,9 +29,9 @@ export default function clients() {
 
       // 2. Prevent manual leadStatus update to 'Closed Won' (must be via OA approval)
       if (body.leadStatus === 'Closed Won' && clientDoc && clientDoc.leadStatus !== 'Closed Won') {
-        const approvedOA = await models.orderacknowledgments.findOne({
+        const approvedOA = await models.order_acknowledgements.findOne({
           clientId: clientDoc._id,
-          status: 'Approved'
+          status: { $in: ['Client Approved', 'Active', 'Completed'] }
         }).lean();
 
         if (!approvedOA) {
@@ -32,9 +41,9 @@ export default function clients() {
 
       // 3. Prevent manual activation if OA is pending
       if (body.Status === 'Active' && clientDoc && clientDoc.Status !== 'Active') {
-        const approvedOA = await models.orderacknowledgments.findOne({
+        const approvedOA = await models.order_acknowledgements.findOne({
           clientId: clientDoc._id,
-          status: 'Approved'
+          status: { $in: ['Client Approved', 'Active', 'Completed'] }
         }).lean();
 
         if (!approvedOA) {
@@ -74,7 +83,19 @@ export default function clients() {
           console.error('[Clients Service] Error logging leadStatus change:', err.message);
         }
       }
+    },
+
+    /**
+     * MIS-02: Client Profitability & Delivery Margin Report
+     */
+    async beforeReport(ctx) {
+      const { default: reportService } = await import('./business/reportService.js');
+      const startDate = ctx.query?.startDate || ctx.body?.startDate || null;
+      const endDate = ctx.query?.endDate || ctx.body?.endDate || null;
+
+      const data = await reportService.getClientProfitabilityReport(startDate, endDate);
+      return { data };
     }
-  }
+  };
 }
 

@@ -66,7 +66,7 @@ const CRMOrders = () => {
     number: o.orderNumber,
     client: o.clientId?.name || "Unknown Client",
     quotation: o.quotationId?.quotationNumber || "Direct Order",
-    value: `$${(o.totalOrderValue || 0).toLocaleString()}`,
+    value: `₹${(o.totalOrderValue || 0).toLocaleString()}`,
     status: o.status,
     salesPerson: o.salesPerson ? `${o.salesPerson.basicInfo?.firstName || ""} ${o.salesPerson.basicInfo?.lastName || ""}`.trim() : "None",
     orderData: o
@@ -138,13 +138,13 @@ const CRMOrders = () => {
                     <div>
                       <p className="font-semibold">{mod.description || "Project Module/Service"}</p>
                     </div>
-                    <span className="font-bold">${mod.agreedValue?.toLocaleString()}</span>
+                    <span className="font-bold">₹{mod.agreedValue?.toLocaleString()}</span>
                   </div>
                 ))}
               </div>
               <div className="text-right mt-4">
                 <span className="text-sm text-gray-500">Total Order Value: </span>
-                <span className="text-xl font-bold text-indigo-600">${selectedOrder.totalOrderValue?.toLocaleString()}</span>
+                <span className="text-xl font-bold text-indigo-600">₹{selectedOrder.totalOrderValue?.toLocaleString()}</span>
               </div>
             </div>
 

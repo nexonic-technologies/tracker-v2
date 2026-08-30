@@ -238,7 +238,7 @@ export class CRMService {
     return response.data;
   }
   static async getOrders(options = {}) {
-    const req = PopulateApi.READ('orders', null, options);
+    const req = PopulateApi.READ('order_acknowledgements', null, options);
     const response = await axiosInstance.post(req.url, req.payload);
     return response.data;
   }
@@ -252,6 +252,37 @@ export class CRMService {
     const response = await axiosInstance.post(req.url, req.payload);
     return response.data;
   }
+  static async getOpportunities(options = {}) {
+    const req = PopulateApi.READ('opportunities', null, options);
+    const response = await axiosInstance.post(req.url, req.payload);
+    return response.data;
+  }
+  static async createOpportunity(data) {
+    const req = PopulateApi.CREATE('opportunities', data);
+    const response = await axiosInstance.post(req.url, req.payload);
+    return response.data;
+  }
+  static async updateOpportunity(id, data) {
+    const req = PopulateApi.UPDATE('opportunities', id, data);
+    const response = await axiosInstance.put(req.url, req.payload);
+    return response.data;
+  }
+  static async getInvoices(options = {}) {
+    const req = PopulateApi.READ('invoices', null, options);
+    const response = await axiosInstance.post(req.url, req.payload);
+    return response.data;
+  }
+  static async createInvoice(data) {
+    const req = PopulateApi.CREATE('invoices', data);
+    const response = await axiosInstance.post(req.url, req.payload);
+    return response.data;
+  }
+  static async updateInvoice(id, data) {
+    const req = PopulateApi.UPDATE('invoices', id, data);
+    const response = await axiosInstance.put(req.url, req.payload);
+    return response.data;
+  }
 }
+
 
 

@@ -256,6 +256,15 @@ export default function employeesService() {
       } catch (err) {
         console.warn('[EmployeeService.afterCreate] UserLogin sync failed:', err.message);
       }
+    },
+
+    /**
+     * H-01: Headcount & Attrition Analytics Report
+     */
+    async beforeReport(ctx) {
+      const { default: reportService } = await import('./business/reportService.js');
+      const data = await reportService.getHeadcountAnalytics();
+      return { data };
     }
   };
 }

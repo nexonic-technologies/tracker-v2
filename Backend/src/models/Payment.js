@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const PaymentSchema = new mongoose.Schema({
   clientId: { type: mongoose.Schema.Types.ObjectId, ref: "clients", required: true, index: true },
-  oaId: { type: mongoose.Schema.Types.ObjectId, ref: "orderacknowledgments", index: true },
+  oaId: { type: mongoose.Schema.Types.ObjectId, ref: "order_acknowledgements", index: true },
   
   amount: { type: Number, required: true, min: 0 },
   paymentDate: { type: Date, required: true, default: Date.now },
