@@ -1,5 +1,4 @@
 import { getTenantModel } from '../tenant/tenantContext.js';
-import { getCanonicalModelName } from '../models/canonicalModelMap.js';
 import { getGlobalModels } from '../models/global/index.js';
 
 const registry = {
@@ -32,31 +31,41 @@ export function getComponent(type, name) {
  * @returns {any}
  */
 export function getModel(name) {
-  const canonicalName = getCanonicalModelName(name) || name;
-  const tenantModel = getTenantModel(canonicalName) || getTenantModel(name);
+  if (!name) return null;
+  const tenantModel = getTenantModel(name);
   if (tenantModel) {
     return tenantModel;
   }
-  const fallback = registry.models[canonicalName] || registry.models[name];
+
+  const raw = String(name).trim();
+  const lower = raw.toLowerCase();
+  const clean = lower.replace(/[^a-z0-9]/g, '');
+
+  const fallback = registry.models[raw] || registry.models[lower] || registry.models[clean];
   if (fallback) {
     return fallback;
   }
+
   try {
     const globalModels = getGlobalModels();
     if (globalModels) {
-      const gModel = globalModels[canonicalName] || globalModels[name] || globalModels[`jarvis_${name}`] || globalModels[`Jarvis${canonicalName}`];
+      const gModel = globalModels[raw] || globalModels[lower] || globalModels[clean] || globalModels[`jarvis_${clean}`];
       if (gModel) return gModel;
     }
   } catch (_) {}
-  throw new Error(`[appRegistry] Model "${name}" (canonical: "${canonicalName}") is not registered on active tenant context or global registry`);
+
+  throw new Error(`[appRegistry] Model "${name}" is not registered on active tenant context or global registry`);
 }
 
 /**
  * Helper to retrieve a service hook synchronously.
  */
 export function getService(name) {
-  const canonicalName = getCanonicalModelName(name) || name;
-  return registry.services[canonicalName] || registry.services[name] || null;
+  if (!name) return null;
+  const raw = String(name).trim();
+  const lower = raw.toLowerCase();
+  const clean = lower.replace(/[^a-z0-9]/g, '');
+  return registry.services[raw] || registry.services[lower] || registry.services[clean] || null;
 }
 
 /**
@@ -65,5 +74,3 @@ export function getService(name) {
 export function getProvider(name) {
   return registry.providers[name] || null;
 }
-
-

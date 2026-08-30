@@ -1,8 +1,6 @@
-// Backend/scripts/alignServiceFiles.mjs
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { CANONICAL_MODEL_NAMES, getCanonicalModelName } from '../src/models/canonicalMapDefinitions.js';
 import { MODULE_DEFINITIONS } from '../src/models/tenantRegistry.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -156,17 +154,6 @@ function getCanonicalSnakeCase(filenameBase) {
     const s1 = model.toLowerCase().replace(/[^a-z0-9]/g, '');
     if (s1 === `${stripped}s` || `${s1}s` === stripped) {
       return model;
-    }
-  }
-
-  // 3. Fallback to canonical model name mapping
-  const pascalName = getCanonicalModelName(filenameBase) || getCanonicalModelName(stripped);
-  if (pascalName) {
-    // Look up in tenant registry
-    for (const model of allTenantModels) {
-      if (CANONICAL_MODEL_NAMES[model] === pascalName) {
-        return model;
-      }
     }
   }
 

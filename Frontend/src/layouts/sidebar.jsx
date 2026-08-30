@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
-import { ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Sparkles } from "lucide-react";
 import { usePermission } from "../context/permissionProvider";
+import { triggerReleaseNotesModal } from "../services/releaseNotesService";
 
 const getIconifyName = (iconName) => {
   if (!iconName) return "ic:baseline-help-outline";
@@ -265,16 +266,28 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
 
       {/* Footer */}
       <div
-        className={`h-12 flex items-center border-t border-hairline-soft flex-shrink-0 ${isExpandedView ? "px-4 justify-between" : "justify-center"
+        className={`h-12 flex items-center border-t border-hairline-soft flex-shrink-0 ${isExpandedView ? "px-3 justify-between" : "justify-center"
           }`}
       >
         <span
           className={`text-[11px] text-ink-subtle whitespace-nowrap transition-opacity duration-300 ${isExpandedView ? "opacity-100" : "opacity-0 hidden"
             }`}
         >
-          © {new Date().getFullYear()} Portal
+          © {new Date().getFullYear()} WorkHub
         </span>
 
+        {/* Release Version Trigger */}
+        <button
+          type="button"
+          onClick={() => triggerReleaseNotesModal()}
+          title="View What's New / Release Notes"
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-surface-1 hover:bg-[var(--brand-teal-light)] text-ink-muted hover:text-[var(--brand-solid)] border border-hairline hover:border-purple-300 transition-all cursor-pointer ${
+            isExpandedView ? "opacity-100" : "px-1.5 py-0.5 text-[9px]"
+          }`}
+        >
+          <Sparkles className="h-2.5 w-2.5 text-purple-500" />
+          <span>v3.1.4</span>
+        </button>
       </div>
     </aside>);
 };

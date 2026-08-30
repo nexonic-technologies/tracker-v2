@@ -2,7 +2,6 @@ import { AsyncLocalStorage } from 'async_hooks';
 import mongoose from 'mongoose';
 import { getGlobalModels } from '../models/global/index.js';
 import staticModelMap from '../models/tenantRegistry.js';
-import { getCanonicalModelName } from '../models/canonicalModelMap.js';
 
 const tenantStorage = new AsyncLocalStorage();
 
@@ -49,18 +48,29 @@ export function createTenantContext({
       if (!modelName) {
         throw new Error('[tenantContext] modelName is required');
       }
-      const canonicalName = getCanonicalModelName(modelName) || modelName;
-      const key = canonicalName.toLowerCase();
+      const rawName = String(modelName).trim();
+      const key = rawName.toLowerCase();
+      const cleanKey = key.replace(/[^a-z0-9]/g, '');
 
-      let Model = models[canonicalName] ||
-                    models[key] ||
-                    models[modelName] ||
-                    (connection && connection.models ? (connection.models[canonicalName] || connection.models[modelName] || connection.models[key] || connection.models[key + 's']) : null);
+      let Model = models[rawName] ||
+                  models[key] ||
+                  models[cleanKey] ||
+                  (connection && connection.models ? (
+                    connection.models[rawName] ||
+                    connection.models[key] ||
+                    connection.models[cleanKey] ||
+                    connection.models[key + 's'] ||
+                    connection.models[cleanKey + 's']
+                  ) : null);
 
       if (!Model && connection) {
-        const staticModelOrSchema = normalizedStaticModelMap.get(key) || staticModelMap[key] || staticModelMap[canonicalName] || staticModelMap[modelName];
+        const staticModelOrSchema = normalizedStaticModelMap.get(key) ||
+                                    normalizedStaticModelMap.get(cleanKey) ||
+                                    staticModelMap[key] ||
+                                    staticModelMap[rawName] ||
+                                    staticModelMap[cleanKey];
         if (staticModelOrSchema) {
-          const targetName = staticModelOrSchema.modelName || canonicalName || modelName;
+          const targetName = staticModelOrSchema.modelName || rawName;
           if (connection.models && connection.models[targetName]) {
             Model = connection.models[targetName];
           } else if (connection.models && connection.models[targetName.toLowerCase()]) {
@@ -75,8 +85,8 @@ export function createTenantContext({
 
           if (Model) {
             models[key] = Model;
-            models[modelName] = Model;
-            models[canonicalName] = Model;
+            models[rawName] = Model;
+            models[cleanKey] = Model;
             models[targetName] = Model;
             models[targetName.toLowerCase()] = Model;
           }
@@ -87,7 +97,7 @@ export function createTenantContext({
         try {
           const globalModels = getGlobalModels();
           if (globalModels) {
-            Model = globalModels[canonicalName] || globalModels[modelName] || globalModels[key];
+            Model = globalModels[rawName] || globalModels[key] || globalModels[cleanKey];
           }
         } catch (e) {
           // Global models not yet initialized
@@ -95,7 +105,7 @@ export function createTenantContext({
       }
 
       if (!Model) {
-        throw new Error(`[tenantContext] Model "${modelName}" (canonical: "${canonicalName}") is not registered on active tenant context`);
+        throw new Error(`[tenantContext] Model "${modelName}" is not registered on active tenant context`);
       }
       return Model;
     },
@@ -136,9 +146,10 @@ export function getTenantModel(modelName) {
     }
   }
   if (store && store.models) {
-    const canonicalName = getCanonicalModelName(modelName) || modelName;
-    const key = canonicalName.toLowerCase();
-    return store.models[canonicalName] || store.models[key] || store.models[modelName] || null;
+    const raw = String(modelName).trim();
+    const key = raw.toLowerCase();
+    const cleanKey = key.replace(/[^a-z0-9]/g, '');
+    return store.models[raw] || store.models[key] || store.models[cleanKey] || null;
   }
   return null;
 }

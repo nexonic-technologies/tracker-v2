@@ -62,6 +62,7 @@ import attendance_policies from "./AttendancePolicy.js";
 import leave_transactions from "./LeaveTransaction.js";
 import payments from "./Payment.js";
 import general_settings from "./GeneralSettings.js";
+import release_notes from "./ReleaseNote.js";
 import operational_events from "./OperationalEvent.js";
 import notificationrules from "./NotificationRule.js";
 import notification_deliveries from "./NotificationDelivery.js";
@@ -120,6 +121,7 @@ import employee_task_queue_requests from "./EmployeeTaskQueueRequest.js";
 
 const models = {
   general_settings,
+  release_notes,
   access_policies,
   employees,
   departments,
@@ -234,7 +236,6 @@ const models = {
 };
 
 import { getTenantModel } from "../tenant/tenantContext.js";
-import { getCanonicalModelName } from "./canonicalModelMap.js";
 
 const dynamicModelsProxy = new Proxy(models, {
   get(target, prop) {
@@ -247,11 +248,7 @@ const dynamicModelsProxy = new Proxy(models, {
     // 2. Direct static target lookup
     if (target[prop]) return target[prop];
 
-    // 3. Canonical model name lookup (e.g. ErrorLog, Session, ApiHitLog)
-    const canonicalName = getCanonicalModelName(prop);
-    if (target[canonicalName]) return target[canonicalName];
-
-    // 4. Normalized string fallback (e.g. "error_logs" -> "errorlog", "sessions" -> "session")
+    // 3. Normalized string fallback (e.g. "error_logs" -> "errorlog", "sessions" -> "session")
     const lowerProp = String(prop).toLowerCase();
     if (target[lowerProp]) return target[lowerProp];
 

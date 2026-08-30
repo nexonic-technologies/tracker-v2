@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import pageCapabilityMappingHelper from '../Config/pageCapabilityMapping.js';
 import { setCache } from '../utils/cache.js';
-import PlatformSideBar from '../models/SideBar.js';
 import TenantConnectionManager from '../tenant/TenantConnectionManager.js';
 import { getGlobalModels } from '../models/global/index.js';
 import { seedNavigationAndCapabilities } from '../scripts/seedMasterNavigationAndCapabilities.js';

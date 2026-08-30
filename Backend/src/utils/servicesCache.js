@@ -2,29 +2,14 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { CANONICAL_MODEL_NAMES, getCanonicalModelName } from "../models/canonicalModelMap.js";
 
 let servicesCache = {};
 let lastUpdated = null;
 const SERVICES_DIR = fileURLToPath(new URL("../services", import.meta.url));
 const CACHE_REFRESH_INTERVAL = 20 * 60 * 1000; // 20 minutes
 
-function resolveCanonical(name) {
-  if (!name) return null;
-  const direct = getCanonicalModelName(name);
-  if (direct) return direct;
-  if (name.endsWith("s")) {
-    const sing = getCanonicalModelName(name.slice(0, -1));
-    if (sing) return sing;
-  } else {
-    const plur = getCanonicalModelName(`${name}s`);
-    if (plur) return plur;
-  }
-  return null;
-}
-
 /**
- * Load all service files dynamically into cache with canonical alias resolution
+ * Load all service files dynamically into cache with algorithmic name resolution
  */
 function loadServices() {
   const cache = {};
@@ -43,30 +28,19 @@ function loadServices() {
     const stripped = rawName.toLowerCase().replace(/[^a-z0-9]/g, "");
     cache[stripped] = filePath;
 
-    const canonical = resolveCanonical(rawName) || resolveCanonical(stripped);
-    if (canonical) {
-      cache[canonical] = filePath;
-      cache[canonical.toLowerCase()] = filePath;
-    }
-  }
-
-  // Map all known canonical aliases from registry
-  if (CANONICAL_MODEL_NAMES) {
-    for (const [alias, canonical] of Object.entries(CANONICAL_MODEL_NAMES)) {
-      const strippedAlias = alias.toLowerCase().replace(/[^a-z0-9]/g, "");
-      const targetPath =
-        cache[canonical] ||
-        cache[alias] ||
-        cache[strippedAlias] ||
-        (strippedAlias.endsWith("s") ? cache[strippedAlias.slice(0, -1)] : cache[`${strippedAlias}s`]);
-
-      if (targetPath) {
-        cache[alias] = targetPath;
-        cache[alias.toLowerCase()] = targetPath;
-        cache[strippedAlias] = targetPath;
-        cache[canonical] = targetPath;
-        cache[canonical.toLowerCase()] = targetPath;
+    // Handle common suffixes (e.g., employeeService -> employee)
+    if (stripped.endsWith("service")) {
+      const core = stripped.replace(/service$/, "");
+      if (core) {
+        cache[core] = filePath;
+        cache[`${core}s`] = filePath;
       }
+    }
+
+    if (stripped.endsWith("s")) {
+      cache[stripped.slice(0, -1)] = filePath;
+    } else {
+      cache[`${stripped}s`] = filePath;
     }
   }
 
@@ -75,7 +49,7 @@ function loadServices() {
 }
 
 /**
- * Get service file path by model name with deep canonical fallback
+ * Get service file path by model name with algorithmic fallback
  * @param {string} modelName
  * @returns {string|null} service file path
  */
@@ -88,10 +62,10 @@ export function getService(modelName) {
 
   if (servicesCache[modelName]) return servicesCache[modelName];
 
-  const canonical = resolveCanonical(modelName);
-  if (canonical && servicesCache[canonical]) return servicesCache[canonical];
+  const lower = String(modelName).toLowerCase();
+  if (servicesCache[lower]) return servicesCache[lower];
 
-  const stripped = String(modelName).toLowerCase().replace(/[^a-z0-9]/g, "");
+  const stripped = lower.replace(/[^a-z0-9]/g, "");
   if (servicesCache[stripped]) return servicesCache[stripped];
 
   if (stripped.endsWith("s") && servicesCache[stripped.slice(0, -1)]) {
@@ -100,9 +74,6 @@ export function getService(modelName) {
   if (!stripped.endsWith("s") && servicesCache[`${stripped}s`]) {
     return servicesCache[`${stripped}s`];
   }
-
-  const lower = String(modelName).toLowerCase();
-  if (servicesCache[lower]) return servicesCache[lower];
 
   return null;
 }
@@ -115,7 +86,7 @@ export function refreshServicesCache() {
 }
 
 /**
- * Returns proxy for service cache so dynamic property access also runs canonical lookup
+ * Returns proxy for service cache so dynamic property access also runs algorithmic lookup
  */
 export function getAllServices() {
   if (!lastUpdated || Date.now() - lastUpdated > CACHE_REFRESH_INTERVAL) {

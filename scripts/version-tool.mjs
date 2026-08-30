@@ -18,9 +18,12 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const VERSION_FILE = path.join(ROOT_DIR, 'version.json');
+const ROOT_PKG = path.join(ROOT_DIR, 'package.json');
 const BACKEND_PKG = path.join(ROOT_DIR, 'Backend', 'package.json');
 const FRONTEND_PKG = path.join(ROOT_DIR, 'Frontend', 'package.json');
 const FRONTEND_PUBLIC_VERSION = path.join(ROOT_DIR, 'Frontend', 'public', 'version.json');
+const FRONTEND_RELEASE_NOTES = path.join(ROOT_DIR, 'Frontend', 'src', 'constants', 'releaseNotes.json');
+const FRONTEND_PUBLIC_RELEASE_NOTES = path.join(ROOT_DIR, 'Frontend', 'public', 'release-notes.json');
 const MOBILE_PUBSPEC = path.join(ROOT_DIR, 'tracker_mobile', 'pubspec.yaml');
 
 // ─── Semantic Version Helpers ──────────────────────────────────────────────────
@@ -88,6 +91,14 @@ export function saveRootVersionConfig(config) {
 export function syncAllPackages(targetVersion) {
   const results = [];
 
+  // 0. Sync root package.json
+  if (fs.existsSync(ROOT_PKG)) {
+    const pkg = JSON.parse(fs.readFileSync(ROOT_PKG, 'utf8'));
+    pkg.version = targetVersion;
+    fs.writeFileSync(ROOT_PKG, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+    results.push(`package.json (root) -> ${targetVersion}`);
+  }
+
   // 1. Sync Backend/package.json
   if (fs.existsSync(BACKEND_PKG)) {
     const pkg = JSON.parse(fs.readFileSync(BACKEND_PKG, 'utf8'));
@@ -128,6 +139,49 @@ export function syncAllPackages(targetVersion) {
       results.push(`tracker_mobile/pubspec.yaml -> ${targetVersion}${buildNumber}`);
     }
   }
+
+  // 5. Sync & update Release Notes schema
+  let releaseNotes = [];
+  if (fs.existsSync(FRONTEND_RELEASE_NOTES)) {
+    try {
+      releaseNotes = JSON.parse(fs.readFileSync(FRONTEND_RELEASE_NOTES, 'utf8'));
+    } catch (_) {
+      releaseNotes = [];
+    }
+  }
+
+  let noteEntry = releaseNotes.find(r => r.version === targetVersion);
+  if (!noteEntry) {
+    noteEntry = {
+      version: targetVersion,
+      releaseDate: new Date().toISOString().split('T')[0],
+      title: `Release v${targetVersion}`,
+      tagline: 'Platform enhancements and continuous improvements.',
+      isLatest: true,
+      type: 'Feature & Maintenance Release',
+      categories: {
+        features: [],
+        improvements: [`Release increment to v${targetVersion}`],
+        security: [],
+        fixes: []
+      }
+    };
+    // Mark previous as non-latest
+    releaseNotes.forEach(r => { r.isLatest = false; });
+    releaseNotes.unshift(noteEntry);
+  } else {
+    // Ensure isLatest flag is set on targetVersion
+    releaseNotes.forEach(r => {
+      r.isLatest = (r.version === targetVersion);
+    });
+  }
+
+  fs.writeFileSync(FRONTEND_RELEASE_NOTES, JSON.stringify(releaseNotes, null, 2) + '\n', 'utf8');
+  results.push(`Frontend/src/constants/releaseNotes.json -> v${targetVersion}`);
+
+  // Mirror to public/release-notes.json
+  fs.writeFileSync(FRONTEND_PUBLIC_RELEASE_NOTES, JSON.stringify(releaseNotes, null, 2) + '\n', 'utf8');
+  results.push(`Frontend/public/release-notes.json -> v${targetVersion}`);
 
   return results;
 }

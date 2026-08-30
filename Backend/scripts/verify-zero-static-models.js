@@ -15,8 +15,6 @@ const ALLOWED_GLOBAL_IMPORTS = new Set([
   'models/global/Module.js',
   'models/global/ModelDefinition.js',
   'models/tenantRegistry.js',
-  'models/canonicalModelMap.js',
-  'models/canonicalMapDefinitions.js',
   'models/Collection.js',
 ]);
 

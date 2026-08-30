@@ -8,9 +8,7 @@
    | Responsibility | File Path |
    |---|---|
    | **Routing & Entry Gates** | `backend/src/routes/populateRoutes.js` |
-   | **Tenant Context & Connection** | `backend/src/tenant/tenantContext.js`, `tenantMiddleware.js` |
-   | **Module Entitlement Gate** | `backend/src/middlewares/moduleGateMiddleware.js` |
-   | **Canonical Model Registry** | `backend/src/models/canonicalModelMap.js`, `canonicalMapDefinitions.js` |
+   | **Dynamic Tenant Model Registry** | `backend/src/models/tenantRegistry.js`, `tenantContext.js` |
    | **Centralized Model Proxy** | `backend/src/models/Collection.js` (`dynamicModelsProxy`) |
    | **Authentication** | `backend/src/Controller/AuthController.js` (`authMiddleware`) |
    | **File Uploads (Multer)**| `backend/src/middlewares/multerConfig.js` (`upload`) |

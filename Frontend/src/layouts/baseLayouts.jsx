@@ -12,6 +12,7 @@ import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import ModernLoader from "../components/Common/ModernLoader.jsx";
 import { ErrorBoundary } from "../components/ErrorBoundary.jsx";
 import JarvisWidget from "../components/Jarvis/JarvisWidget.jsx";
+import ReleaseNotesModal from "../components/Common/ReleaseNotesModal.jsx";
 
 // Memoized static layout components
 const MemoSidebar = memo(Sidebar);
@@ -192,6 +193,9 @@ const BaseLayout = () => {
 
       {/* Global Jarvis AI Assistant Widget */}
       <JarvisWidget />
+
+      {/* Global What's New / Release Notes Modal */}
+      <ReleaseNotesModal />
     </div>
   );
 };

@@ -65,6 +65,7 @@ import attendance_policies from "./AttendancePolicy.js";
 import leave_transactions from "./LeaveTransaction.js";
 import payments from "./Payment.js";
 import general_settings from "./GeneralSettings.js";
+import release_notes from "./ReleaseNote.js";
 import operational_events from "./OperationalEvent.js";
 import notificationrules from "./NotificationRule.js";
 import notification_deliveries from "./NotificationDelivery.js";
@@ -122,7 +123,7 @@ export const MODULE_METADATA = {
 
 export const MODULE_DEFINITIONS = {
   core: [
-    'general_settings', 'access_policies', 'roles', 'session', 'jarvis_chat_sessions', 'audit_log', 'error_log',
+    'general_settings', 'release_notes', 'access_policies', 'roles', 'session', 'jarvis_chat_sessions', 'audit_log', 'error_log',
     'sidebars', 'api_hit_logs', 'capabilities', 'grants', 'user_overrides', 'useroverrides', 'status_configs', 'status_mappings', 'activity_logs',
     'notifications', 'notification_receptionists', 'notification_preferences', 'notification_rules', 'notification_deliveries',
     'employees', 'departments', 'designations', 'company', 'clients', 'contacts', 'service_providers',
@@ -162,6 +163,7 @@ export const MODULE_DEFINITIONS = {
 
 const staticModelMap = {
   general_settings,
+  release_notes,
   access_policies,
   employees,
   departments,
