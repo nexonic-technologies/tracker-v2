@@ -10,7 +10,14 @@
  * @returns {string}
  */
 export function getUserDisplayName(user, fallback = '—') {
-  if (!user || typeof user !== 'object') return fallback;
+  if (!user) return fallback;
+  if (typeof user === 'string') {
+    if (/^[0-9a-fA-F]{24}$/.test(user.trim())) {
+      return fallback;
+    }
+    return user.trim() || fallback;
+  }
+  if (typeof user !== 'object') return fallback;
 
   const first = user.basicInfo?.firstName || user.firstName || '';
   const last = user.basicInfo?.lastName || user.lastName || '';

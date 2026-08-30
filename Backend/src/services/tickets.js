@@ -130,7 +130,35 @@ export default function tickets() {
 
         // Set createdBy info from session if not already set as agent
         if (body.createdByModel !== 'agents') {
-          body.createdBy = userId;
+          let empId = body.createdBy || userId;
+          if (empId) {
+            const empExists = await models.employees.exists({ _id: empId });
+            if (!empExists) {
+              const userEmail = user?.email || user?.authInfo?.email || user?.basicInfo?.email;
+              const query = [];
+              if (userEmail) {
+                query.push({ 'authInfo.email': userEmail.toLowerCase() });
+                query.push({ 'basicInfo.email': userEmail.toLowerCase() });
+              }
+              if (empId) {
+                query.push({ userLoginId: empId });
+                query.push({ 'authInfo.userLoginId': empId });
+              }
+              if (user?.name) {
+                const parts = user.name.trim().split(' ');
+                if (parts.length > 0) {
+                  query.push({ 'basicInfo.firstName': { $regex: new RegExp(`^${parts[0]}$`, 'i') } });
+                }
+              }
+              if (query.length > 0) {
+                const empDoc = await models.employees.findOne({ $or: query }).select('_id').lean();
+                if (empDoc) {
+                  empId = empDoc._id;
+                }
+              }
+            }
+          }
+          body.createdBy = empId || userId;
           body.createdByModel = 'employees';
         }
       }
@@ -240,6 +268,65 @@ export default function tickets() {
       } catch (error) {
         console.error('[tickets service] afterCreate error:', error);
       }
+    },
+
+    // ---------------- After Read ----------------
+    afterRead: async (ctx) => {
+      const data = ctx.data;
+      if (!data) return data;
+
+      const ticketsList = Array.isArray(data) ? data : [data];
+      const unpopulatedIds = new Set();
+
+      for (const t of ticketsList) {
+        if (!t) continue;
+        const c = t.createdBy;
+        if (c && typeof c === 'string' && /^[0-9a-fA-F]{24}$/.test(c)) {
+          unpopulatedIds.add(c);
+        } else if (c && typeof c === 'object') {
+          const hasName = c.basicInfo?.firstName || c.firstName || c.name || c.displayName;
+          if (!hasName && c._id) {
+            unpopulatedIds.add(String(c._id));
+          }
+        } else if (!c && t._doc?.createdBy) {
+          unpopulatedIds.add(String(t._doc.createdBy));
+        }
+      }
+
+      if (unpopulatedIds.size > 0) {
+        try {
+          const ids = Array.from(unpopulatedIds);
+          const [emps, empsByUserLogin, agents] = await Promise.all([
+            models.employees.find({ _id: { $in: ids } }).select('basicInfo firstName lastName profileImage authInfo.email userLoginId').lean(),
+            models.employees.find({ $or: [{ userLoginId: { $in: ids } }, { 'authInfo.userLoginId': { $in: ids } }] }).select('basicInfo firstName lastName profileImage authInfo.email userLoginId').lean(),
+            models.agents.find({ _id: { $in: ids } }).select('name email client profileImage').lean()
+          ]);
+
+          const userMap = new Map();
+          emps.forEach(e => userMap.set(String(e._id), e));
+          empsByUserLogin.forEach(e => {
+            if (e.userLoginId) userMap.set(String(e.userLoginId), e);
+            if (e.authInfo?.userLoginId) userMap.set(String(e.authInfo.userLoginId), e);
+          });
+          agents.forEach(a => userMap.set(String(a._id), a));
+
+          for (const t of ticketsList) {
+            if (!t) continue;
+            const cId = String(t.createdBy?._id || t.createdBy || t._doc?.createdBy || '');
+            if (cId && userMap.has(cId)) {
+              const matched = userMap.get(cId);
+              const currentHasName = t.createdBy && typeof t.createdBy === 'object' && (t.createdBy.basicInfo?.firstName || t.createdBy.firstName || t.createdBy.name);
+              if (!currentHasName) {
+                t.createdBy = matched;
+              }
+            }
+          }
+        } catch (err) {
+          console.error('[tickets service] afterRead creator resolution error:', err.message);
+        }
+      }
+
+      return data;
     },
 
     // ---------------- Before Update ----------------

@@ -77,7 +77,7 @@ export const login = async (req, res, next) => {
         let resolvedDesig = null;
         let resolvedManager = null;
 
-        if (globalUser.employeeId && dbName) {
+        if (dbName) {
           const tTenantConn = performance.now();
           try {
             const { default: TenantConnectionManager } = await import("../tenant/TenantConnectionManager.js");
@@ -87,9 +87,26 @@ export const login = async (req, res, next) => {
             const tEmpLookup = performance.now();
             const EmpModel = tenantModels?.employees || conn.models.employees || conn.model('employees', Employee.schema);
             const RoleModel = tenantModels?.roles || conn.models.roles || conn.model('roles', models.roles.schema);
-            const empDoc = await EmpModel.findById(globalUser.employeeId)
-              .populate('professionalInfo.role')
-              .lean();
+            let empDoc = null;
+            if (globalUser.employeeId) {
+              empDoc = await EmpModel.findById(globalUser.employeeId)
+                .populate('professionalInfo.role')
+                .lean();
+            }
+            if (!empDoc && emailToUse) {
+              empDoc = await EmpModel.findOne({
+                $or: [
+                  { 'authInfo.email': emailToUse },
+                  { 'basicInfo.email': emailToUse },
+                  { userLoginId: globalUser._id },
+                  { 'authInfo.userLoginId': globalUser._id }
+                ]
+              }).populate('professionalInfo.role').lean();
+              if (empDoc) {
+                globalUser.employeeId = empDoc._id;
+                UserLogin.updateOne({ _id: globalUser._id }, { $set: { employeeId: empDoc._id } }).catch(() => {});
+              }
+            }
             timings.empLookup = +(performance.now() - tEmpLookup).toFixed(2);
 
             if (empDoc?.basicInfo) {

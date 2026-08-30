@@ -467,6 +467,8 @@ export async function populateHelper(req, res, next) {
       body: requestBody,
       user: {
         id: user.id,
+        name: user.name,
+        email: user.email,
         role: user.role,
         userType: user.userType,
         client: user.client,
