@@ -3,6 +3,8 @@ import axiosInstance from '@api/axiosInstance';
 
 const ProfileImage = ({
   profileImage,
+  src,
+  name,
   firstName,
   lastName,
   size = 'md',
@@ -11,17 +13,20 @@ const ProfileImage = ({
   className = ''
 }) => {
   const [imageError, setImageError] = useState(false);
+  const actualImg = profileImage || src;
 
   useEffect(() => {
     setImageError(false);
-  }, [profileImage]);
+  }, [actualImg]);
 
   const sizes = {
-    xs: 'w-8 h-8 text-xs',
-    sm: 'w-12 h-12 text-sm',
-    md: 'w-16 h-16 text-lg',
-    lg: 'w-24 h-24 text-xl',
-    xl: 'w-32 h-32 text-2xl'
+    '3xs': 'w-4 h-4 text-[8px]',
+    '2xs': 'w-5 h-5 text-[9px]',
+    xs: 'w-6 h-6 text-[10px]',
+    sm: 'w-8 h-8 text-xs',
+    md: 'w-10 h-10 text-sm',
+    lg: 'w-14 h-14 text-base',
+    xl: 'w-20 h-20 text-lg'
   };
 
   const getImageUrl = (imagePath) => {
@@ -50,9 +55,19 @@ const ProfileImage = ({
   };
 
   const getInitials = () => {
-    const first = firstName?.[0] || '';
-    const last = lastName?.[0] || '';
-    return (first + last).toUpperCase() || 'U';
+    if (firstName || lastName) {
+      const first = firstName?.[0] || '';
+      const last = lastName?.[0] || '';
+      return (first + last).toUpperCase() || 'U';
+    }
+    if (name || title) {
+      const parts = (name || title || '').trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return (parts[0]?.[0] || 'U').toUpperCase();
+    }
+    return 'U';
   };
 
   const sizeClass = px ? '' : sizes[size];

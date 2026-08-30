@@ -251,7 +251,7 @@ const MyTickets = () => {
       </div>
 
       {/* ── Table ── */}
-      <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+      <div className="w-full">
         <TableGenerator
           title="My Ticket List"
           data={displayed}

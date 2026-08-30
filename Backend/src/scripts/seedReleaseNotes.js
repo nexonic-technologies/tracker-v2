@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '../../..');
-const RELEASE_NOTES_FILE = path.join(ROOT_DIR, 'Frontend', 'src', 'constants', 'releaseNotes.json');
+const RELEASE_NOTES_FILE = path.join(__dirname, '..', 'constants', 'releaseNotes.json');
 
 export async function seedReleaseNotesForTenant(tenantModels, dbName = 'default') {
   if (!tenantModels || !tenantModels.release_notes) {
