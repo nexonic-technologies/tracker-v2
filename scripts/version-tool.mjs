@@ -21,9 +21,7 @@ const VERSION_FILE = path.join(ROOT_DIR, 'version.json');
 const ROOT_PKG = path.join(ROOT_DIR, 'package.json');
 const BACKEND_PKG = path.join(ROOT_DIR, 'Backend', 'package.json');
 const FRONTEND_PKG = path.join(ROOT_DIR, 'Frontend', 'package.json');
-const FRONTEND_PUBLIC_VERSION = path.join(ROOT_DIR, 'Frontend', 'public', 'version.json');
-const FRONTEND_RELEASE_NOTES = path.join(ROOT_DIR, 'Frontend', 'src', 'constants', 'releaseNotes.json');
-const FRONTEND_PUBLIC_RELEASE_NOTES = path.join(ROOT_DIR, 'Frontend', 'public', 'release-notes.json');
+const BACKEND_RELEASE_NOTES = path.join(ROOT_DIR, 'Backend', 'src', 'constants', 'releaseNotes.json');
 const MOBILE_PUBSPEC = path.join(ROOT_DIR, 'tracker_mobile', 'pubspec.yaml');
 
 // ─── Semantic Version Helpers ──────────────────────────────────────────────────
@@ -142,9 +140,9 @@ export function syncAllPackages(targetVersion) {
 
   // 5. Sync & update Release Notes schema
   let releaseNotes = [];
-  if (fs.existsSync(FRONTEND_RELEASE_NOTES)) {
+  if (fs.existsSync(BACKEND_RELEASE_NOTES)) {
     try {
-      releaseNotes = JSON.parse(fs.readFileSync(FRONTEND_RELEASE_NOTES, 'utf8'));
+      releaseNotes = JSON.parse(fs.readFileSync(BACKEND_RELEASE_NOTES, 'utf8'));
     } catch (_) {
       releaseNotes = [];
     }
@@ -176,12 +174,8 @@ export function syncAllPackages(targetVersion) {
     });
   }
 
-  fs.writeFileSync(FRONTEND_RELEASE_NOTES, JSON.stringify(releaseNotes, null, 2) + '\n', 'utf8');
-  results.push(`Frontend/src/constants/releaseNotes.json -> v${targetVersion}`);
-
-  // Mirror to public/release-notes.json
-  fs.writeFileSync(FRONTEND_PUBLIC_RELEASE_NOTES, JSON.stringify(releaseNotes, null, 2) + '\n', 'utf8');
-  results.push(`Frontend/public/release-notes.json -> v${targetVersion}`);
+  fs.writeFileSync(BACKEND_RELEASE_NOTES, JSON.stringify(releaseNotes, null, 2) + '\n', 'utf8');
+  results.push(`Backend/src/constants/releaseNotes.json -> v${targetVersion}`);
 
   return results;
 }
