@@ -29,26 +29,29 @@ export async function seedReleaseNotesForTenant(tenantModels, dbName = 'default'
 
   let seededCount = 0;
   for (const item of notes) {
-    const existing = await tenantModels.release_notes.findOne({ version: item.version });
-    if (!existing) {
-      await tenantModels.release_notes.create({
-        version: item.version,
-        releaseDate: item.releaseDate ? new Date(item.releaseDate) : new Date(),
-        title: item.title || `Release v${item.version}`,
-        tagline: item.tagline || '',
-        type: item.type || 'Feature & Maintenance Release',
-        isLatest: Boolean(item.isLatest),
-        isPublished: true,
-        categories: {
-          features: item.categories?.features || [],
-          improvements: item.categories?.improvements || [],
-          security: item.categories?.security || [],
-          fixes: item.categories?.fixes || [],
-        },
-        metaStatus: 'active',
-      });
-      seededCount++;
-    }
+    await tenantModels.release_notes.findOneAndUpdate(
+      { version: item.version },
+      {
+        $set: {
+          version: item.version,
+          releaseDate: item.releaseDate ? new Date(item.releaseDate) : new Date(),
+          title: item.title || `Release v${item.version}`,
+          tagline: item.tagline || '',
+          type: item.type || 'Feature & Maintenance Release',
+          isLatest: Boolean(item.isLatest),
+          isPublished: true,
+          categories: {
+            features: item.categories?.features || [],
+            improvements: item.categories?.improvements || [],
+            security: item.categories?.security || [],
+            fixes: item.categories?.fixes || [],
+          },
+          metaStatus: 'active',
+        }
+      },
+      { upsert: true, new: true }
+    );
+    seededCount++;
   }
 
   return { count: seededCount, total: notes.length };

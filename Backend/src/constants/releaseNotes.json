@@ -2,26 +2,29 @@
   {
     "version": "3.1.8",
     "releaseDate": "2026-08-30",
-    "title": "Form 25B Statutory Payroll Vouchers, PDF Email Dispatch & Dynamic Tenant Architecture",
-    "tagline": "Official Form 25B statutory payslips, automated PDF generation & email delivery, configurable payroll round-off, and zero-hardcoded multi-tenant resolution.",
+    "title": "Form 25B Statutory Payroll Vouchers, Theme Stability & Multi-Tier Auth",
+    "tagline": "Official Form 25B statutory payslips, automated PDF email dispatch, glitch-free theme transitions, profile navigation stability, and universal multi-tier password authentication.",
     "isLatest": true,
-    "type": "Major Feature & Compliance Release",
+    "type": "Major Feature, Compliance & UX Release",
     "categories": {
       "features": [
         "Form 25B Statutory Pay Register & Slip: Official statutory payslip layout with side-by-side Earnings & Deductions ledger, Indian currency in words, and print isolation",
         "Automated Payslip PDF Attachment Generator: Server-side PDFKit generator creating official Form 25B PDF vouchers attached to corporate email notifications",
         "Configurable Payroll Round-Off: Organization-wide setting in General Settings to toggle net salary and line-item rounding to nearest whole rupee",
-        "Dynamic Multi-Tenant Branding: Fully dynamic company profile, logo, and address resolution from tenant database with zero hardcoded values"
+        "Universal Multi-Tier Password Change: Unified password change supporting Central Auth UserLogin, Multi-Tenant Employee databases, and Agents with simultaneous hash persistence",
+        "Dark Mode Design Token Compliance: Comprehensive semantic token upgrade across Task workspace, activity timers, delivery badges, and session logs"
       ],
       "improvements": [
+        "Glitch-Free Theme Switching: Debounced transition tracking and snappy 200ms surface animations eliminating flashing during repeated Night/Bright Mode toggles",
+        "Client-Side Address Resolution: Seamless offline country, state, and city autocomplete via native dataset eliminating unnecessary API latency and 404 errors",
+        "Dedicated Hero Navigation: Integrated instant Back navigation button in Employee Profile header",
         "Corporate Email Notification Template: High-density branded email summary with salary metrics and attached PDF payslip voucher",
-        "SMTP Protocol & Port Compliance: Dynamic port alignment supporting Port 587 STARTTLS and Port 465 direct SSL with credential whitespace sanitization",
-        "Expanded Payroll Default Population: Automated inclusion of employee basicInfo, professionalInfo, accountDetails, and personalDocuments in read queries",
-        "Form Dropdown Name Resolution: Enhanced FormRenderer to cleanly display human-readable employee names instead of raw MongoDB ObjectIds"
+        "SMTP Protocol & Port Compliance: Dynamic port alignment supporting Port 587 STARTTLS and Port 465 direct SSL with credential whitespace sanitization"
       ],
       "fixes": [
+        "Resolved 'Failed' toast on Edit Password by bridging Central Global UserLogin with tenant-specific Employee credentials",
+        "Fixed Profile page continuous loading state caused by uppercase routing redirects",
         "Fixed Email Configuration save pipeline to properly issue PUT requests for existing tenant configs",
-        "Resolved reportingManager and teamLead ObjectId rendering in employee management forms",
         "Eliminated procedural fallback chains in favor of declarative schema validation and informative error reporting"
       ]
     }
@@ -94,63 +97,6 @@
       "fixes": [
         "Resolved Vercel build rejection caused by duplicate version tags during continuous integration",
         "Fixed root and sub-package version disparity during automated release bumps"
-      ]
-    }
-  },
-  {
-    "version": "3.1.3",
-    "releaseDate": "2026-08-26",
-    "title": "Platform Stability & Performance Upgrades",
-    "tagline": "Optimized database indexer and enhanced real-time state synchronization.",
-    "isLatest": false,
-    "type": "Performance & Architecture",
-    "categories": {
-      "improvements": [
-        "Upgraded MongoDB dynamic database indexer with automated query performance diagnostics",
-        "Enhanced PermissionProvider background polling and automated token invalidation checks",
-        "Accelerated page navigation rendering and memory footprint optimization"
-      ],
-      "fixes": [
-        "Resolved payroll calculation edge cases for employees with multiple salary structure histories",
-        "Fixed optimistic mutation queue resolution on intermittent network disconnects"
-      ]
-    }
-  },
-  {
-    "version": "3.1.2",
-    "releaseDate": "2026-08-20",
-    "title": "Jarvis Neuro-Symbolic Cognitive Engine",
-    "tagline": "Upgraded J.A.R.V.I.S. with Epistemic Gap Resolution and Memory Graph Ingestion.",
-    "isLatest": false,
-    "type": "AI & Automation",
-    "categories": {
-      "features": [
-        "Integrated J.A.R.V.I.S. Cognitive Brain with zero-token internal memory retrieval (<5ms)",
-        "Global keyboard shortcut (Alt + Ctrl + J) to invoke Jarvis AI assistant anywhere in Workhub",
-        "Teacher-bootstrapped knowledge expansion for novel multi-document synthesis tasks"
-      ],
-      "improvements": [
-        "Refined 2026-grade glassmorphic UI components with semantic HSL design tokens",
-        "Standardized master populate API pipeline architecture across all core ERP modules"
-      ]
-    }
-  },
-  {
-    "version": "3.1.0",
-    "releaseDate": "2026-08-10",
-    "title": "Master Populate Pipeline & Enterprise Security",
-    "tagline": "Unified ABAC policy engine, tenant isolation, and modern ERP UI overhaul.",
-    "isLatest": false,
-    "type": "Major Platform Release",
-    "categories": {
-      "features": [
-        "Unified Populate Pipeline (/api/populate/:action/:model) replacing raw ad-hoc endpoints",
-        "Dynamic ABAC Policy Engine with declarative permission evaluation and role management",
-        "Comprehensive Tenant Connection Manager for multi-tenant database isolation"
-      ],
-      "improvements": [
-        "Full dark/light theme switching with WCAG 2.1 AA compliant color contrast",
-        "Department-wise dynamic menu navigation and command-grade typeahead search"
       ]
     }
   }

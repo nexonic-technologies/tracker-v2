@@ -815,52 +815,123 @@ export const resetPassword = async (req, res, next) => {
 export const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const { id, userType } = req.user;
+    const { id, userType, email, dbName, tenantId, tenantSlug } = req.user || {};
 
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: "Current password and new password are required" });
+      return res.status(400).json({ success: false, message: "Current password and new password are required" });
     }
 
-    let user;
-    if (userType === "employee") {
-      user = await Employee.findById(id);
-    } else if (userType === "agent") {
-      user = await Agent.findById(id);
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: "New password must be at least 6 characters long" });
     }
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    let globalUser = null;
+    let tenantEmployee = null;
+    let agentUser = null;
+    let isPasswordValid = false;
 
-    // Verify current password
-    let isValid = false;
-    if (userType === "employee") {
-      isValid = await bcrypt.compare(currentPassword, user.authInfo.password);
-    } else {
-      if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
-        isValid = await user.comparePassword(currentPassword);
-      } else {
-        isValid = currentPassword === user.password;
+    // 1. Check Global UserLogin first (Central Auth)
+    try {
+      const { UserLogin } = getGlobalModels();
+      if (UserLogin) {
+        const query = [];
+        if (id) query.push({ _id: id }, { employeeId: id });
+        if (email) query.push({ email: email.toLowerCase() });
+        if (query.length > 0) {
+          globalUser = await UserLogin.findOne({ $or: query });
+          if (globalUser) {
+            isPasswordValid = await globalUser.comparePassword(currentPassword);
+          }
+        }
       }
+    } catch (e) {
+      console.warn("[changePassword] Global UserLogin lookup:", e.message);
     }
 
-    if (!isValid) {
-      return res.status(400).json({ message: "Invalid current password" });
+    // 2. Check Tenant Employee / Local Employee
+    const effectiveDb = dbName || (tenantSlug && tenantSlug !== 'admin' ? `tenant_${tenantSlug}` : process.env.DEFAULT_TENANT_DB || 'tenant_admin');
+    try {
+      const { default: TenantConnectionManager } = await import("../tenant/TenantConnectionManager.js");
+      const { conn, models: tenantModels } = await TenantConnectionManager.getTenantConnection(effectiveDb);
+      const EmpModel = tenantModels?.employees || conn.models.employees || conn.model('employees', Employee.schema);
+
+      const empQuery = [];
+      if (id) empQuery.push({ _id: id });
+      if (globalUser?.employeeId) empQuery.push({ _id: globalUser.employeeId });
+      if (email) empQuery.push({ 'authInfo.workEmail': email.toLowerCase() }, { 'basicInfo.email': email.toLowerCase() });
+
+      if (empQuery.length > 0) {
+        tenantEmployee = await EmpModel.findOne({ $or: empQuery });
+        if (!isPasswordValid && tenantEmployee?.authInfo?.password) {
+          isPasswordValid = await bcrypt.compare(currentPassword, tenantEmployee.authInfo.password);
+        }
+      }
+    } catch (e) {
+      // Fallback to default Employee model
+      try {
+        const empQuery = [];
+        if (id) empQuery.push({ _id: id });
+        if (email) empQuery.push({ 'authInfo.workEmail': email.toLowerCase() }, { 'basicInfo.email': email.toLowerCase() });
+        if (empQuery.length > 0) {
+          tenantEmployee = await Employee.findOne({ $or: empQuery });
+          if (!isPasswordValid && tenantEmployee?.authInfo?.password) {
+            isPasswordValid = await bcrypt.compare(currentPassword, tenantEmployee.authInfo.password);
+          }
+        }
+      } catch (_) { }
     }
 
-    // Update to new password
+    // 3. Check Agent User
+    if (!globalUser && !tenantEmployee) {
+      try {
+        const agentQuery = [];
+        if (id) agentQuery.push({ _id: id });
+        if (email) agentQuery.push({ email: email.toLowerCase() });
+        if (agentQuery.length > 0) {
+          agentUser = await Agent.findOne({ $or: agentQuery });
+          if (agentUser) {
+            if (agentUser.password?.startsWith('$2b$') || agentUser.password?.startsWith('$2a$')) {
+              isPasswordValid = await agentUser.comparePassword(currentPassword);
+            } else {
+              isPasswordValid = currentPassword === agentUser.password;
+            }
+          }
+        }
+      } catch (_) { }
+    }
+
+    if (!globalUser && !tenantEmployee && !agentUser) {
+      return res.status(404).json({ success: false, message: "User account not found" });
+    }
+
+    if (!isPasswordValid) {
+      return res.status(400).json({ success: false, message: "Current password is incorrect" });
+    }
+
+    // Hash new password
     const salt = await bcrypt.genSalt(12);
     const hashed = await bcrypt.hash(newPassword, salt);
 
-    if (userType === "employee") {
-      user.authInfo.password = hashed;
-    } else {
-      user.password = hashed;
+    // Update Global UserLogin
+    if (globalUser) {
+      globalUser.password = hashed;
+      await globalUser.save();
     }
 
-    await user.save();
+    // Update Tenant Employee
+    if (tenantEmployee) {
+      if (!tenantEmployee.authInfo) tenantEmployee.authInfo = {};
+      tenantEmployee.authInfo.password = hashed;
+      await tenantEmployee.save();
+    }
 
-    return res.json({ message: "Password updated successfully" });
+    // Update Agent
+    if (agentUser) {
+      agentUser.password = hashed;
+      await agentUser.save();
+    }
+
+    return res.json({ success: true, message: "Password updated successfully" });
   } catch (err) {
     next(err);
   }

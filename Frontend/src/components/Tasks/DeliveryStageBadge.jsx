@@ -62,18 +62,18 @@ export default function DeliveryStageBadge({ stage, onChange, editable = false }
       <div className="relative inline-block" ref={dropdownRef}>
         <button
           onClick={() => editable && setShowDropdown(!showDropdown)}
-          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs text-gray-400 bg-gray-100 border border-slate-200 ${editable ? 'cursor-pointer hover:bg-gray-200 hover:text-gray-600 transition-colors' : 'cursor-default'}`}
+          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs text-ink-subtle bg-surface-1 border border-hairline ${editable ? 'cursor-pointer hover:bg-surface-2 hover:text-ink transition-colors' : 'cursor-default'}`}
         >
-          No stage {editable && <span className="text-gray-400 text-[10px]">▾</span>}
+          No stage {editable && <span className="text-ink-subtle text-[10px]">▾</span>}
         </button>
         {showDropdown && editable && (
-          <div className="absolute z-50 top-full left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl min-w-[180px] overflow-hidden">
-            <div className="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase bg-gray-50">Pipeline</div>
+          <div className="absolute z-50 top-full left-0 mt-1 bg-surface border border-hairline rounded-lg shadow-xl min-w-[180px] overflow-hidden">
+            <div className="px-2 py-1 text-[10px] font-bold text-ink-subtle uppercase bg-surface-1">Pipeline</div>
             {stages.filter(s => s.isSequential !== false).sort((a, b) => a.order - b.order).map(s => (
               <button
                 key={s.key}
                 onClick={() => { onChange?.(s.key); setShowDropdown(false); }}
-                className="w-full text-left px-3 py-1.5 text-sm hover:bg-blue-50 flex items-center gap-2"
+                className="w-full text-left px-3 py-1.5 text-xs text-ink hover:bg-surface-1 flex items-center gap-2 cursor-pointer"
               >
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
                 {s.label}
@@ -81,12 +81,12 @@ export default function DeliveryStageBadge({ stage, onChange, editable = false }
             ))}
             {stages.some(s => s.isSequential === false) && (
               <>
-                <div className="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase bg-gray-50 border-t">Independent</div>
+                <div className="px-2 py-1 text-[10px] font-bold text-ink-subtle uppercase bg-surface-1 border-t border-hairline">Independent</div>
                 {stages.filter(s => s.isSequential === false).sort((a, b) => a.order - b.order).map(s => (
                   <button
                     key={s.key}
                     onClick={() => { onChange?.(s.key); setShowDropdown(false); }}
-                    className="w-full text-left px-3 py-1.5 text-sm hover:bg-blue-50 flex items-center gap-2"
+                    className="w-full text-left px-3 py-1.5 text-xs text-ink hover:bg-surface-1 flex items-center gap-2 cursor-pointer"
                   >
                     <span className="w-2.5 h-2.5 rounded-full border" style={{ borderColor: s.color }} />
                     {s.label}
@@ -122,14 +122,14 @@ export default function DeliveryStageBadge({ stage, onChange, editable = false }
 
       {/* Stage Selector Dropdown */}
       {showDropdown && editable && (
-        <div className="absolute z-50 top-full left-0 mt-1 bg-white border rounded-lg shadow-xl min-w-[180px] overflow-hidden">
+        <div className="absolute z-50 top-full left-0 mt-1 bg-surface border border-hairline rounded-lg shadow-xl min-w-[180px] overflow-hidden">
           {/* Sequential stages */}
-          <div className="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase bg-gray-50">Pipeline</div>
+          <div className="px-2 py-1 text-[10px] font-bold text-ink-subtle uppercase bg-surface-1">Pipeline</div>
           {stages.filter(s => s.isSequential !== false).sort((a, b) => a.order - b.order).map(s => (
             <button
               key={s.key}
               onClick={() => { onChange?.(s.key); setShowDropdown(false); }}
-              className={`w-full text-left px-3 py-1.5 text-sm hover:bg-blue-50 flex items-center gap-2 ${stage === s.key ? 'bg-blue-50 font-medium' : ''}`}
+              className={`w-full text-left px-3 py-1.5 text-xs text-ink hover:bg-surface-1 flex items-center gap-2 cursor-pointer ${stage === s.key ? 'bg-surface-1 font-semibold text-brand' : ''}`}
             >
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
               {s.label}
@@ -138,12 +138,12 @@ export default function DeliveryStageBadge({ stage, onChange, editable = false }
           {/* Independent stages */}
           {stages.some(s => s.isSequential === false) && (
             <>
-              <div className="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase bg-gray-50 border-t">Independent</div>
+              <div className="px-2 py-1 text-[10px] font-bold text-ink-subtle uppercase bg-surface-1 border-t border-hairline">Independent</div>
               {stages.filter(s => s.isSequential === false).sort((a, b) => a.order - b.order).map(s => (
                 <button
                   key={s.key}
                   onClick={() => { onChange?.(s.key); setShowDropdown(false); }}
-                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-blue-50 flex items-center gap-2 ${stage === s.key ? 'bg-blue-50 font-medium' : ''}`}
+                  className={`w-full text-left px-3 py-1.5 text-xs text-ink hover:bg-surface-1 flex items-center gap-2 cursor-pointer ${stage === s.key ? 'bg-surface-1 font-semibold text-brand' : ''}`}
                 >
                   <span className="w-2.5 h-2.5 rounded-full border" style={{ borderColor: s.color }} />
                   {s.label}

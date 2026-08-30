@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { compileTenantModels } from '../models/tenantRegistry.js';
 import { ensureTenantIndexes } from '../utils/databaseIndexer.js';
 import { runTenantMigrations } from './TenantMigrationRunner.js';
+import { seedReleaseNotesForTenant } from '../scripts/seedReleaseNotes.js';
 
 class TenantConnectionManager {
   constructor() {
@@ -83,6 +84,10 @@ class TenantConnectionManager {
         if (dur > 500) console.log(`[TENANT_INDEX_TIMING] db: ${dbName} | took: ${dur}ms`);
       })
       .catch((err) => console.warn(`[TenantConnectionManager] Indexing error on ${dbName}:`, err.message));
+
+    // Auto-sync release notes from backend constants to tenant database
+    seedReleaseNotesForTenant(models, dbName)
+      .catch((err) => console.warn(`[TenantConnectionManager] Release notes seeding error on ${dbName}:`, err.message));
 
     // Evict oldest if cache exceeded limit
     if (this.connectionCache.size >= this.maxCacheSize) {

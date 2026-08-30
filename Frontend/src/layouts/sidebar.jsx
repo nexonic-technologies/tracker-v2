@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { ChevronsLeft, ChevronsRight, Sparkles } from "lucide-react";
 import { usePermission } from "../context/permissionProvider";
-import { triggerReleaseNotesModal } from "../services/releaseNotesService";
+import { triggerReleaseNotesModal, getLatestRelease } from "../services/releaseNotesService";
 
 const getIconifyName = (iconName) => {
   if (!iconName) return "ic:baseline-help-outline";
@@ -286,7 +286,7 @@ const Sidebar = ({ isOpen, onClose, onOpen }) => {
           }`}
         >
           <Sparkles className="h-2.5 w-2.5 text-purple-500" />
-          <span>v3.1.4</span>
+          <span>v{getLatestRelease()?.version || '3.1.8'}</span>
         </button>
       </div>
     </aside>);

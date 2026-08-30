@@ -8,6 +8,8 @@ const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+let transitionTimeout = null;
+
 const runThemeTransition = (applyThemeChange) => {
   if (prefersReducedMotion()) {
     applyThemeChange();
@@ -15,19 +17,23 @@ const runThemeTransition = (applyThemeChange) => {
   }
 
   const root = document.documentElement;
+  if (transitionTimeout) {
+    clearTimeout(transitionTimeout);
+  }
   root.classList.add("theme-transition");
   void root.offsetHeight;
   applyThemeChange();
 
-  window.setTimeout(() => {
+  transitionTimeout = window.setTimeout(() => {
     root.classList.remove("theme-transition");
+    transitionTimeout = null;
   }, THEME_TRANSITION_MS);
 };
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem("theme");
-    if (saved) return saved;
+    if (saved === "dark" || saved === "light") return saved;
     if (typeof window !== "undefined" && window.matchMedia) {
       return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
@@ -40,9 +46,11 @@ export const ThemeProvider = ({ children }) => {
     if (theme === "dark") {
       root.classList.add("dark");
       root.classList.remove("light");
+      root.setAttribute("data-theme", "dark");
     } else {
       root.classList.add("light");
       root.classList.remove("dark");
+      root.setAttribute("data-theme", "light");
     }
 
     localStorage.setItem("theme", theme);
@@ -51,7 +59,8 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e) => {
-      if (!localStorage.getItem("theme")) {
+      const saved = localStorage.getItem("theme");
+      if (!saved) {
         setTheme(e.matches ? "dark" : "light");
       }
     };
@@ -62,7 +71,7 @@ export const ThemeProvider = ({ children }) => {
 
   const toggleTheme = () => {
     runThemeTransition(() => {
-      setTheme((prev) => (prev === "light" ? "dark" : "light"));
+      setTheme((prev) => (prev === "dark" ? "light" : "dark"));
     });
   };
 
