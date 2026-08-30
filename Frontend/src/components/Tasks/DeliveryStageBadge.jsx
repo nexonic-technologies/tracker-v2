@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axiosInstance from '../../api/axiosInstance';
 
 /**
@@ -25,11 +25,24 @@ const STAGE_FALLBACK_COLORS = {
 export default function DeliveryStageBadge({ stage, onChange, editable = false }) {
   const [stages, setStages] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDropdown]);
 
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const res = await axiosInstance.post('/populate/list/status_configss', {
+        const res = await axiosInstance.post('/populate/read/status_configs', {
           filter: { modelName: 'tasks_delivery_stage' },
           limit: 1
         });
@@ -46,15 +59,15 @@ export default function DeliveryStageBadge({ stage, onChange, editable = false }
 
   if (!stage) {
     return (
-      <div className="relative inline-block">
+      <div className="relative inline-block" ref={dropdownRef}>
         <button
           onClick={() => editable && setShowDropdown(!showDropdown)}
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-gray-400 bg-gray-100 ${editable ? 'cursor-pointer hover:bg-gray-200 hover:text-gray-600 transition-colors' : 'cursor-default'}`}
+          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs text-gray-400 bg-gray-100 border border-slate-200 ${editable ? 'cursor-pointer hover:bg-gray-200 hover:text-gray-600 transition-colors' : 'cursor-default'}`}
         >
-          No stage {editable && <span className="text-gray-300">▾</span>}
+          No stage {editable && <span className="text-gray-400 text-[10px]">▾</span>}
         </button>
         {showDropdown && editable && (
-          <div className="absolute z-50 top-full left-0 mt-1 bg-white border rounded-lg shadow-xl min-w-[180px] overflow-hidden">
+          <div className="absolute z-50 top-full left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl min-w-[180px] overflow-hidden">
             <div className="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase bg-gray-50">Pipeline</div>
             {stages.filter(s => s.isSequential !== false).sort((a, b) => a.order - b.order).map(s => (
               <button
@@ -93,7 +106,7 @@ export default function DeliveryStageBadge({ stage, onChange, editable = false }
   const isSequential = stageConfig?.isSequential !== false;
 
   return (
-    <div className="relative inline-block">
+    <div className="relative inline-block" ref={dropdownRef}>
       <button
         onClick={() => editable && setShowDropdown(!showDropdown)}
         className={`

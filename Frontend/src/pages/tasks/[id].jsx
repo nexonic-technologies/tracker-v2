@@ -37,6 +37,8 @@ const TaskDetailPage = () => {
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [newTagInput, setNewTagInput] = useState("");
   const [showTagInput, setShowTagInput] = useState(false);
+  const [projectTypes, setProjectTypes] = useState([]);
+  const [taskTypes, setTaskTypes] = useState([]);
 
   // Checklist State
   const [checklist, setChecklist] = useState(() => {
@@ -56,6 +58,8 @@ const TaskDetailPage = () => {
     if (id) {
       fetchTask();
       fetchEmployees();
+      fetchProjectTypes();
+      fetchTaskTypes();
     }
     const handler = (e) => {
       if (assignRef.current && !assignRef.current.contains(e.target)) setShowAssignDropdown(false);
@@ -127,6 +131,29 @@ const TaskDetailPage = () => {
     } catch (e) { console.error(e); }
   };
 
+  const fetchProjectTypes = async () => {
+    try {
+      const res = await axiosInstance.post("/populate/read/project_types", {
+        filter: { isActive: true },
+        fields: "name,description,estimatedHours,complexity",
+        sort: { name: 1 },
+        limit: 100
+      });
+      setProjectTypes(res.data?.data || []);
+    } catch (e) { console.error('[fetchProjectTypes]', e); }
+  };
+
+  const fetchTaskTypes = async () => {
+    try {
+      const res = await axiosInstance.post("/populate/read/task_types", {
+        fields: "name,icon,color",
+        sort: { name: 1 },
+        limit: 100
+      });
+      setTaskTypes(res.data?.data || []);
+    } catch (e) { console.error('[fetchTaskTypes]', e); }
+  };
+
   const fetchComments = async (thread) => {
     const threadId = typeof thread === "object" ? thread._id : thread;
     if (!threadId) return;
@@ -142,7 +169,15 @@ const TaskDetailPage = () => {
   const handleUpdate = async (field, value) => {
     try {
       await axiosInstance.put(`/populate/update/tasks/${id}`, { [field]: value });
-      setTask((prev) => ({ ...prev, [field]: value }));
+      let updatedVal = value;
+      if (field === 'projectTypeId') {
+        const found = projectTypes.find(p => p._id === value);
+        updatedVal = found ? { _id: found._id, name: found.name } : value;
+      } else if (field === 'taskTypeId') {
+        const found = taskTypes.find(t => t._id === value);
+        updatedVal = found ? { _id: found._id, name: found.name, icon: found.icon, color: found.color } : value;
+      }
+      setTask((prev) => ({ ...prev, [field]: updatedVal }));
       toast.success("Task updated");
     } catch (e) {
       console.error(e);
@@ -724,6 +759,46 @@ const TaskDetailPage = () => {
                 editable={true}
                 onChange={(stage) => handleUpdate('deliveryStage', stage)}
               />
+            </div>
+
+            {/* ── Job Category ── */}
+            <div>
+              <label className="text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-2 block">Job Category</label>
+              <div className="relative">
+                <select
+                  value={typeof task.projectTypeId === 'object' ? task.projectTypeId?._id : (task.projectTypeId || '')}
+                  onChange={(e) => handleUpdate('projectTypeId', e.target.value)}
+                  className="w-full appearance-none bg-white hover:bg-slate-100 border border-slate-200 rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+                >
+                  <option value="">— Select Category —</option>
+                  {projectTypes.map((pt) => (
+                    <option key={pt._id} value={pt._id}>
+                      {pt.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
+              </div>
+            </div>
+
+            {/* ── Task Type ── */}
+            <div>
+              <label className="text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-2 block">Task Type</label>
+              <div className="relative">
+                <select
+                  value={typeof task.taskTypeId === 'object' ? task.taskTypeId?._id : (task.taskTypeId || '')}
+                  onChange={(e) => handleUpdate('taskTypeId', e.target.value)}
+                  className="w-full appearance-none bg-white hover:bg-slate-100 border border-slate-200 rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+                >
+                  <option value="">— Select Type —</option>
+                  {taskTypes.map((tt) => (
+                    <option key={tt._id} value={tt._id}>
+                      {tt.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
+              </div>
             </div>
 
             {/* ── Estimated Hours & Complexity ── */}
