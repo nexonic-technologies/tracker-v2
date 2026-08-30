@@ -12,10 +12,11 @@ const fmt12 = (d) => {
 };
 
 const fmtHM = (hrs) => {
-  if (!hrs && hrs !== 0) return "—";
-  const h = Math.floor(hrs);
-  const m = Math.floor((hrs - h) * 60);
-  return h === 0 && m === 0 ? "—" : `${h}h ${m}m`;
+  if (hrs == null || isNaN(hrs)) return "—";
+  const totalMinutes = Math.round(Number(hrs) * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${h}H:${String(m).padStart(2, "0")}M`;
 };
 
 export default function AttendanceApprovalPage() {

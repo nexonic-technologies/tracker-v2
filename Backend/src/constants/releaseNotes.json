@@ -1,10 +1,30 @@
 [
   {
+    "version": "3.1.10",
+    "releaseDate": "2026-08-30",
+    "title": "Standardized Attendance Logged Hours Format (H:MM)",
+    "tagline": "Standardized duration display across Attendance Control Center, Active Logged counters, Daywise ledgers, and Reports to clear H:MM format.",
+    "isLatest": true,
+    "type": "UX & Formatting Enhancement",
+    "categories": {
+      "features": [
+        "Standardized Hour:Minute Attendance Display: Formatted all logged working durations to uppercase two-digit minute notation (e.g. 0H:01M, 1H:30M, 8H:00M)"
+      ],
+      "improvements": [
+        "Active Logged Duration Alignment: Formatted active clock and summary card hours to standard H:MM format",
+        "Daywise Attendance Ledger & Drawers: Aligned daily work hours and punch breakdown durations across all view modes",
+        "Attendance Reports & Dashboards: Unified live header timers and reporting tables to consistent time formatting"
+      ],
+      "security": [],
+      "fixes": []
+    }
+  },
+  {
     "version": "3.1.9",
     "releaseDate": "2026-08-30",
     "title": "Attendance & Theme Stability, Profile Navigation, Multi-Tier Auth & Dark Mode Tokens",
     "tagline": "Glitch-free theme mode switching, profile responsiveness & back navigation, universal multi-tier password change, task workspace dark mode token migration, and backend-driven release notes.",
-    "isLatest": true,
+    "isLatest": false,
     "type": "Major Feature, Compliance & UX Release",
     "categories": {
       "features": [

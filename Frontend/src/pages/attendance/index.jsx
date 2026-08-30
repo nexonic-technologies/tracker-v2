@@ -23,9 +23,11 @@ const fmt12 = (d) => {
 };
 
 const fmtHM = (hrs) => {
-  const h = Math.floor(hrs);
-  const m = Math.floor((hrs - h) * 60);
-  return h === 0 && m === 0 ? "—" : `${h}h ${m}m`;
+  if (hrs == null || isNaN(hrs)) return "—";
+  const totalMinutes = Math.round(Number(hrs) * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${h}H:${String(m).padStart(2, "0")}M`;
 };
 
 const getWeekDays = (offset = 0) => {
@@ -688,7 +690,7 @@ const AttendancePage = () => {
                   <div className="relative inline-flex items-center justify-center">
                     <Ring pct={pct} size={44} sw={4} color={ringColor} />
                     <span className="absolute text-[11px] font-bold text-ink">
-                      {Math.floor(activeHours)}h
+                      {Math.floor(activeHours)}H
                     </span>
                   </div>
                   <div>
