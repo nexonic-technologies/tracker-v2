@@ -313,7 +313,8 @@ export default async function buildReadQuery(ctx) {
    * ----------------------------------------------- */
   if (serviceInstance?.afterRead) {
     ctx.data = result;
-    result = await serviceInstance.afterRead(ctx);
+    const afterRes = await serviceInstance.afterRead(ctx);
+    result = afterRes || ctx.data || result;
   }
 
   const finalResult = docId ? result?.[0] : result;

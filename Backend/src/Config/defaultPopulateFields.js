@@ -26,8 +26,8 @@ export const DEFAULT_POPULATE_FIELDS = {
     'clientId': 'name',
     'productId': 'name',
     'type': 'name,icon,color',
-    'assignedTo': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage',
-    'createdBy': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage',
+    'assignedTo': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,firstName,lastName,name,profileImage',
+    'createdBy': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,firstName,lastName,name,profileImage,email',
     'comments': 'ticketId,message,comment,commentedBy,commenterModel,isPublic,createdAt,updatedAt,attachments',
     'attachments': 'filename,originalName,path,mimetype,size,uploadedBy,uploadedByModel'
   },

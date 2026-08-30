@@ -1,10 +1,33 @@
 [
   {
+    "version": "3.2.0",
+    "releaseDate": "2026-08-30",
+    "title": "Ticket Creator Resolution, Created By Mapping & Auth Synchronization",
+    "tagline": "Seamless user-to-employee creator mapping across Ticket queues, real-time auth synchronization, and robust fallback resolution.",
+    "isLatest": true,
+    "type": "Minor Feature & Data Integrity Release",
+    "categories": {
+      "features": [
+        "End-to-End Ticket Creator Mapping: Guaranteed creator identity persistence across new and existing ticket records using declarative employee resolution",
+        "Universal Creator Fallback Engine: Proactive batch-resolution for tickets in afterRead hook ensuring 'Created By' is always populated on Ticket Listing and exports"
+      ],
+      "improvements": [
+        "Auth Employee Linking: Automatically links tenant Employee ID to Central Auth UserLogin during authentication if missing",
+        "Populate Context Expansion: Forwarded user name and email claims into Populate context pipeline for frictionless audit resolution",
+        "User Display Normalization: Enhanced declarative getUserDisplayName helper to handle string names and polymorphic schema contracts"
+      ],
+      "security": [],
+      "fixes": [
+        "Fixed blank 'Created By' display on Ticket Listing queue when tickets are created by logged-in users"
+      ]
+    }
+  },
+  {
     "version": "3.1.10",
     "releaseDate": "2026-08-30",
     "title": "Standardized Attendance Logged Hours Format (H:MM)",
     "tagline": "Standardized duration display across Attendance Control Center, Active Logged counters, Daywise ledgers, and Reports to clear H:MM format.",
-    "isLatest": true,
+    "isLatest": false,
     "type": "UX & Formatting Enhancement",
     "categories": {
       "features": [
