@@ -192,7 +192,7 @@ const BaseLayout = () => {
       </div>
 
       {/* Global Jarvis AI Assistant Widget */}
-      <JarvisWidget />
+      {/* <JarvisWidget /> */}
 
       {/* Global What's New / Release Notes Modal */}
       <ReleaseNotesModal />

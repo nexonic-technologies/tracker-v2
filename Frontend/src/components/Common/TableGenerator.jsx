@@ -149,7 +149,7 @@ const printTable = (columns, data, title, customExport = {}) => {
   win.print();
 };
 
-const ROWS_PER_PAGE = 10;
+const ROWS_PER_PAGE = 15;
 
 /* -------------------- Component -------------------- */
 
@@ -164,6 +164,8 @@ const TableGenerator = ({
   onDelete,
   onRowClick,
   customExport = {},
+  maxHeight = "calc(100vh - 220px)",
+  className = "",
 }) => {
   const [tableData, setTableData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -229,17 +231,17 @@ const TableGenerator = ({
 
   return (
     <div
-      className="bg-surface rounded-lg border border-hairline-soft overflow-hidden"
+      className={`bg-surface rounded-tracker-lg border border-hairline shadow-xs overflow-hidden w-full ${className}`}
       style={{ fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}
     >
       {/* ── Toolbar ── */}
-      <div className="px-5 py-3.5 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
+      <div className="px-4 py-2.5 border-b border-hairline flex items-center justify-between gap-3 flex-wrap bg-surface">
         {/* Left: title */}
         <div>
           {title && (
             <div className="flex items-center gap-2">
-              <span className="w-1 h-5 rounded-full bg-[#7C3AED] inline-block" />
-              <h3 className="text-[15px] font-semibold text-ink leading-none">{title}</h3>
+              <span className="w-1 h-4 rounded-full bg-[var(--brand-solid)] inline-block" />
+              <h3 className="text-[14px] font-bold text-ink leading-none">{title}</h3>
             </div>
           )}
         </div>
@@ -249,21 +251,21 @@ const TableGenerator = ({
           {/* Print */}
           <button
             onClick={() => printTable(visibleDataCols, sortedData, title, customExport)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] border border-hairline bg-surface text-[13px] font-medium text-ink-muted hover:bg-[var(--module-ticket-light)] hover:text-[var(--module-ticket)] hover:border-[var(--module-ticket)] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-tracker-md border border-hairline bg-surface text-[12px] font-semibold text-ink-muted hover:bg-surface-2 hover:text-ink transition-colors cursor-pointer"
             title="Print"
           >
-            <Printer size={15} />
-            Print
+            <Printer size={13} />
+            <span>Print</span>
           </button>
 
           {/* Export Excel */}
           <button
             onClick={() => exportToExcel(visibleDataCols, sortedData, title, customExport)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] border border-hairline bg-surface text-[13px] font-medium text-ink-muted hover:bg-[var(--tracker-success-light)] hover:text-[var(--tracker-success)] hover:border-[var(--tracker-success)] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-tracker-md border border-hairline bg-surface text-[12px] font-semibold text-ink-muted hover:bg-[var(--tracker-success-light)] hover:text-[var(--tracker-success)] hover:border-[var(--tracker-success)] transition-colors cursor-pointer"
             title="Export to Excel"
           >
-            <FileSpreadsheet size={15} />
-            Excel
+            <FileSpreadsheet size={13} />
+            <span>Excel</span>
           </button>
 
           {/* Column Visibility */}
@@ -280,72 +282,76 @@ const TableGenerator = ({
           <SearchBar
             data={tableData}
             searchFields={visibleDataCols}
-            placeholder="Search..."
+            placeholder="Search records..."
             onFilter={(d) => { setFilteredData(d); setCurrentPage(1); }}
           />
         </div>
       </div>
 
       {paginatedData.length === 0 ? (
-        <div className="text-center py-14">
-          <div className="w-12 h-12 rounded-[12px] bg-[var(--module-ticket-light)] flex items-center justify-center mx-auto mb-3">
-            <span className="text-[24px]">🔍</span>
+        <div className="text-center py-14 bg-surface">
+          <div className="w-12 h-12 rounded-xl bg-surface-1 border border-hairline flex items-center justify-center mx-auto mb-2 text-ink-subtle">
+            <span className="text-xl">🔍</span>
           </div>
-          <div className="text-ink text-[15px] font-medium mb-1">No records found</div>
-          <div className="text-ink-muted text-[13px]">Try adjusting your search or column filters</div>
+          <div className="text-ink text-sm font-semibold mb-0.5">No records found</div>
+          <div className="text-ink-muted text-xs">Try adjusting your search or filters</div>
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-surface-1 border-b border-hairline">
+          {/* ── Table with Sticky Header & Scrollable Body ── */}
+          <div
+            className="overflow-x-auto overflow-y-auto w-full"
+            style={{ maxHeight: maxHeight }}
+          >
+            <table className="w-full border-collapse text-left">
+              <thead className="sticky top-0 z-10 bg-surface-1 shadow-[0_1px_2px_rgba(0,0,0,0.04)] backdrop-blur-md">
+                <tr className="border-b border-hairline">
                   {columns.map((col) => (
                     <th
                       key={col}
                       onClick={() => handleSort(col)}
-                      className="px-5 py-3 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-[0.4px] select-none cursor-pointer hover:bg-[var(--module-ticket-light)] hover:text-[var(--module-ticket)] transition-colors"
+                      className="px-3 py-1.5 text-left text-[10.5px] font-bold text-ink-muted uppercase tracking-wider select-none cursor-pointer hover:bg-surface-2 hover:text-ink transition-colors whitespace-nowrap"
                     >
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1">
                         {col === "__actions" ? "Actions" : formatColumnName(col)}
                         {sortConfig.key === col &&
                           (sortConfig.direction === "asc"
-                            ? <ChevronUp size={13} className="text-[var(--module-ticket)]" />
-                            : <ChevronDown size={13} className="text-[var(--module-ticket)]" />)}
+                            ? <ChevronUp size={11} className="text-accent font-bold" />
+                            : <ChevronDown size={11} className="text-accent font-bold" />)}
                       </div>
                     </th>
                   ))}
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-hairline-soft">
+              <tbody className="divide-y divide-hairline-soft bg-surface">
                 {paginatedData.map((row, i) => (
                   <tr
-                    key={i}
+                    key={row._id || i}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
-                    className={onRowClick ? "cursor-pointer" : ""}
+                    className={`transition-colors hover:bg-surface-1/70 ${onRowClick ? "cursor-pointer" : ""}`}
                   >
                     {columns.map((col) => (
-                      <td key={col} className="px-5 py-3 whitespace-nowrap text-[13px] text-ink">
+                      <td key={col} className="px-3 py-1.5 whitespace-nowrap text-[12px] text-ink leading-tight">
                         {col === "__actions" ? (
                           customRender.__actions ? customRender.__actions(row) : (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                               {onEdit && (
                                 <button
                                   onClick={() => onEdit(row)}
-                                  className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] bg-[var(--module-ticket-light)] text-[var(--module-ticket)] hover:bg-[var(--module-ticket)] hover:text-white transition-colors cursor-pointer"
+                                  className="inline-flex items-center justify-center w-6 h-6 rounded bg-surface-1 hover:bg-surface-2 text-ink-muted hover:text-ink border border-hairline transition-colors cursor-pointer"
                                   title="Edit"
                                 >
-                                  <Pencil size={13} />
+                                  <Pencil size={11} />
                                 </button>
                               )}
                               {onDelete && (
                                 <button
                                   onClick={() => onDelete(row)}
-                                  className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] bg-[var(--tracker-danger-light)] text-[var(--tracker-danger)] hover:bg-[var(--tracker-danger)] hover:text-white transition-colors cursor-pointer"
+                                  className="inline-flex items-center justify-center w-6 h-6 rounded bg-[var(--tracker-danger-light)] text-[var(--tracker-danger)] hover:bg-[var(--tracker-danger)] hover:text-white transition-colors cursor-pointer"
                                   title="Delete"
                                 >
-                                  <Trash2 size={13} />
+                                  <Trash2 size={11} />
                                 </button>
                               )}
                             </div>
@@ -353,7 +359,7 @@ const TableGenerator = ({
                         ) : customRender[col] ? (
                           customRender[col](row)
                         ) : isDateString(row[col]) ? (
-                          <span className="text-ink-muted">{formatIndianDate(row[col])}</span>
+                          <span className="text-ink-muted text-[11px]">{formatIndianDate(row[col])}</span>
                         ) : (
                           <span className="text-ink">{typeof row[col] === "object" && row[col] !== null ? formatValueForExport(row[col]) : String(row[col] ?? "-")}</span>
                         )}
@@ -365,47 +371,59 @@ const TableGenerator = ({
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="px-5 py-3.5 bg-surface-1 border-t border-hairline flex items-center justify-between">
-            <div className="text-[13px] text-ink-muted">
-              Showing <span className="font-medium text-ink">{((currentPage - 1) * ROWS_PER_PAGE) + 1}</span>
+          {/* ── Pagination ── */}
+          <div className="px-4 py-2.5 bg-surface-1 border-t border-hairline flex items-center justify-between gap-2 flex-wrap">
+            <div className="text-xs text-ink-muted">
+              Showing <span className="font-semibold text-ink">{((currentPage - 1) * ROWS_PER_PAGE) + 1}</span>
               {" – "}
-              <span className="font-medium text-ink">{Math.min(currentPage * ROWS_PER_PAGE, sortedData.length)}</span>
+              <span className="font-semibold text-ink">{Math.min(currentPage * ROWS_PER_PAGE, sortedData.length)}</span>
               {" of "}
-              <span className="font-medium text-ink">{sortedData.length}</span> results
+              <span className="font-semibold text-ink">{sortedData.length}</span> records
             </div>
 
             <div className="flex items-center gap-1">
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => p - 1)}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] border border-hairline bg-surface text-ink-muted hover:bg-[#EDE9FE] hover:text-[#7C3AED] hover:border-[#7C3AED] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center justify-center w-7 h-7 rounded-tracker-md border border-hairline bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Previous Page"
               >
-                <ChevronsLeft size={15} />
+                <ChevronsLeft size={13} />
               </button>
 
               <div className="flex gap-1">
-                {[...Array(totalPages)].map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`w-8 h-8 rounded-[6px] text-[13px] font-medium transition-colors ${
-                      currentPage === i + 1
-                        ? "bg-[#7C3AED] text-white shadow-[0_2px_8px_rgba(124,58,237,0.30)]"
-                        : "bg-surface border border-hairline text-ink-muted hover:bg-[#EDE9FE] hover:text-[#7C3AED] hover:border-[#7C3AED]"
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
+                {[...Array(totalPages)].map((_, i) => {
+                  const pageNum = i + 1;
+                  // Show current page and neighbors
+                  if (totalPages > 6 && Math.abs(currentPage - pageNum) > 2 && pageNum !== 1 && pageNum !== totalPages) {
+                    if (Math.abs(currentPage - pageNum) === 3) {
+                      return <span key={i} className="text-ink-subtle text-xs px-1 self-center">...</span>;
+                    }
+                    return null;
+                  }
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-7 h-7 rounded-tracker-md text-xs font-semibold transition-colors ${
+                        currentPage === pageNum
+                          ? "bg-[var(--brand-solid)] text-white shadow-xs"
+                          : "bg-surface border border-hairline text-ink-muted hover:bg-surface-2 hover:text-ink"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
               </div>
 
               <button
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || totalPages === 0}
                 onClick={() => setCurrentPage((p) => p + 1)}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] border border-hairline bg-surface text-ink-muted hover:bg-[#EDE9FE] hover:text-[#7C3AED] hover:border-[#7C3AED] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center justify-center w-7 h-7 rounded-tracker-md border border-hairline bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Next Page"
               >
-                <ChevronsRight size={15} />
+                <ChevronsRight size={13} />
               </button>
             </div>
           </div>
