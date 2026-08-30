@@ -1,10 +1,57 @@
 [
   {
+    "version": "3.1.7",
+    "releaseDate": "2026-08-30",
+    "title": "Task Details: Job Category & Task Type Selection Fix",
+    "tagline": "Added interactive Job Category and Task Type selector dropdowns in Task details sidebar with delivery stage alignment.",
+    "isLatest": true,
+    "type": "Hotfix & UX Enhancement",
+    "categories": {
+      "features": [
+        "Interactive Job Category (projectTypeId) selector dropdown added to Task details sidebar for 1-click category changes",
+        "Task Type (taskTypeId) selector dropdown integrated directly into Task parameters sidebar"
+      ],
+      "improvements": [
+        "Enhanced Delivery Stage dropdown with click-outside auto-close listener and clean z-index layering",
+        "Activity Timer job selector aligned with Master Populate read endpoints"
+      ],
+      "fixes": [
+        "Fixed DeliveryStageBadge endpoint typo (/populate/read/status_configs) resolving stage pipeline loading errors",
+        "Resolved dropdown layout collisions over Estimated Hours input controls"
+      ]
+    }
+  },
+  {
+    "version": "3.1.5",
+    "releaseDate": "2026-08-30",
+    "title": "Enhanced Ticket & Task Listings, Filter Presets & Dynamic Populate Resolution",
+    "tagline": "Universal configurable filter bar, custom filter preset saving, full-width sticky tables, and automated polymorphic reference population.",
+    "isLatest": false,
+    "type": "Feature & UX Enhancement",
+    "categories": {
+      "features": [
+        "Universal Configurable Filter Bar: Declarative schema-driven filter component with typeahead search, active filter counter badges, and date range picker",
+        "Custom Filter Presets: Save, apply, and delete custom named filter combinations with per-user isolated storage",
+        "Full-Width Sticky Table Layout: Edge-to-edge data table presentation with sticky headers pinned at the top on vertical scroll",
+        "Task Table View Mode: Dedicated high-density table view added to Task Workspace alongside Kanban, Gantt, and Sprint views"
+      ],
+      "improvements": [
+        "'Created By' Filter & Column: Added creator filter and avatar chips across Ticket and Task listings with declarative name resolution",
+        "Optimized Information Density: Compact 18px avatar scaling and streamlined row padding for enhanced viewport capacity",
+        "Declarative user display name utilities eliminating ad-hoc procedural branching"
+      ],
+      "fixes": [
+        "Resolved polymorphic 'createdBy' population in Populate Engine by auto-including refPath discriminator fields in select projections",
+        "Eliminated canonical model map dependencies in favor of dynamic runtime resolution"
+      ]
+    }
+  },
+  {
     "version": "3.1.4",
     "releaseDate": "2026-08-30",
     "title": "Deployment Gate & UI Release Notes Integration",
     "tagline": "Automated SemVer verification gate for zero-drift deployments and interactive What's New changelogs.",
-    "isLatest": true,
+    "isLatest": false,
     "type": "Enhancement & Release Management",
     "categories": {
       "features": [

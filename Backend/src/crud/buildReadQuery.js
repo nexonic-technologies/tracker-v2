@@ -199,6 +199,16 @@ export default async function buildReadQuery(ctx) {
   if (fields && fields.length > 0) {
     const validFields = fields.filter(f => f && f !== '*');
     if (validFields.length > 0) {
+      // Auto-include any refPath discriminator fields required for requested populate paths
+      if (populateFields && typeof populateFields === 'object' && Model) {
+        for (const fullPath of Object.keys(populateFields)) {
+          const schemaPath = Model.schema.path(fullPath) || Model.schema.path(`${fullPath}.$`);
+          const refPath = schemaPath?.options?.refPath || schemaPath?.caster?.options?.refPath;
+          if (refPath && !validFields.includes(refPath)) {
+            validFields.push(refPath);
+          }
+        }
+      }
       query = query.select(validFields.join(' '));
     }
   }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, Square, Clock, ChevronDown, Briefcase, Zap } from 'lucide-react';
 import axiosInstance from '../../api/axiosInstance';
 import useJobSession from '../../hooks/useJobSession';
@@ -29,6 +29,19 @@ export default function JobSessionTimer({ taskId, userId, onSessionChange }) {
   const [selectedJobTypeId, setSelectedJobTypeId] = useState(null);
   const [showSelector, setShowSelector] = useState(false);
   const [loadingTypes, setLoadingTypes] = useState(false);
+  const selectorRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (selectorRef.current && !selectorRef.current.contains(e.target)) {
+        setShowSelector(false);
+      }
+    };
+    if (showSelector) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showSelector]);
 
   // ── Fetch job types grouped by category ──
   useEffect(() => {
@@ -36,12 +49,12 @@ export default function JobSessionTimer({ taskId, userId, onSessionChange }) {
       setLoadingTypes(true);
       try {
         const [catRes, typeRes] = await Promise.all([
-          axiosInstance.post('/populate/list/job_categories', {
+          axiosInstance.post('/populate/read/job_categories', {
             filter: { isActive: true },
             sort: { order: 1 },
             limit: 50
           }),
-          axiosInstance.post('/populate/list/job_types', {
+          axiosInstance.post('/populate/read/job_types', {
             filter: { isActive: true },
             sort: { order: 1 },
             limit: 100,
@@ -205,7 +218,7 @@ export default function JobSessionTimer({ taskId, userId, onSessionChange }) {
 
       {/* ── Job Type Selector (only when no active session) ── */}
       {!hasSession && (
-        <div className="relative">
+        <div className="relative" ref={selectorRef}>
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); setShowSelector(!showSelector); }}

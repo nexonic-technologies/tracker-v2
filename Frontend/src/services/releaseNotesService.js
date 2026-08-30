@@ -5,15 +5,13 @@
  */
 
 import axiosInstance from '../api/axiosInstance';
-import staticReleaseNotes from '../constants/releaseNotes.json';
 
 const STORAGE_KEY_PREFIX = 'tracker_seen_release_';
 
-let cachedReleases = null;
+let cachedReleases = [];
 
 /**
  * Fetch all published release notes from the database via the Populate API.
- * Falls back to bundled static notes if offline or during bootstrapping.
  * @returns {Promise<Array>}
  */
 export async function fetchReleaseNotes() {
@@ -46,16 +44,14 @@ export async function fetchReleaseNotes() {
       return cachedReleases;
     }
   } catch (err) {
-    console.debug('[releaseNotesService] Populate API unavailable, using fallback:', err.message);
+    console.debug('[releaseNotesService] Populate API unavailable:', err.message);
   }
 
-  // Fallback to static bundled release notes
-  cachedReleases = Array.isArray(staticReleaseNotes) ? staticReleaseNotes : [];
-  return cachedReleases;
+  return cachedReleases || [];
 }
 
 export function getCachedReleases() {
-  return cachedReleases || staticReleaseNotes || [];
+  return cachedReleases || [];
 }
 
 export function getLatestRelease() {

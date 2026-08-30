@@ -33,7 +33,7 @@ const ticketSchema = new mongoose.Schema({
     index: true
   },
   createdBy: { type: mongoose.Schema.Types.ObjectId, refPath: 'createdByModel', required: true },
-  createdByModel: { type: String, enum: ['employees', 'agents'], required: true },
+  createdByModel: { type: String, enum: ['employees', 'agents'], default: 'employees' },
   assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: 'employees' }], // Multiple assignees
   accountManager: {
     type: mongoose.Schema.Types.ObjectId,
