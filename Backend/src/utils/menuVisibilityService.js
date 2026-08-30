@@ -52,24 +52,39 @@ export function isMenuItemVisible(menuItem, user, userCapabilities, roleMeta) {
   const routeKey = menuItem.mainRoute ? menuItem.mainRoute.replace(/^\//, '').split('/')[0].toLowerCase() : '';
   const modelName = menuItem.modelName?.toLowerCase() || (menuItem.key ? menuItem.key.toLowerCase() : '') || routeKey;
 
-  if (modelName) {
-    const policy = (roleMeta?.id ? getPolicy(roleMeta.id, modelName) : null) ||
-      (roleMeta?.name ? getPolicy(roleMeta.name, modelName) : null) ||
-      getPolicy(roleMeta?.id, `${modelName}s`) ||
-      getPolicy(roleMeta?.name, `${modelName}s`) ||
-      getPolicy(roleMeta?.id, modelName.replace(/s$/, '')) ||
-      getPolicy(roleMeta?.name, modelName.replace(/s$/, ''));
+  const MODULE_MODELS = {
+    attendance: ['attendances', 'leaves', 'regularizations', 'shifts', 'time_tracker_sessions', 'daily_activities'],
+    payroll: ['payrolls', 'payroll_runs', 'salary_structures', 'period_closures'],
+    hrms: ['employees', 'departments', 'designations', 'onboardings', 'job_openings', 'candidates'],
+    crm: ['contacts', 'orders', 'quotations', 'payments'],
+    assets: ['assets', 'asset_allocations', 'asset_incidents']
+  };
+
+  const modelsToCheck = [modelName, ...(MODULE_MODELS[modelName] || [])].filter(Boolean);
+
+  for (const m of modelsToCheck) {
+    const policy = (roleMeta?.id ? getPolicy(roleMeta.id, m) : null) ||
+      (roleMeta?.name ? getPolicy(roleMeta.name, m) : null) ||
+      getPolicy(roleMeta?.id, `${m}s`) ||
+      getPolicy(roleMeta?.name, `${m}s`) ||
+      getPolicy(roleMeta?.id, m.replace(/s$/, '')) ||
+      getPolicy(roleMeta?.name, m.replace(/s$/, ''));
 
     if (policy && policy.permissions && policy.permissions.read === true) {
       return true;
     }
   }
 
-  // 3. Check sidebar capabilities for protected items
+  // 3. Check sidebar capabilities for protected items (Unified CBAC)
   if (menuItem.capabilities && menuItem.capabilities.length > 0) {
-    const userCaps = (roleMeta?.capabilities || []).map(normalizeCap);
+    const roleCaps = (roleMeta?.capabilities || []).map(normalizeCap);
+    const cbacCaps = userCapabilities instanceof Set
+      ? Array.from(userCapabilities).map(normalizeCap)
+      : (Array.isArray(userCapabilities) ? userCapabilities.map(normalizeCap) : []);
+    const allUserCaps = new Set([...roleCaps, ...cbacCaps]);
+
     const requiredCaps = menuItem.capabilities.map(c => normalizeCap(c.key || c));
-    const hasCapability = requiredCaps.some(cap => userCaps.includes(cap));
+    const hasCapability = requiredCaps.some(cap => allUserCaps.has(cap) || roleCaps.includes(cap));
     if (hasCapability) {
       return true;
     }

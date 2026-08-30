@@ -6,7 +6,7 @@ export default function salary_structures() {
       if (!body.effectiveFrom) throw new Error('effectiveFrom is required.');
 
       const SalaryStructure = tenantContext?.getModel
-        ? tenantContext.getModel('SalaryStructure')
+        ? (tenantContext.getModel('salary_structures') || tenantContext.getModel('SalaryStructure'))
         : (await import('../models/SalaryStructure.js')).default;
 
       // Get latest version for this employee

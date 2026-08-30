@@ -997,6 +997,228 @@ const DashboardWidgetsTab = ({ selectedRole }) => {
     );
 };
 
+// ─── Role Capabilities Tab (Granular Tab & Feature CBAC) ───────────────────────────
+
+const RoleCapabilitiesTab = ({ selectedRole }) => {
+    const { refresh: refreshPermissions } = usePermission();
+    const [capabilities, setCapabilities] = useState([]);
+    const [assignedCaps, setAssignedCaps] = useState(new Set());
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [message, setMessage] = useState('');
+    const [search, setSearch] = useState('');
+    const [selectedModule, setSelectedModule] = useState('all');
+
+    useEffect(() => {
+        if (!selectedRole) return;
+        const loadCapabilities = async () => {
+            setLoading(true);
+            try {
+                const [capRes, roleRes] = await Promise.all([
+                    axiosInstance.post('/populate/read/capabilities', {
+                        filter: { status: 'active' },
+                        limit: 1000,
+                        sort: { module: 1, key: 1 }
+                    }),
+                    axiosInstance.post(`/populate/read/roles/${selectedRole}`)
+                ]);
+
+                const allCaps = capRes.data?.data || [];
+                setCapabilities(allCaps);
+
+                const roleDoc = roleRes.data?.data;
+                const existingCaps = (roleDoc?.capabilities || []).map(c => typeof c === 'object' ? c._id : c);
+                setAssignedCaps(new Set(existingCaps.map(String)));
+            } catch (err) {
+                console.error('[RoleCapabilitiesTab] Load failed:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadCapabilities();
+    }, [selectedRole]);
+
+    const handleToggle = (capId) => {
+        setAssignedCaps(prev => {
+            const next = new Set(prev);
+            const idStr = String(capId);
+            if (next.has(idStr)) next.delete(idStr);
+            else next.add(idStr);
+            return next;
+        });
+        setMessage('');
+    };
+
+    const handleToggleAllModule = (moduleCaps, enable) => {
+        setAssignedCaps(prev => {
+            const next = new Set(prev);
+            moduleCaps.forEach(c => {
+                const idStr = String(c._id);
+                if (enable) next.add(idStr);
+                else next.delete(idStr);
+            });
+            return next;
+        });
+        setMessage('');
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        setMessage('Saving...');
+        try {
+            const res = await axiosInstance.put(`/populate/update/roles/${selectedRole}`, {
+                capabilities: Array.from(assignedCaps)
+            });
+            if (res.data?.success) {
+                setMessage('✓ Capabilities saved!');
+                await axiosInstance.post('/config/refresh-policy');
+                await refreshPermissions();
+            } else {
+                setMessage('Save failed');
+            }
+        } catch (err) {
+            console.error('[RoleCapabilitiesTab] Save error:', err);
+            setMessage('Error saving capabilities');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const filteredCaps = React.useMemo(() => {
+        return capabilities.filter(c => {
+            const matchSearch = !search || 
+                (c.label || '').toLowerCase().includes(search.toLowerCase()) ||
+                (c.key || '').toLowerCase().includes(search.toLowerCase()) ||
+                (c.description || '').toLowerCase().includes(search.toLowerCase());
+            const matchModule = selectedModule === 'all' || (c.module || 'general').toLowerCase() === selectedModule.toLowerCase();
+            return matchSearch && matchModule;
+        });
+    }, [capabilities, search, selectedModule]);
+
+    // Group filtered capabilities by module
+    const groupedCaps = React.useMemo(() => {
+        const groups = {};
+        filteredCaps.forEach(c => {
+            const mod = (c.module || 'general').toUpperCase();
+            if (!groups[mod]) groups[mod] = [];
+            groups[mod].push(c);
+        });
+        return groups;
+    }, [filteredCaps]);
+
+    const modules = React.useMemo(() => {
+        const set = new Set(capabilities.map(c => (c.module || 'general').toLowerCase()));
+        return ['all', ...Array.from(set)];
+    }, [capabilities]);
+
+    if (loading) {
+        return (
+            <PremiumCard className="flex-1 flex items-center justify-center py-16">
+                <div className="flex items-center gap-2 text-gray-400">
+                    <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                    <span>Loading capabilities...</span>
+                </div>
+            </PremiumCard>
+        );
+    }
+
+    return (
+        <div className="flex flex-col flex-1 min-h-0 gap-4">
+            {/* Filter toolbar */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1 max-w-md w-full">
+                    <div className="relative flex-1">
+                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <input
+                            type="text"
+                            placeholder="Search capabilities (e.g. payroll_runs, attendance)..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/60 backdrop-blur text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        />
+                    </div>
+                    <select
+                        value={selectedModule}
+                        onChange={e => setSelectedModule(e.target.value)}
+                        className="text-xs font-bold border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 capitalize"
+                    >
+                        {modules.map(m => (
+                            <option key={m} value={m}>{m === 'all' ? 'All Modules' : m}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="text-xs font-bold text-gray-500">
+                    Assigned: <span className="text-blue-600 dark:text-blue-400 font-extrabold">{assignedCaps.size}</span> / {capabilities.length}
+                </div>
+            </div>
+
+            {/* Capability cards grouped by module */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+                {Object.keys(groupedCaps).length === 0 ? (
+                    <div className="text-center py-12 text-gray-400 text-sm">No matching capabilities found.</div>
+                ) : (
+                    Object.entries(groupedCaps).map(([moduleName, moduleCaps]) => {
+                        const allAssigned = moduleCaps.every(c => assignedCaps.has(String(c._id)));
+                        return (
+                            <PremiumCard key={moduleName} className="flex flex-col gap-3">
+                                <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700/50 pb-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-blue-500" />
+                                        <h4 className="text-xs font-black text-gray-800 dark:text-white tracking-wider">{moduleName}</h4>
+                                        <span className="text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                                            {moduleCaps.length}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleToggleAllModule(moduleCaps, !allAssigned)}
+                                        className="text-[11px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer"
+                                    >
+                                        {allAssigned ? 'Deselect All' : 'Select All'}
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                    {moduleCaps.map(cap => {
+                                        const isAssigned = assignedCaps.has(String(cap._id));
+                                        return (
+                                            <div
+                                                key={cap._id}
+                                                onClick={() => handleToggle(cap._id)}
+                                                className={`p-3 rounded-xl border transition-all cursor-pointer select-none flex flex-col justify-between gap-1.5 ${
+                                                    isAssigned
+                                                        ? 'bg-blue-50/60 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/60 shadow-xs'
+                                                        : 'bg-gray-50/50 dark:bg-gray-800/30 border-gray-100 dark:border-gray-700/40 hover:border-gray-200 opacity-70 hover:opacity-100'
+                                                }`}
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{cap.label || cap.key}</p>
+                                                        <p className="text-[10px] font-mono text-gray-400 dark:text-gray-500 mt-0.5 truncate">{cap.key}</p>
+                                                    </div>
+                                                    <div className={`w-4 h-4 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
+                                                        isAssigned ? 'bg-blue-600 text-white' : 'border border-gray-300 dark:border-gray-600'
+                                                    }`}>
+                                                        {isAssigned && <CheckCircleIcon className="w-3.5 h-3.5" />}
+                                                    </div>
+                                                </div>
+                                                {cap.description && (
+                                                    <p className="text-[10.5px] text-gray-500 dark:text-gray-400 line-clamp-1">{cap.description}</p>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </PremiumCard>
+                        );
+                    })
+                )}
+            </div>
+
+            <SaveBar onSave={handleSave} saving={saving} message={message} />
+        </div>
+    );
+};
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 const RoleAccessPolicy = () => {
@@ -1337,6 +1559,7 @@ const RoleAccessPolicy = () => {
 
     const tabs = [
         { key: 'rbac', label: 'Resource Access', icon: TableCellsIcon },
+        { key: 'capabilities', label: 'Capabilities', icon: SparklesIcon },
         { key: 'fbac', label: 'Field Policies', icon: FunnelIcon },
         { key: 'registry', label: 'Registry', icon: CpuChipIcon },
         { key: 'widgets', label: 'Dashboard', icon: SquaresPlusIcon },
@@ -1444,6 +1667,9 @@ const RoleAccessPolicy = () => {
                                         saving={rbacSaving}
                                         message={rbacMessage}
                                     />
+                                )}
+                                {activeTab === 'capabilities' && (
+                                    <RoleCapabilitiesTab selectedRole={selectedRole} />
                                 )}
                                 {activeTab === 'fbac' && (
                                     <FieldPoliciesTab

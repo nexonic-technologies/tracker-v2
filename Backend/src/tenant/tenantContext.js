@@ -5,14 +5,20 @@ import staticModelMap from '../models/tenantRegistry.js';
 
 const tenantStorage = new AsyncLocalStorage();
 
-// Pre-build normalized static model map (lowercased keys -> model/schema) for O(1) case-insensitive lookup
+// Pre-build normalized static model map (lowercased & cleaned keys -> model/schema) for O(1) case-insensitive lookup
 const normalizedStaticModelMap = new Map();
 if (staticModelMap) {
   for (const [k, v] of Object.entries(staticModelMap)) {
     if (k && v) {
-      normalizedStaticModelMap.set(k.toLowerCase(), v);
+      const lower = k.toLowerCase();
+      const clean = lower.replace(/[^a-z0-9]/g, '');
+      normalizedStaticModelMap.set(lower, v);
+      normalizedStaticModelMap.set(clean, v);
       if (v.modelName) {
-        normalizedStaticModelMap.set(v.modelName.toLowerCase(), v);
+        const mLower = v.modelName.toLowerCase();
+        const mClean = mLower.replace(/[^a-z0-9]/g, '');
+        normalizedStaticModelMap.set(mLower, v);
+        normalizedStaticModelMap.set(mClean, v);
       }
     }
   }
