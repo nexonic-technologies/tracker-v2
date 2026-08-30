@@ -327,11 +327,45 @@ const CRMContacts = () => {
 
   const handleConvert = async (contact) => {
     try {
-      await axiosInstance.put(`/populate/update/contacts/${contact._id}`, { status: "Converted" });
-      toast.success(`Contact successfully converted to Client!`);
+      // 1. Create client account
+      const clientPayload = {
+        name: contact.companyName || `${contact.firstName} ${contact.lastName || ''}`.trim() || 'New Client Prospect',
+        email: contact.email || undefined,
+        phone: contact.phone || undefined,
+        leadStatus: 'Qualified',
+        Status: 'Inactive',
+        leadType: contact.leadType || 'Normal',
+        referenceType: contact.referenceType || 'Direct'
+      };
+
+      const clientRes = await axiosInstance.post('/populate/create/clients', clientPayload);
+      const createdClient = clientRes.data?.data;
+      const createdClientId = createdClient?._id;
+
+      // 2. Update contact with converted status and linked client
+      await axiosInstance.put(`/populate/update/contacts/${contact._id}`, {
+        status: "Converted",
+        convertedClientId: createdClientId || undefined
+      });
+
+      // 3. Log CRM activity if client was created
+      if (createdClientId) {
+        try {
+          await axiosInstance.post('/populate/create/crm_activities', {
+            clientId: createdClientId,
+            type: 'System',
+            content: `Contact ${contact.firstName} ${contact.lastName || ''} converted into Client Account.`
+          });
+        } catch (actErr) {
+          console.warn('Could not log conversion activity:', actErr.message);
+        }
+      }
+
+      toast.success(`Contact successfully converted to Client Account!`);
       fetchContacts();
     } catch (err) {
       console.error("Error converting contact:", err);
+      toast.error(err.response?.data?.message || "Failed to convert contact to client");
     }
   };
 

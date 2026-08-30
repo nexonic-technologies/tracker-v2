@@ -25,13 +25,22 @@ const MarketingCalendar = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [clients, setClients] = useState([]);
+  const [meetingForm, setMeetingForm] = useState({
+    clientId: '',
+    title: '',
+    notes: '',
+    status: 'Scheduled',
+    scheduledTime: new Date().toISOString(),
+    endTime: new Date(Date.now() + 3600000).toISOString()
+  });
+  const [saving, setSaving] = useState(false);
 
   // Fetch meetings and clients
   const fetchData = async () => {
     try {
       setLoading(true);
       const [meetingsRes, clientsRes] = await Promise.all([
-        axiosInstance.post('/populate/read/crm_meetings', { limit: 1000 }),
+        axiosInstance.post('/populate/read/crm_meetings', { limit: 1000, populateFields: ['clientId'] }),
         axiosInstance.post('/populate/read/clients', { limit: 1000, select: 'name _id' })
       ]);
       setMeetings(meetingsRes.data?.data || []);
@@ -46,6 +55,62 @@ const MarketingCalendar = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const openMeetingModal = (meeting = null, defaultDate = null) => {
+    setSelectedMeeting(meeting);
+    const baseDate = defaultDate || (meeting?.scheduledTime ? new Date(meeting.scheduledTime) : new Date());
+    const endDate = meeting?.endTime ? new Date(meeting.endTime) : new Date(baseDate.getTime() + 3600000);
+
+    setMeetingForm({
+      clientId: meeting?.clientId?._id || meeting?.clientId || '',
+      title: meeting?.title || '',
+      notes: meeting?.notes || meeting?.outcome || '',
+      status: meeting?.status || 'Scheduled',
+      scheduledTime: baseDate.toISOString(),
+      endTime: endDate.toISOString()
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSaveMeeting = async () => {
+    if (!meetingForm.clientId) {
+      toast.error('Please select a client');
+      return;
+    }
+    if (!meetingForm.title.trim()) {
+      toast.error('Please enter a meeting title');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const payload = {
+        clientId: meetingForm.clientId,
+        title: meetingForm.title.trim(),
+        notes: meetingForm.notes,
+        outcome: meetingForm.notes,
+        status: meetingForm.status,
+        scheduledTime: meetingForm.scheduledTime,
+        endTime: meetingForm.endTime
+      };
+
+      if (selectedMeeting?._id) {
+        await axiosInstance.put(`/populate/update/crm_meetings/${selectedMeeting._id}`, payload);
+        toast.success('Meeting outcome updated successfully');
+      } else {
+        await axiosInstance.post('/populate/create/crm_meetings', payload);
+        toast.success('Meeting scheduled successfully');
+      }
+
+      setIsModalOpen(false);
+      setSelectedMeeting(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save meeting');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handlePrev = () => {
     setCurrentDate(currentDate.subtract(1, view));
@@ -97,10 +162,7 @@ const MarketingCalendar = () => {
               <div
                 key={idx}
                 className={`min-h-[120px] p-2 border-r border-b border-hairline transition-colors hover:bg-surface-1/50 cursor-pointer ${!isCurrentMonth ? 'bg-canvas' : ''}`}
-                onClick={() => {
-                  setSelectedMeeting({ scheduledTime: date.hour(10).minute(0).toDate() });
-                  setIsModalOpen(true);
-                }}
+                onClick={() => openMeetingModal(null, date.hour(10).minute(0).toDate())}
               >
                 <div className="flex justify-between items-start mb-1">
                   <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-brand text-white' : 'text-ink'}`}>
@@ -114,8 +176,7 @@ const MarketingCalendar = () => {
                       className="px-1.5 py-0.5 text-[10px] bg-module-project-light text-module-project border-l-2 border-module-project rounded-sm truncate"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedMeeting(m);
-                        setIsModalOpen(true);
+                        openMeetingModal(m);
                       }}
                     >
                       {dayjs(m.scheduledTime).format('HH:mm')} {m.title}
@@ -175,10 +236,7 @@ const MarketingCalendar = () => {
           </div>
 
           <button
-            onClick={() => {
-              setSelectedMeeting({ scheduledTime: new Date() });
-              setIsModalOpen(true);
-            }}
+            onClick={() => openMeetingModal()}
             className="tracker-btn-brand flex items-center gap-2"
           >
             <Plus size={16} />
@@ -226,19 +284,24 @@ const MarketingCalendar = () => {
                 {/* Client & Title */}
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-ink-subtle uppercase tracking-wider">Client</label>
-                    <div className="flex items-center gap-3 p-3 bg-canvas rounded-tracker-md border border-hairline">
-                      <User size={16} className="text-brand" />
-                      <span className="text-sm font-medium text-ink">
-                        {selectedMeeting?.clientId?.name || 'Select Client...'}
-                      </span>
-                    </div>
+                    <label className="text-[11px] font-bold text-ink-subtle uppercase tracking-wider">Client *</label>
+                    <select
+                      value={meetingForm.clientId}
+                      onChange={(e) => setMeetingForm({ ...meetingForm, clientId: e.target.value })}
+                      className="lmx-input"
+                    >
+                      <option value="">Select Client Account...</option>
+                      {clients.map(c => (
+                        <option key={c._id} value={c._id}>{c.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-ink-subtle uppercase tracking-wider">Meeting Title</label>
+                    <label className="text-[11px] font-bold text-ink-subtle uppercase tracking-wider">Meeting Title *</label>
                     <input
                       type="text"
-                      defaultValue={selectedMeeting?.title}
+                      value={meetingForm.title}
+                      onChange={(e) => setMeetingForm({ ...meetingForm, title: e.target.value })}
                       className="lmx-input"
                       placeholder="e.g. Initial Requirement Discussion"
                     />
@@ -247,42 +310,58 @@ const MarketingCalendar = () => {
 
                 {/* Notes & Outcome */}
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-ink-subtle uppercase tracking-wider">Meeting Notes</label>
+                  <label className="text-[11px] font-bold text-ink-subtle uppercase tracking-wider">Meeting Notes / Outcome</label>
                   <textarea
                     className="lmx-input min-h-[120px] resize-none"
-                    placeholder="What was discussed? Any specific requirements or objections?"
-                    defaultValue={selectedMeeting?.notes}
+                    placeholder="What was discussed? Any specific requirements, agreements or objections?"
+                    value={meetingForm.notes}
+                    onChange={(e) => setMeetingForm({ ...meetingForm, notes: e.target.value })}
                   ></textarea>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-ink-subtle uppercase tracking-wider">Outcome Status</label>
-                    <select className="lmx-input" defaultValue={selectedMeeting?.status || 'Scheduled'}>
+                    <select
+                      className="lmx-input"
+                      value={meetingForm.status}
+                      onChange={(e) => setMeetingForm({ ...meetingForm, status: e.target.value })}
+                    >
                       <option value="Scheduled">Scheduled</option>
                       <option value="Started">In Progress</option>
                       <option value="Completed">Completed / Success</option>
-                      <option value="Follow-up">Follow-up Needed</option>
                       <option value="Cancelled">Cancelled</option>
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-ink-subtle uppercase tracking-wider">Milestone Update</label>
-                    <select className="lmx-input">
-                      <option value="">No Milestone Change</option>
-                      <option value="Requirement Gathered">Requirement Gathered</option>
-                      <option value="Proposal Sent">Proposal Sent</option>
-                      <option value="Negotation">Negotiation</option>
-                    </select>
+                    <label className="text-[11px] font-bold text-ink-subtle uppercase tracking-wider">Scheduled Date & Time</label>
+                    <input
+                      type="datetime-local"
+                      className="lmx-input"
+                      value={meetingForm.scheduledTime ? new Date(meetingForm.scheduledTime).toISOString().slice(0, 16) : ''}
+                      onChange={(e) => setMeetingForm({ ...meetingForm, scheduledTime: new Date(e.target.value).toISOString() })}
+                    />
                   </div>
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-10 pt-6 border-t border-hairline">
-                <button onClick={() => setIsModalOpen(false)} className="tracker-btn-secondary px-6">Discard</button>
-                <button className="tracker-btn-brand px-8 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="tracker-btn-secondary px-6"
+                  disabled={saving}
+                >
+                  Discard
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveMeeting}
+                  disabled={saving}
+                  className="tracker-btn-brand px-8 flex items-center gap-2 disabled:opacity-50"
+                >
                   <CheckCircle2 size={18} />
-                  <span>Save Outcome</span>
+                  <span>{saving ? 'Saving...' : (selectedMeeting?._id ? 'Update Meeting' : 'Save Meeting')}</span>
                 </button>
               </div>
             </div>

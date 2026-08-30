@@ -10,7 +10,7 @@ import {
 export default function CRMReports() {
   const [departmentsList, setDepartmentsList] = useState([{ id: 'all', name: 'All Departments' }]);
   const [selectedDepartment, setSelectedDepartment] = useState('all');
-  const [activeReport, setActiveReport] = useState('crm-pipeline');
+  const [activeReport, setActiveReport] = useState('client-profitability');
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -22,8 +22,17 @@ export default function CRMReports() {
 
   const crmReports = [
     {
+      id: 'client-profitability',
+      code: 'MIS-02',
+      label: 'Client Profitability & Delivery Margin',
+      audience: 'Executive Leadership / Finance',
+      businessQuestion: 'Which client accounts generate the highest gross profit margin after actual delivery labor costs?',
+      endpoint: '/populate/report/clients',
+      description: 'Account revenue vs. delivery hours, employee hourly costs, reimbursable expenses, and gross margin %.'
+    },
+    {
       id: 'crm-pipeline',
-      code: 'C-01',
+      code: 'MIS-06',
       label: 'CRM Lead & Activity Pipeline',
       audience: 'Sales VP / Commercial Lead',
       businessQuestion: 'What is our active lead conversion rate and pipeline deal value?',

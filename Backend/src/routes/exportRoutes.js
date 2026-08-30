@@ -48,8 +48,8 @@ router.get("/tasks", authMiddleware, async (req, res) => {
 router.get("/oa/:id", authMiddleware, async (req, res) => {
   try {
     const OA = req.tenantContext?.getModel
-      ? req.tenantContext.getModel("orderacknowledgments")
-      : getModel("orderacknowledgments");
+      ? (req.tenantContext.getModel("order_acknowledgements") || req.tenantContext.getModel("orderacknowledgments"))
+      : (getModel("order_acknowledgements") || getModel("orderacknowledgments"));
 
     const oa = await OA
       .findById(req.params.id)

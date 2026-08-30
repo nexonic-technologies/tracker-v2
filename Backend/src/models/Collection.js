@@ -88,8 +88,10 @@ import company from "./Company.js";
 // CRM Pipeline Models
 import serviceproviders from "./ServiceProvider.js";
 import contacts from "./Contact.js";
+import opportunities from "./Opportunity.js";
 import quotation_revisions from "./QuotationRevision.js";
 import order_acknowledgements from "./OrderAcknowledgement.js";
+import invoices from "./Invoice.js";
 import payment_journals from "./PaymentJournal.js";
 import clients_ledgers from "./ClientLedger.js";
 import period_closures from "./PeriodClosure.js";
@@ -218,9 +220,11 @@ const models = {
   // CRM
   serviceproviders,
   contacts,
+  opportunities,
   quotations,
   quotation_revisions,
   order_acknowledgements,
+  invoices,
   payment_journals,
   clients_ledgers,
   period_closures,

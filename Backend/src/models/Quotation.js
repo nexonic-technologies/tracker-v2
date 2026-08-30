@@ -23,6 +23,7 @@ const ApprovalEntrySchema = new mongoose.Schema({
 const QuotationSchema = new mongoose.Schema({
   quotationNumber: { type: String, unique: true },
   clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'clients', required: true, index: true },
+  opportunityId: { type: mongoose.Schema.Types.ObjectId, ref: 'opportunities', index: true },
   contactId: { type: mongoose.Schema.Types.ObjectId, ref: 'contacts' },
 
   lineItems: [QuotationLineItemSchema],

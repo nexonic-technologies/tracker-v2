@@ -23,7 +23,7 @@ const OrderAcknowledgments = () => {
   const fetchOAs = async () => {
     try {
       setLoading(true);
-      const res = await axiosInstance.post('/populate/read/orderacknowledgments', {
+      const res = await axiosInstance.post('/populate/read/order_acknowledgements', {
         limit: 100,
         sort: { createdAt: -1 },
         populate: [
@@ -47,7 +47,7 @@ const OrderAcknowledgments = () => {
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
-      link.download = `OA_${oa.oaNumber}.pdf`;
+      link.download = `OA_${oa.orderNumber || oa.oaNumber}.pdf`;
       link.click();
       toast.success('PDF Downloaded!', { id: 'pdf-gen' });
     } catch (err) {
@@ -58,7 +58,7 @@ const OrderAcknowledgments = () => {
   const handleUpdateStatus = async (oaId, nextStatus) => {
     try {
       toast.loading('Updating status...', { id: 'status-update' });
-      const res = await axiosInstance.post(`/populate/update/orderacknowledgments/${oaId}`, {
+      const res = await axiosInstance.put(`/populate/update/order_acknowledgements/${oaId}`, {
         status: nextStatus
       });
       if (res.data.success) {
@@ -110,10 +110,10 @@ const OrderAcknowledgments = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Value', value: '₹' + oas.reduce((acc, o) => acc + (o.committedPrice || 0), 0).toLocaleString(), icon: FileText, color: 'text-blue-600' },
-          { label: 'Approved', value: oas.filter(o => o.status === 'Approved').length, icon: CheckCircle, color: 'text-green-600' },
-          { label: 'Pending', value: oas.filter(o => o.status === 'Draft' || o.status === 'Sent').length, icon: Clock, color: 'text-amber-600' },
-          { label: 'Drafts', value: oas.filter(o => o.status === 'Draft').length, icon: AlertCircle, color: 'text-gray-600' },
+          { label: 'Total Value', value: '₹' + oas.reduce((acc, o) => acc + (o.totalOrderValue || o.committedPrice || 0), 0).toLocaleString(), icon: FileText, color: 'text-blue-600' },
+          { label: 'Approved', value: oas.filter(o => o.status === 'Approved' || o.status === 'Client Approved').length, icon: CheckCircle, color: 'text-green-600' },
+          { label: 'Pending', value: oas.filter(o => o.status === 'Draft' || o.status === 'Sent' || o.status === 'Pending Client Approval' || o.status === 'Pending Internal Approval').length, icon: Clock, color: 'text-amber-600' },
+          { label: 'Drafts', value: oas.filter(o => o.status === 'Draft' || o.status === 'Pending Internal Approval').length, icon: AlertCircle, color: 'text-gray-600' },
         ].map((stat, i) => (
           <div key={i} className="bg-surface p-4 rounded-tracker-lg border border-hairline shadow-sm flex items-center gap-4">
             <div className={`p-3 rounded-tracker-md bg-canvas ${stat.color}`}>
@@ -152,7 +152,7 @@ const OrderAcknowledgments = () => {
               <tr className="bg-surface-1 border-b border-hairline">
                 <th className="px-6 py-3 text-[11px] font-bold text-ink-muted uppercase tracking-wider">OA Number</th>
                 <th className="px-6 py-3 text-[11px] font-bold text-ink-muted uppercase tracking-wider">Client</th>
-                <th className="px-6 py-3 text-[11px] font-bold text-ink-muted uppercase tracking-wider">Committed Price</th>
+                <th className="px-6 py-3 text-[11px] font-bold text-ink-muted uppercase tracking-wider">Order Value</th>
                 <th className="px-6 py-3 text-[11px] font-bold text-ink-muted uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-[11px] font-bold text-ink-muted uppercase tracking-wider">Date</th>
                 <th className="px-6 py-3 text-right"></th>
@@ -172,9 +172,9 @@ const OrderAcknowledgments = () => {
               ) : (
                 oas.map(oa => (
                   <tr key={oa._id} className="hover:bg-surface-1/50 transition-colors">
-                    <td className="px-6 py-4 font-mono text-xs font-bold text-brand">{oa.oaNumber}</td>
+                    <td className="px-6 py-4 font-mono text-xs font-bold text-brand">{oa.orderNumber || oa.oaNumber}</td>
                     <td className="px-6 py-4 text-sm font-medium text-ink">{oa.clientId?.name || oa.clientName}</td>
-                    <td className="px-6 py-4 text-sm font-bold text-ink">₹{oa.committedPrice?.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-ink">₹{(oa.totalOrderValue || oa.committedPrice || 0).toLocaleString()}</td>
                     <td className="px-6 py-4">{getStatusChip(oa.status)}</td>
                     <td className="px-6 py-4 text-xs text-ink-muted">{dayjs(oa.createdAt).format('DD MMM YYYY')}</td>
                     <td className="px-6 py-4 text-right relative">

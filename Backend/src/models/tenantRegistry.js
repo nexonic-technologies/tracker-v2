@@ -83,8 +83,10 @@ import employee_life_cycle_histories from "./EmployeeLifecycleHistory.js";
 import company from "./Company.js";
 import serviceproviders from "./ServiceProvider.js";
 import contacts from "./Contact.js";
+import opportunities from "./Opportunity.js";
 import quotation_revisions from "./QuotationRevision.js";
 import order_acknowledgements from "./OrderAcknowledgement.js";
+import invoices from "./Invoice.js";
 import payment_journals from "./PaymentJournal.js";
 import clients_ledgers from "./ClientLedger.js";
 import period_closures from "./PeriodClosure.js";
@@ -147,8 +149,8 @@ export const MODULE_DEFINITIONS = {
     'ticket_activity_logs', 'ticket_assignments', 'ticket_participants', 'ticket_status_history'
   ],
   crm: [
-    'crm_activities', 'crm_meetings', 'quotations', 'quotation_revisions',
-    'order_acknowledgements', 'client_ledgers', 'period_closures', 'reference_types', 'lead_types'
+    'crm_activities', 'crm_meetings', 'opportunities', 'quotations', 'quotation_revisions',
+    'order_acknowledgements', 'invoices', 'client_ledgers', 'clients_ledgers', 'period_closures', 'reference_types', 'lead_types'
   ],
   assets: [
     'assets', 'assets_categories', 'asset_allocations', 'assets_incidents', 'assets_repairs', 'assets_vendors', 'assets_purchases', 'assets_invoices', 'assets_payments', 'assets_stock_ledgers'
@@ -260,7 +262,11 @@ const staticModelMap = {
   company,
   serviceproviders,
   contacts,
+  opportunities,
+  quotations,
   quotation_revisions,
+  order_acknowledgements,
+  invoices,
   payment_journals,
   clients_ledgers,
   period_closures,

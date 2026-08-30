@@ -123,6 +123,67 @@ export default function payrolls() {
       }
 
       return body;
+    },
+
+    /**
+     * Monthly Payroll Register & Variance Audit Hook
+     */
+    async beforeReport(ctx) {
+      const month = Number(ctx.query?.month || ctx.body?.month || (new Date().getMonth() + 1));
+      const year = Number(ctx.query?.year || ctx.body?.year || new Date().getFullYear());
+      const departmentId = ctx.query?.departmentId || ctx.body?.departmentId || ctx.filter?.departmentId;
+      const validDeptId = departmentId && departmentId !== 'all' && departmentId !== 'undefined' ? departmentId : null;
+
+      const PayrollModel = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('Payroll') : (await import('../models/Payroll.js')).default;
+      const EmployeeModel = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('Employee') : (await import('../models/Employee.js')).default;
+
+      const empQuery = { isDeleted: false };
+      if (validDeptId) {
+        empQuery['professionalInfo.department'] = validDeptId;
+      }
+
+      const employees = await EmployeeModel.find(empQuery)
+        .populate('professionalInfo.department', 'name')
+        .populate('professionalInfo.designation', 'title name')
+        .lean();
+
+      const payrollDocs = await PayrollModel.find({ month, year }).lean();
+      const payrollMap = new Map();
+      payrollDocs.forEach(p => {
+        const empId = p.employeeId?.toString();
+        if (empId) payrollMap.set(empId, p);
+      });
+
+      const rows = employees.map(emp => {
+        const empIdStr = emp._id.toString();
+        const p = payrollMap.get(empIdStr);
+
+        const gross = p?.grossSalary || 0;
+        const net = p?.netSalary || 0;
+        const basic = p?.earnedBreakdown?.['Basic'] || Math.round(gross * 0.5);
+        const pf = p?.deductionBreakdown?.['PF Employee'] || p?.deductionBreakdown?.['PF'] || 0;
+        const esi = p?.deductionBreakdown?.['ESI Employee'] || p?.deductionBreakdown?.['ESI'] || 0;
+        const totalDeductions = p?.totalDeductions || (pf + esi);
+
+        return {
+          empId: emp.professionalInfo?.empId || emp.empId || '-',
+          employeeName: `${emp.basicInfo?.firstName || ''} ${emp.basicInfo?.lastName || ''}`.trim() || 'Employee',
+          department: emp.professionalInfo?.department?.name || '-',
+          designation: emp.professionalInfo?.designation?.title || emp.professionalInfo?.designation?.name || '-',
+          monthYear: `${new Date(0, month - 1).toLocaleString('en', { month: 'short' })} ${year}`,
+          basicSalary: `₹${basic.toLocaleString('en-IN')}`,
+          grossSalary: `₹${gross.toLocaleString('en-IN')}`,
+          pfDeduction: pf > 0 ? `₹${pf.toLocaleString('en-IN')}` : '₹0',
+          esiDeduction: esi > 0 ? `₹${esi.toLocaleString('en-IN')}` : '₹0',
+          totalDeductions: `₹${totalDeductions.toLocaleString('en-IN')}`,
+          netPayable: `₹${net.toLocaleString('en-IN')}`,
+          presentDays: p?.presentDays ?? '-',
+          status: p ? p.status : 'Pending Calculation',
+          bankName: emp.bankDetails?.bankName || '-'
+        };
+      });
+
+      return { data: rows };
     }
   };
 }

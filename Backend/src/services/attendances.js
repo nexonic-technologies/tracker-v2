@@ -458,5 +458,104 @@ export default function attendances() {
         relatedId: attendanceDoc._id,
       });
     },
+
+    /**
+     * Consolidates multi-punch attendance records into exactly 1 row per employee per day
+     */
+    async beforeReport(ctx) {
+      const dateStr = ctx.query?.date || ctx.body?.date || ctx.filter?.date;
+      const departmentId = ctx.query?.departmentId || ctx.body?.departmentId || ctx.filter?.departmentId;
+      const validDeptId = departmentId && departmentId !== 'all' && departmentId !== 'undefined' ? departmentId : null;
+
+      const targetDate = dateStr ? new Date(dateStr) : new Date();
+      const startOfDay = new Date(targetDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(targetDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const EmployeeModel = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('employees') : getModel('employees');
+      const AttendanceModel = ctx.tenantContext?.getModel ? ctx.tenantContext.getModel('attendances') : getModel('attendances');
+
+      const empQuery = { status: 'Active', isDeleted: false };
+      if (validDeptId) {
+        empQuery['professionalInfo.department'] = validDeptId;
+      }
+
+      const employees = await EmployeeModel.find(empQuery)
+        .populate('professionalInfo.department', 'name')
+        .populate('professionalInfo.designation', 'title name')
+        .lean();
+
+      // Query all attendance/punch documents for this day
+      const attendanceDocs = await AttendanceModel.find({
+        date: { $gte: startOfDay, $lte: endOfDay }
+      }).lean();
+
+      // Group attendance records by employee ID
+      const empAttendanceMap = new Map();
+      attendanceDocs.forEach(att => {
+        const empId = (att.employee || att.employeeId)?._id?.toString() || (att.employee || att.employeeId)?.toString();
+        if (!empId) return;
+        if (!empAttendanceMap.has(empId)) {
+          empAttendanceMap.set(empId, []);
+        }
+        empAttendanceMap.get(empId).push(att);
+      });
+
+      // Construct exactly 1 row per active employee
+      const rows = employees.map(emp => {
+        const empIdStr = emp._id.toString();
+        const records = empAttendanceMap.get(empIdStr) || [];
+
+        let firstCheckIn = null;
+        let lastCheckOut = null;
+        let totalWorkHours = 0;
+        let maxLateMinutes = 0;
+        let consolidatedStatus = 'Absent';
+        let location = 'Office';
+
+        if (records.length > 0) {
+          records.forEach(r => {
+            const inTime = r.checkIn || r.clockIn;
+            const outTime = r.checkOut || r.clockOut;
+
+            if (inTime) {
+              const inDate = new Date(inTime);
+              if (!firstCheckIn || inDate < firstCheckIn) firstCheckIn = inDate;
+            }
+            if (outTime) {
+              const outDate = new Date(outTime);
+              if (!lastCheckOut || outDate > lastCheckOut) lastCheckOut = outDate;
+            }
+
+            if (r.workHours) totalWorkHours += Number(r.workHours) || 0;
+            if (r.lateMinutes) maxLateMinutes = Math.max(maxLateMinutes, Number(r.lateMinutes) || 0);
+            if (r.workLocation) location = r.workLocation;
+            if (r.status && r.status !== 'Absent') consolidatedStatus = r.status;
+          });
+
+          if (consolidatedStatus === 'Absent' && (firstCheckIn || totalWorkHours > 0)) {
+            consolidatedStatus = maxLateMinutes > 0 ? 'Late' : 'Present';
+          }
+        }
+
+        const fmtTime = (d) => d ? d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '-';
+
+        return {
+          empId: emp.professionalInfo?.empId || emp.empId || '-',
+          employeeName: `${emp.basicInfo?.firstName || ''} ${emp.basicInfo?.lastName || ''}`.trim() || 'Employee',
+          department: emp.professionalInfo?.department?.name || '-',
+          designation: emp.professionalInfo?.designation?.title || emp.professionalInfo?.designation?.name || '-',
+          status: consolidatedStatus,
+          clockIn: fmtTime(firstCheckIn),
+          clockOut: fmtTime(lastCheckOut),
+          workHours: totalWorkHours > 0 ? `${totalWorkHours.toFixed(1)} hrs` : (firstCheckIn ? 'Active' : '-'),
+          lateMinutes: maxLateMinutes > 0 ? `${maxLateMinutes} mins` : 0,
+          workLocation: location
+        };
+      });
+
+      return { data: rows };
+    }
   };
 }

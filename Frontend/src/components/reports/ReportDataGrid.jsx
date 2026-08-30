@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { AlertCircle, FileSpreadsheet, Mail, MapPin, ExternalLink } from 'lucide-react';
+import { AlertCircle, FileSpreadsheet, Mail, MapPin, ExternalLink, X } from 'lucide-react';
 
 // In-memory reverse geocoding cache for fast location lookups
 const locationCache = new Map();
@@ -157,15 +157,14 @@ function renderCellValue(key, val, row = {}) {
 
     return (
       <span
-        className={`px-2.5 py-1 text-[11px] font-bold rounded-full border inline-flex items-center gap-1 ${
-          isSuccess
-            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
-            : isWarning
+        className={`px-2.5 py-1 text-[11px] font-bold rounded-full border inline-flex items-center gap-1 ${isSuccess
+          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
+          : isWarning
             ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
             : isDanger
-            ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'
-            : 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20'
-        }`}
+              ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'
+              : 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20'
+          }`}
       >
         <span className={`w-1.5 h-1.5 rounded-full ${isSuccess ? 'bg-emerald-500' : isWarning ? 'bg-amber-500' : isDanger ? 'bg-rose-500' : 'bg-slate-400'}`}></span>
         {valStr}
@@ -215,16 +214,18 @@ function renderCellValue(key, val, row = {}) {
   return <span className="text-slate-800 dark:text-slate-200 font-medium">{valStr}</span>;
 }
 
-export default function ReportDataGrid({ loading, error, data = [] }) {
-  // Process raw backend data into clean flattened rows & columns
+export default function ReportDataGrid({ data, loading, error, modelName, onExport }) {
+  const [selectedRow, setSelectedRow] = useState(null);
+
+  // Normalize and flatten dynamic datasets
   const { flattenedRows, columns } = useMemo(() => {
-    if (!Array.isArray(data) || data.length === 0) {
-      return { flattenedRows: [], columns: [] };
-    }
+    if (!data) return { flattenedRows: [], columns: [] };
+    const rawArray = Array.isArray(data) ? data : [data];
+    if (rawArray.length === 0) return { flattenedRows: [], columns: [] };
 
-    let rows = data.map(row => flattenDoc(row));
+    let rows = rawArray.map(item => flattenDoc(item));
 
-    // Consolidate raw latitude/longitude columns into a unified dynamic location object
+    // Consolidate separate latitude & longitude into single unified coordinates
     rows = rows.map(r => {
       const lat = r.latitude || r['location.latitude'];
       const lng = r.longitude || r['location.longitude'];
@@ -250,54 +251,143 @@ export default function ReportDataGrid({ loading, error, data = [] }) {
     const otherCols = allCols.filter(c => !priorityCols.includes(c));
     const sortedCols = [...priorityCols, ...otherCols];
 
-    return { flattenedRows: rows, columns: sortedCols };
+    // Filter out internal ObjectId-only columns and empty columns across all report views
+    const usefulCols = sortedCols.filter(col => {
+      const isRawObjectIdCol = /(_id|departmentId|designationId|roleId|clientId|sprintId|managerId|candidateId)$/i.test(col);
+      if (isRawObjectIdCol) return false;
+      const allHex = rows.every(r => typeof r[col] === 'string' && /^[0-9a-fA-F]{24}$/.test(r[col]));
+      if (allHex && !/empId|taskCode|code/i.test(col)) return false;
+      return rows.some(r => r[col] !== '-' && r[col] !== '' && r[col] !== null && r[col] !== undefined);
+    });
+
+    // Deduplicate columns by formatted visual header name, picking the cleanest non-hex column
+    const seenHeaders = new Map();
+    usefulCols.forEach(col => {
+      const label = formatHeaderLabel(col);
+      if (!seenHeaders.has(label)) {
+        seenHeaders.set(label, col);
+      } else {
+        const existingCol = seenHeaders.get(label);
+        const currentHasHex = rows.some(r => typeof r[col] === 'string' && /^[0-9a-fA-F]{24}$/.test(r[col]));
+        const existingHasHex = rows.some(r => typeof r[existingCol] === 'string' && /^[0-9a-fA-F]{24}$/.test(r[existingCol]));
+        if (existingHasHex && !currentHasHex) {
+          seenHeaders.set(label, col);
+        }
+      }
+    });
+
+    const finalCols = Array.from(seenHeaders.values());
+
+    return { flattenedRows: rows, columns: finalCols.length > 0 ? finalCols : sortedCols };
   }, [data]);
 
   return (
-    <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden shadow-xs">
-      {loading ? (
-        <div className="p-12 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
-          <span className="w-4 h-4 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"></span>
-          Compiling report dataset via populate pipeline...
-        </div>
-      ) : error ? (
-        <div className="p-6 text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/30 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4" />
-          {error}
-        </div>
-      ) : flattenedRows.length === 0 ? (
-        <div className="p-12 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 flex flex-col items-center gap-2">
-          <FileSpreadsheet className="w-8 h-8 text-slate-300 dark:text-slate-700" />
-          No records found for the selected department & report scope.
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-              <tr>
-                <th className="p-3 w-10 text-center text-slate-400 dark:text-slate-500 font-mono">#</th>
-                {columns.map(col => (
-                  <th key={col} className="p-3 font-mono text-[11px] whitespace-nowrap">
-                    {formatHeaderLabel(col)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/60">
-              {flattenedRows.map((row, idx) => (
-                <tr key={idx} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="p-3 text-center text-slate-400 dark:text-slate-500 font-mono text-[11px]">{idx + 1}</td>
+    <>
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden shadow-xs">
+        {loading ? (
+          <div className="p-8 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
+            <span className="w-4 h-4 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"></span>
+            Loading report data...
+          </div>
+        ) : error ? (
+          <div className="p-4 text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/30 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {error}
+          </div>
+        ) : flattenedRows.length === 0 ? (
+          <div className="p-8 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 flex flex-col items-center gap-2">
+            <FileSpreadsheet className="w-7 h-7 text-slate-300 dark:text-slate-700" />
+            No records found for the selected filter criteria.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                <tr>
+                  <th className="px-2.5 py-2 w-8 text-center text-slate-400 dark:text-slate-500 font-mono text-[10px]">#</th>
                   {columns.map(col => (
-                    <td key={col} className="p-3 whitespace-nowrap">
-                      {renderCellValue(col, row[col], row)}
-                    </td>
+                    <th key={col} className="px-3 py-2 font-mono text-[10px] whitespace-nowrap">
+                      {formatHeaderLabel(col)}
+                    </th>
                   ))}
+                  <th className="px-3 py-2 text-center text-slate-400 font-mono text-[10px]">ACTIONS</th>
                 </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/60 font-medium">
+                {flattenedRows.map((row, idx) => (
+                  <tr
+                    key={idx}
+                    onClick={() => setSelectedRow({ row, index: idx })}
+                    className="hover:bg-blue-50/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                  >
+                    <td className="px-2.5 py-1.5 text-center text-slate-400 dark:text-slate-500 font-mono text-[10px]">{idx + 1}</td>
+                    {columns.map(col => (
+                      <td key={col} className="px-3 py-1.5 whitespace-nowrap text-xs">
+                        {renderCellValue(col, row[col], row)}
+                      </td>
+                    ))}
+                    <td className="px-3 py-1.5 text-center">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelectedRow({ row, index: idx }); }}
+                        className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="View Details"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Slide-Over Row Detail Inspector */}
+      {selectedRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/50 backdrop-blur-xs">
+          <div className="w-full max-w-xl h-full bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col animate-in slide-in-from-right duration-200">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Record Details
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
+                  {selectedRow.row.empId || selectedRow.row.employeeName || selectedRow.row.clientName || selectedRow.row.quotationNumber || `Entry #${selectedRow.index + 1}`}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedRow(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+              {Object.entries(selectedRow.row).map(([key, val]) => (
+                <div key={key} className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-4">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono">
+                    {formatHeaderLabel(key)}
+                  </span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white text-right break-all">
+                    {renderCellValue(key, val, selectedRow.row)}
+                  </span>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-end">
+              <button
+                onClick={() => setSelectedRow(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
