@@ -1,10 +1,35 @@
 [
   {
+    "version": "3.1.9",
+    "releaseDate": "2026-08-30",
+    "title": "Attendance & Theme Stability, Profile Navigation, Multi-Tier Auth & Dark Mode Tokens",
+    "tagline": "Glitch-free theme mode switching, profile responsiveness & back navigation, universal multi-tier password change, task workspace dark mode token migration, and backend-driven release notes.",
+    "isLatest": true,
+    "type": "Major Feature, Compliance & UX Release",
+    "categories": {
+      "features": [
+        "Universal Multi-Tier Password Change: Unified password change supporting Central Auth UserLogin, Multi-Tenant Employee databases, and Agents with simultaneous hash persistence",
+        "Dark Mode Design Token Compliance: Comprehensive semantic token upgrade across Task workspace, activity timers, delivery badges, and session logs",
+        "Backend-Driven Release Notes: Dynamic MongoDB schema-driven changelog populated via Populate API with zero frontend constants"
+      ],
+      "improvements": [
+        "Glitch-Free Theme Switching: Debounced transition tracking and snappy 200ms surface animations eliminating flashing during repeated Night/Bright Mode toggles",
+        "Client-Side Address Resolution: Seamless offline country, state, and city autocomplete via native dataset eliminating unnecessary API latency and 404 errors",
+        "Dedicated Hero Navigation: Integrated instant Back navigation button in Employee Profile header"
+      ],
+      "fixes": [
+        "Resolved 'Failed' toast on Edit Password by bridging Central Global UserLogin with tenant-specific Employee credentials",
+        "Fixed Profile page continuous loading state caused by uppercase routing redirects",
+        "Resolved policy engine read access for release_notes across all authenticated roles"
+      ]
+    }
+  },
+  {
     "version": "3.1.8",
     "releaseDate": "2026-08-30",
     "title": "Form 25B Statutory Payroll Vouchers, Theme Stability & Multi-Tier Auth",
     "tagline": "Official Form 25B statutory payslips, automated PDF email dispatch, glitch-free theme transitions, profile navigation stability, and universal multi-tier password authentication.",
-    "isLatest": true,
+    "isLatest": false,
     "type": "Major Feature, Compliance & UX Release",
     "categories": {
       "features": [
