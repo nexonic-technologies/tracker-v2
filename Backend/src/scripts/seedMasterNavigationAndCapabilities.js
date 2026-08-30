@@ -400,6 +400,25 @@ export const MASTER_NAVIGATION_TREE = [
   }
 ];
 
+export const MASTER_TAB_CAPABILITIES = [
+  // ── Payroll Module Tabs ──
+  { capBase: 'payroll_runs', actions: ['view', 'create', 'approve'], moduleKey: 'attendance', label: 'Payroll Runs Tab', title: 'Payroll Runs Tab' },
+  { capBase: 'salary_structures', actions: ['view', 'create', 'update'], moduleKey: 'attendance', label: 'Salary Structures Tab', title: 'Salary Structures Tab' },
+  { capBase: 'period_closures', actions: ['view', 'create', 'update'], moduleKey: 'attendance', label: 'Period Closures Tab', title: 'Period Closures Tab' },
+  { capBase: 'my_payslips', actions: ['view'], moduleKey: 'attendance', label: 'My Payslips Tab', title: 'My Payslips Tab' },
+
+  // ── Attendance Module Tabs ──
+  { capBase: 'my_attendance', actions: ['view', 'create'], moduleKey: 'attendance', label: 'My Attendance Tab', title: 'My Attendance Tab' },
+  { capBase: 'team_attendance', actions: ['view'], moduleKey: 'attendance', label: 'Team Live Presence Tab', title: 'Team Live Presence Tab' },
+  { capBase: 'pending_approvals', actions: ['view', 'approve'], moduleKey: 'attendance', label: 'Attendance Approvals Queue', title: 'Attendance Approvals Queue' },
+
+  // ── HRMS Module Tabs ──
+  { capBase: 'hrms_dashboard', actions: ['view'], moduleKey: 'hrms', label: 'HRMS Overview Tab', title: 'HRMS Overview Tab' },
+  { capBase: 'job_openings', actions: ['view', 'create', 'update', 'delete'], moduleKey: 'hrms', label: 'Job Openings Tab', title: 'Job Openings Tab' },
+  { capBase: 'recruitment_pipeline', actions: ['view', 'update'], moduleKey: 'hrms', label: 'Recruitment Pipeline Tab', title: 'Recruitment Pipeline Tab' },
+  { capBase: 'onboarding_checklist', actions: ['view', 'update'], moduleKey: 'hrms', label: 'Onboarding Checklist Tab', title: 'Onboarding Checklist Tab' }
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CORE SEEDING LOGIC
 // ─────────────────────────────────────────────────────────────────────────────
@@ -436,7 +455,7 @@ export async function seedNavigationAndCapabilities(conn, {
   const capBaseToIds = new Map();
   const seenCapabilityKeys = new Set();
 
-  const registerCap = (capBase, act, module, label, title) => {
+  const registerCap = (capBase, act, module, label, title, type = 'ui') => {
     const key = `${capBase}:${act}`;
     const capId = makeObjectId(`cap:${key}`);
     capKeyToId.set(key, capId);
@@ -456,7 +475,7 @@ export async function seedNavigationAndCapabilities(conn, {
         label: `${act === 'view' ? 'View' : act.charAt(0).toUpperCase() + act.slice(1)} ${label}`,
         description: `Allows user to ${act} ${title}`,
         status: 'active',
-        type: 'ui',
+        type: type,
         createdAt: new Date(),
         updatedAt: new Date()
       });
@@ -466,16 +485,23 @@ export async function seedNavigationAndCapabilities(conn, {
   for (const parent of MASTER_NAVIGATION_TREE) {
     const parentMod = parent.moduleKey;
     for (const act of parent.actions) {
-      registerCap(parent.capBase, act, parentMod, parent.label, parent.title);
+      registerCap(parent.capBase, act, parentMod, parent.label, parent.title, 'ui');
     }
 
     if (parent.children) {
       for (const child of parent.children) {
         const childMod = child.moduleKey || parentMod;
         for (const act of child.actions) {
-          registerCap(child.capBase, act, childMod, child.label, child.title);
+          registerCap(child.capBase, act, childMod, child.label, child.title, 'ui');
         }
       }
+    }
+  }
+
+  // Register granular tab capabilities
+  for (const item of MASTER_TAB_CAPABILITIES) {
+    for (const act of item.actions) {
+      registerCap(item.capBase, act, item.moduleKey, item.label, item.title, 'business');
     }
   }
 

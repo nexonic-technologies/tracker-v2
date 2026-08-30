@@ -99,7 +99,8 @@ const general_settingsSchema = new mongoose.Schema({
     pfPercent: { type: Number, default: 12 },
     esiThreshold: { type: Number, default: 21000 },
     esiPercent: { type: Number, default: 0.75 },
-    esiEmployerPercent: { type: Number, default: 3.25 }  // Employer ESI rate
+    esiEmployerPercent: { type: Number, default: 3.25 },  // Employer ESI rate
+    roundOff: { type: Boolean, default: true }            // Round off net and line items to nearest rupee
   },
 
   // ── Finance / Accounting ──────────────────────────────────────────────────

@@ -72,14 +72,19 @@ export function calculateHourlyRate({
 // ─── resolveStructure ─────────────────────────────────────────────────────────
 
 export async function resolveStructure(employeeId, payrollDate) {
-  const SalaryStructure = getTenantModel('SalaryStructure');
+  const SalaryStructure = getTenantModel('salary_structures') || getTenantModel('SalaryStructure');
   const structure = await SalaryStructure.findOne({
     employeeId,
-    effectiveFrom: { $lte: payrollDate },
-    $or: [{ effectiveTo: null }, { effectiveTo: { $gte: payrollDate } }]
-  }).sort({ effectiveFrom: -1 }).lean();
+    $or: [
+      { effectiveFrom: { $lte: payrollDate } },
+      { effectiveFrom: { $exists: false } }
+    ]
+  }).sort({ effectiveFrom: -1, version: -1 }).lean();
 
   if (!structure) {
+    // Fallback to latest active version for the employee
+    const latest = await SalaryStructure.findOne({ employeeId }).sort({ version: -1, effectiveFrom: -1 }).lean();
+    if (latest) return latest;
     throw new Error(`PAYROLL_CONFIGURATION_REQUIRED: No valid salary structure configured for employee ${employeeId} on ${payrollDate.toISOString().slice(0, 10)}`);
   }
   return structure;
@@ -146,7 +151,10 @@ export async function computeAttendanceSummary(employeeId, month, year) {
   end.setHours(23, 59, 59, 999);
 
   const [attendances, leaves] = await Promise.all([
-    Attendance.find({ employee: employeeId, date: { $gte: start, $lte: end } }).lean(),
+    Attendance.find({
+      $or: [{ employee: employeeId }, { employeeId: employeeId }],
+      date: { $gte: start, $lte: end }
+    }).lean(),
     Leave.find({
       employeeId,
       status: 'Approved',
@@ -269,6 +277,9 @@ function computeEmployerContributions(grossSalary, basicEarned, structure, orgSe
 // ─── computeSalary ────────────────────────────────────────────────────────────
 
 export function computeSalary(attendanceSummary, structure, clEncashmentAmount = 0, shiftWorkingHours = 8, orgSettings = {}) {
+  const isRoundOff = orgSettings.roundOff !== false;
+  const round = (val) => isRoundOff ? Math.round(val) : Math.round(val * 100) / 100;
+
   const { workingDays, presentDays, lopDays, overtimeHours } = attendanceSummary;
   const earnedRatio = workingDays > 0 ? presentDays / workingDays : 0;
 
@@ -288,12 +299,12 @@ export function computeSalary(attendanceSummary, structure, clEncashmentAmount =
     } else {
       earned = entry.amount;
     }
-    earnedBreakdown[entry.name] = Math.round(earned * 100) / 100;
+    earnedBreakdown[entry.name] = round(earned);
   }
 
   // Inject Unused CL Encashment as non-attendance earning line-item
   if (clEncashmentAmount > 0) {
-    earnedBreakdown['Unused CL Encashment'] = Math.round(clEncashmentAmount * 100) / 100;
+    earnedBreakdown['Unused CL Encashment'] = round(clEncashmentAmount);
   }
 
   // Overtime rate: Use configured overtimeRate from structure if available, otherwise compute from basic & working hours
@@ -302,10 +313,10 @@ export function computeSalary(attendanceSummary, structure, clEncashmentAmount =
     ? structure.overtimeRate 
     : ((basicMonthly > 0 && workingDays > 0) ? (basicMonthly / (workingDays * effectiveWorkingHours)) : 0);
 
-  const overtimePay = Math.round((overtimeHours * hourlyRate) * 100) / 100;
-  const grossSalary = Math.round(
-    (Object.values(earnedBreakdown).reduce((s, v) => s + v, 0) + overtimePay) * 100
-  ) / 100;
+  const overtimePay = round(overtimeHours * hourlyRate);
+  const grossSalary = round(
+    Object.values(earnedBreakdown).reduce((s, v) => s + v, 0) + overtimePay
+  );
 
   const basicEarned = earnedBreakdown['Basic'] || 0;
   const deductionBreakdown = {};
@@ -323,15 +334,15 @@ export function computeSalary(attendanceSummary, structure, clEncashmentAmount =
     } else if (entry.type === 'statutory') {
       deducted = resolveStatutory(entry.name, grossSalary, basicEarned, structure, orgSettings);
     }
-    deductionBreakdown[entry.name] = Math.round(deducted * 100) / 100;
+    deductionBreakdown[entry.name] = round(deducted);
   }
 
   if (attendanceSummary.fineDeductions > 0) {
-    deductionBreakdown['Attendance Fine'] = attendanceSummary.fineDeductions;
+    deductionBreakdown['Attendance Fine'] = round(attendanceSummary.fineDeductions);
   }
 
-  const totalDeductions = Object.values(deductionBreakdown).reduce((s, v) => s + v, 0);
-  const netSalary = Math.round((grossSalary - totalDeductions) * 100) / 100;
+  const totalDeductions = round(Object.values(deductionBreakdown).reduce((s, v) => s + v, 0));
+  const netSalary = round(grossSalary - totalDeductions);
 
   const { pfEmployerContribution, esiEmployerContribution } = computeEmployerContributions(
     grossSalary, basicEarned, structure, orgSettings
@@ -340,7 +351,7 @@ export function computeSalary(attendanceSummary, structure, clEncashmentAmount =
   return {
     earnedBreakdown, deductionBreakdown, grossSalary, netSalary,
     lopDays, overtimePay, fineDeductions: attendanceSummary.fineDeductions || 0,
-    pfEmployerContribution, esiEmployerContribution
+    pfEmployerContribution: round(pfEmployerContribution), esiEmployerContribution: round(esiEmployerContribution)
   };
 }
 

@@ -1,10 +1,37 @@
 [
   {
+    "version": "3.1.8",
+    "releaseDate": "2026-08-30",
+    "title": "Form 25B Statutory Payroll Vouchers, PDF Email Dispatch & Dynamic Tenant Architecture",
+    "tagline": "Official Form 25B statutory payslips, automated PDF generation & email delivery, configurable payroll round-off, and zero-hardcoded multi-tenant resolution.",
+    "isLatest": true,
+    "type": "Major Feature & Compliance Release",
+    "categories": {
+      "features": [
+        "Form 25B Statutory Pay Register & Slip: Official statutory payslip layout with side-by-side Earnings & Deductions ledger, Indian currency in words, and print isolation",
+        "Automated Payslip PDF Attachment Generator: Server-side PDFKit generator creating official Form 25B PDF vouchers attached to corporate email notifications",
+        "Configurable Payroll Round-Off: Organization-wide setting in General Settings to toggle net salary and line-item rounding to nearest whole rupee",
+        "Dynamic Multi-Tenant Branding: Fully dynamic company profile, logo, and address resolution from tenant database with zero hardcoded values"
+      ],
+      "improvements": [
+        "Corporate Email Notification Template: High-density branded email summary with salary metrics and attached PDF payslip voucher",
+        "SMTP Protocol & Port Compliance: Dynamic port alignment supporting Port 587 STARTTLS and Port 465 direct SSL with credential whitespace sanitization",
+        "Expanded Payroll Default Population: Automated inclusion of employee basicInfo, professionalInfo, accountDetails, and personalDocuments in read queries",
+        "Form Dropdown Name Resolution: Enhanced FormRenderer to cleanly display human-readable employee names instead of raw MongoDB ObjectIds"
+      ],
+      "fixes": [
+        "Fixed Email Configuration save pipeline to properly issue PUT requests for existing tenant configs",
+        "Resolved reportingManager and teamLead ObjectId rendering in employee management forms",
+        "Eliminated procedural fallback chains in favor of declarative schema validation and informative error reporting"
+      ]
+    }
+  },
+  {
     "version": "3.1.7",
     "releaseDate": "2026-08-30",
     "title": "Task Details: Job Category & Task Type Selection Fix",
     "tagline": "Added interactive Job Category and Task Type selector dropdowns in Task details sidebar with delivery stage alignment.",
-    "isLatest": true,
+    "isLatest": false,
     "type": "Hotfix & UX Enhancement",
     "categories": {
       "features": [

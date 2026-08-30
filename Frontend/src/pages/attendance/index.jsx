@@ -102,26 +102,37 @@ const Ring = ({ pct, size = 52, sw = 5, color }) => {
    MAIN ATTENDANCE HUB
    ════════════════════════════════ */
 import { usePermissions } from "../../hooks/usePermissions";
+import { useCapability } from "../../hooks/useCapability";
 
 const AttendancePage = () => {
   const { user, loading: authLoading } = useAuth();
   const { can, isSuperAdmin } = usePermissions();
+  const { hasAnyCapability } = useCapability();
   const { read, create, update } = useGenericAPI();
   const navigate = useNavigate();
 
   // Active Control Center Tab: "my" | "team" | "approvals"
   const [activeTab, setActiveTab] = useState("my");
 
-  // Dynamic capability resolution via Central ABAC Policy Engine
+  // Dynamic capability resolution via Central CBAC Gateway
   const canPunchIn = can('create', 'attendances');
   const canPunchOut = can('update', 'attendances');
 
   const canViewTeam = Boolean(
     isSuperAdmin ||
+    hasAnyCapability(['team_attendance:view', 'attendance:team:view']) ||
     can('read', 'team_attendance') ||
     user?.isManager === true ||
     user?.departmentHead === true ||
     user?.subordinatesCount > 0
+  );
+
+  const canViewApprovals = Boolean(
+    isSuperAdmin ||
+    hasAnyCapability(['pending_approvals:view', 'attendance_approvals:view', 'pending_approvals:approve']) ||
+    can('read', 'pending_approvals') ||
+    user?.isManager === true ||
+    user?.departmentHead === true
   );
 
   // ── My Attendance States ──
@@ -603,7 +614,7 @@ const AttendancePage = () => {
             </button>
           )}
 
-          {canViewTeam && (
+          {canViewApprovals && (
             <button
               onClick={() => setActiveTab("approvals")}
               className={`lmx-tab ${activeTab === "approvals" ? "lmx-tab-active" : ""}`}

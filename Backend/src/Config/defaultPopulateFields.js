@@ -64,10 +64,10 @@ export const DEFAULT_POPULATE_FIELDS = {
     'groups': 'name'
   },
   payrolls: {
-    'employeeId': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,professionalInfo.empId',
+    'employeeId': 'basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,professionalInfo.empId,professionalInfo.department,professionalInfo.designation,professionalInfo.doj,accountDetails,personalDocuments,authInfo.workEmail',
     'processedBy': 'basicInfo.firstName,basicInfo.lastName',
     'approvedBy': 'basicInfo.firstName,basicInfo.lastName',
-    'salaryStructureId': 'version,effectiveFrom,effectiveTo,ctc',
+    'salaryStructureId': 'version,effectiveFrom,effectiveTo,ctc,components',
     'payrollRunId': 'month,year,status'
   },
   salary_structures: {

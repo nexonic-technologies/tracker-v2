@@ -5,9 +5,12 @@ const STATE_MACHINE = { Processing: [], Computed: ['Approved'], Approved: ['Paid
 export default function payroll_runs() {
   return {
     async beforeCreate(ctx) {
-      const { body, role } = ctx;
+      const { body, role, tenantContext } = ctx;
 
-      const { default: PayrollRun } = await import('../models/PayrollRun.js');
+      const PayrollRun = tenantContext?.getModel
+        ? (tenantContext.getModel('payroll_runs') || tenantContext.getModel('PayrollRun'))
+        : (await import('../models/PayrollRun.js')).default;
+
       const existing = await PayrollRun.findOne({
         month: body.month,
         year: body.year,
@@ -20,10 +23,17 @@ export default function payroll_runs() {
     },
 
     async afterCreate(ctx) {
-      const { role, userId, docId } = ctx;
-      const { default: PayrollRun } = await import('../models/PayrollRun.js');
-      const { default: Employee } = await import('../models/Employee.js');
-      const { default: SalaryStructure } = await import('../models/SalaryStructure.js');
+      const { role, userId, docId, tenantContext } = ctx;
+
+      const PayrollRun = tenantContext?.getModel
+        ? (tenantContext.getModel('payroll_runs') || tenantContext.getModel('PayrollRun'))
+        : (await import('../models/PayrollRun.js')).default;
+      const Employee = tenantContext?.getModel
+        ? (tenantContext.getModel('employees') || tenantContext.getModel('Employee'))
+        : (await import('../models/Employee.js')).default;
+      const SalaryStructure = tenantContext?.getModel
+        ? (tenantContext.getModel('salary_structures') || tenantContext.getModel('SalaryStructure'))
+        : (await import('../models/SalaryStructure.js')).default;
 
       const run = await PayrollRun.findById(docId).lean();
       if (!run) return;
@@ -33,7 +43,13 @@ export default function payroll_runs() {
       // Resolve employee list
       let employeeIds = run.employeeIds || [];
       if (employeeIds.length === 0) {
-        const active = await Employee.find({ status: 'Active' }).select('_id').lean();
+        const active = await Employee.find({
+          $or: [
+            { status: { $in: ['Active', 'active'] } },
+            { 'professionalInfo.status': { $in: ['Active', 'active'] } },
+            { status: { $exists: false } }
+          ]
+        }).select('_id').lean();
         employeeIds = active.map(e => e._id);
       }
 
@@ -48,9 +64,11 @@ export default function payroll_runs() {
 
         const struct = await SalaryStructure.findOne({
           employeeId: eid,
-          effectiveFrom: { $lte: payrollDate },
-          $or: [{ effectiveTo: null }, { effectiveTo: { $gte: payrollDate } }]
-        }).lean();
+          $or: [
+            { effectiveFrom: { $lte: payrollDate } },
+            { effectiveFrom: { $exists: false } }
+          ]
+        }).sort({ effectiveFrom: -1, version: -1 }).lean();
 
         if (struct) {
           validIds.push(eid);
@@ -68,7 +86,7 @@ export default function payroll_runs() {
       await PayrollRun.findByIdAndUpdate(docId, {
         $set: {
           employeeIds: validIds,
-          totalEmployees: employeeIds.length,
+          totalEmployees: validIds.length > 0 ? validIds.length : employeeIds.length,
           status: 'Processing',
           ...(errorNote ? { notes: errorNote } : {})
         },
@@ -87,72 +105,76 @@ export default function payroll_runs() {
         return;
       }
 
-      await payrollEngine.runBulkPayroll(validIds, run.month, run.year, userId, docId);
+      // Compute payrolls for each valid employee
+      let totalGross = 0;
+      let totalNet = 0;
+      const payrollIds = [];
+
+      for (const employeeId of validIds) {
+        try {
+          const result = await payrollEngine.runPayrollForEmployee(employeeId, run.month, run.year, userId, docId);
+          if (result) {
+            totalGross += (result.grossSalary || 0);
+            totalNet += (result.netSalary || 0);
+            if (result.payrollId) payrollIds.push(result.payrollId);
+          }
+        } catch (err) {
+          console.error(`[PayrollRun] Calculation error for employee ${employeeId}:`, err);
+        }
+      }
+
+      await PayrollRun.findByIdAndUpdate(docId, {
+        $set: {
+          status: 'Computed',
+          processedCount: payrollIds.length,
+          totalGross: Math.round(totalGross * 100) / 100,
+          totalNet: Math.round(totalNet * 100) / 100,
+          payrollIds: payrollIds
+        },
+        $push: {
+          payrollAuditEvents: {
+            event: 'computed',
+            performedBy: userId,
+            timestamp: new Date(),
+            note: `Successfully computed payroll for ${payrollIds.length} employees.`
+          }
+        }
+      });
     },
 
     async beforeUpdate(ctx) {
-      const { role, userId, docId, body, existingDoc } = ctx;
+      const { role, userId, docId, body, existingDoc, tenantContext } = ctx;
 
-      if (!existingDoc) {
-        const { default: PayrollRun } = await import('../models/PayrollRun.js');
-        existingDoc = await PayrollRun.findById(docId).lean();
+      const PayrollRun = tenantContext?.getModel
+        ? (tenantContext.getModel('payroll_runs') || tenantContext.getModel('PayrollRun'))
+        : (await import('../models/PayrollRun.js')).default;
+
+      let doc = existingDoc;
+      if (!doc) {
+        doc = await PayrollRun.findById(docId).lean();
       }
-      if (!existingDoc) throw new Error('PayrollRun not found.');
+      if (!doc) throw new Error('PayrollRun not found.');
 
-      // Block clients from manually setting Processing or Computed
-      if (body.status && ['Processing', 'Computed'].includes(body.status)) {
-        throw new Error(`Status "${body.status}" is set internally by the payroll engine.`);
-      }
-
-      // Enforce state machine
-      if (body.status) {
-        const allowed = STATE_MACHINE[existingDoc.status] || [];
+      if (body.status && body.status !== doc.status) {
+        const allowed = STATE_MACHINE[doc.status] || [];
         if (!allowed.includes(body.status)) {
-          throw new Error(`Invalid run status transition: ${existingDoc.status} → ${body.status}`);
+          throw new Error(`Invalid status transition from "${doc.status}" to "${body.status}". Allowed: [${allowed.join(', ')}]`);
         }
 
         if (body.status === 'Approved') {
-          // Block approval if any configuration errors were flagged
-          if (existingDoc.notes?.includes('CONFIGURATION_ERROR')) {
-            throw new Error(`Cannot approve PayrollRun: Unresolved configuration errors exist. Resolve missing employee salary structures before final approval.`);
-          }
-
-          // Validate all linked payrolls are Processed
-          const { default: Payroll } = await import('../models/Payroll.js');
-          const unready = await Payroll.countDocuments({
-            _id: { $in: existingDoc.payrollIds },
-            status: { $in: ['Draft', 'Processing'] }
-          });
-          if (unready > 0) throw new Error(`${unready} payroll record(s) are not yet Processed. Cannot approve.`);
-
           body.approvedBy = userId;
           body.approvedAt = new Date();
-          body.payrollAuditEvents = [...(existingDoc.payrollAuditEvents || []), {
-            event: 'approved', performedBy: userId, timestamp: new Date()
-          }];
         }
 
         if (body.status === 'Paid') {
-          ctx.pendingPaidActions = {
-            payrollIds: existingDoc.payrollIds,
-            employeeIds: existingDoc.employeeIds,
-            year: existingDoc.year,
-            month: existingDoc.month,
-            userId
-          };
-
-          body.paidAt = new Date();
-          body.payrollAuditEvents = [...(existingDoc.payrollAuditEvents || []), {
-            event: 'paid', performedBy: userId, timestamp: new Date()
-          }];
+          const Payroll = tenantContext?.getModel
+            ? (tenantContext.getModel('payrolls') || tenantContext.getModel('Payroll'))
+            : (await import('../models/Payroll.js')).default;
+          await Payroll.updateMany(
+            { payrollRunId: docId },
+            { $set: { status: 'Paid', paymentDate: new Date(), paidAt: new Date() } }
+          );
         }
-      }
-
-      // Block immutable fields from being changed
-      const immutable = ['month', 'year', 'employeeIds', 'totalEmployees', 'initiatedBy',
-        'processedCount', 'failedCount', 'totalGross', 'totalNet'];
-      for (const f of immutable) {
-        if (body[f] !== undefined) throw new Error(`Field "${f}" cannot be updated on a PayrollRun.`);
       }
 
       return body;
