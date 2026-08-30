@@ -125,7 +125,7 @@ export async function resolvePolicy(ctx, targetModelName) {
     } catch (_) {}
   }
 
-  if (!policy && ['notifications', 'notification_preferences', 'notificationreceptionist', 'notificationrules', 'notification_deliveries', 'session', 'auditlog', 'dashboard_schemas', 'dashboard_widgets'].includes(targetModelName.toLowerCase())) {
+  if (!policy && ['release_notes', 'notifications', 'notification_preferences', 'notificationreceptionist', 'notificationrules', 'notification_deliveries', 'session', 'auditlog', 'dashboard_schemas', 'dashboard_widgets'].includes(targetModelName.toLowerCase())) {
     return {
       role,
       modelName: targetModelName,

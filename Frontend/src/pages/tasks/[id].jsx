@@ -387,11 +387,11 @@ const TaskDetailPage = () => {
   ].sort((a, b) => b.date - a.date);
 
   return (
-    <div className="bg-canvas">
-      <div className="w-full max-w-6xl mx-auto bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
+    <div className="bg-canvas min-h-screen p-4 sm:p-6 lg:p-8" data-module="tasks">
+      <div className="w-full max-w-6xl mx-auto bg-surface border border-hairline rounded-xl shadow-sm overflow-hidden flex flex-col transition-colors">
 
         {/* ─── Header Section ─── */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-hairline flex items-center justify-between bg-surface-1/40">
           <div className="flex items-center gap-3">
             {/* Complete Task Button */}
             {task.status !== "Completed" ? (
@@ -403,7 +403,7 @@ const TaskDetailPage = () => {
                 <Check size={14} /> Complete Task
               </button>
             ) : (
-              <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold rounded-tracker-md text-xs">
+              <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-bold rounded-tracker-md text-xs">
                 <CheckCircle size={14} /> Completed
               </div>
             )}
@@ -413,35 +413,35 @@ const TaskDetailPage = () => {
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); setShowAssignDropdown(!showAssignDropdown); }}
-                className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 rounded-tracker-md text-xs font-semibold text-slate-700 hover:text-slate-900 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-surface-1 hover:bg-surface-2 border border-hairline rounded-tracker-md text-xs font-semibold text-ink transition-all cursor-pointer"
               >
-                <UserPlus size={14} />
+                <UserPlus size={14} className="text-ink-subtle" />
                 <span>Assigned to {task.assignedTo?.length || 0} Members</span>
-                <ChevronDown size={12} />
+                <ChevronDown size={12} className="text-ink-subtle" />
               </button>
 
               {showAssignDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-64 bg-surface border border-hairline rounded-tracker-md shadow-lg py-1.5 z-30 max-h-64 overflow-y-auto">
-                  <h4 className="text-[10px] font-bold text-ink-subtle uppercase tracking-wider px-3 py-1.5 border-b border-hairline-soft mb-1">Assign Members</h4>
+                  <h4 className="text-[10px] font-bold text-ink-subtle uppercase tracking-wider px-3 py-1.5 border-b border-hairline mb-1">Assign Members</h4>
                   {employees.map((emp) => {
                     const assigned = isAssigned(emp._id);
                     return (
                       <button
                         key={emp._id}
                         onClick={() => assigned ? handleUnassignUser(emp._id) : handleAssignUser(emp._id)}
-                        className="w-full flex items-center justify-between px-3 py-2 hover:bg-canvas-muted cursor-pointer text-left transition-colors text-xs font-medium text-ink"
+                        className="w-full flex items-center justify-between px-3 py-2 hover:bg-surface-1 cursor-pointer text-left transition-colors text-xs font-medium text-ink"
                       >
                         <div className="flex items-center gap-2 truncate">
                           {emp.basicInfo?.profileImage ? (
                             <img src={emp.basicInfo.profileImage} alt="" className="w-5 h-5 rounded-full object-cover" />
                           ) : (
-                            <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-700">
+                            <div className="w-5 h-5 rounded-full bg-surface-2 border border-hairline flex items-center justify-center text-[9px] font-bold text-ink">
                               {emp.basicInfo?.firstName?.charAt(0)}
                             </div>
                           )}
                           <span className="truncate">{emp.basicInfo?.firstName} {emp.basicInfo?.lastName}</span>
                         </div>
-                        {assigned && <Check size={14} className="text-emerald-600" />}
+                        {assigned && <Check size={14} className="text-emerald-500" />}
                       </button>
                     );
                   })}
@@ -456,7 +456,7 @@ const TaskDetailPage = () => {
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); setShowMoreDropdown(!showMoreDropdown); }}
-                className="p-2 bg-slate-100 hover:bg-slate-200 rounded-tracker-md hover:text-slate-900 transition-all cursor-pointer text-slate-700"
+                className="p-2 bg-surface-1 hover:bg-surface-2 border border-hairline rounded-tracker-md text-ink transition-all cursor-pointer"
               >
                 <MoreHorizontal size={14} />
               </button>
@@ -465,13 +465,13 @@ const TaskDetailPage = () => {
                 <div className="absolute top-full right-0 mt-1 w-48 bg-surface border border-hairline rounded-tracker-md shadow-lg py-1 z-30">
                   <button
                     onClick={handleCopyUrl}
-                    className="w-full text-left px-4 py-2 hover:bg-canvas-muted text-xs text-ink cursor-pointer font-medium"
+                    className="w-full text-left px-4 py-2 hover:bg-surface-1 text-xs text-ink cursor-pointer font-medium"
                   >
                     Copy URL
                   </button>
                   <button
                     onClick={() => { handleUpdate("status", "Completed"); setShowMoreDropdown(false); }}
-                    className="w-full text-left px-4 py-2 hover:bg-canvas-muted text-xs text-ink cursor-pointer font-medium"
+                    className="w-full text-left px-4 py-2 hover:bg-surface-1 text-xs text-ink cursor-pointer font-medium"
                   >
                     Complete Task
                   </button>
@@ -481,19 +481,19 @@ const TaskDetailPage = () => {
                       handleUpdate("metaStatus", nextMeta);
                       setShowMoreDropdown(false);
                     }}
-                    className="w-full text-left px-4 py-2 hover:bg-canvas-muted text-xs text-ink cursor-pointer font-medium"
+                    className="w-full text-left px-4 py-2 hover:bg-surface-1 text-xs text-ink cursor-pointer font-medium"
                   >
                     {task.metaStatus === 'archived' ? 'Unarchive Task' : 'Archive Task'}
                   </button>
                   <button
                     onClick={handleDuplicate}
-                    className="w-full text-left px-4 py-2 hover:bg-canvas-muted text-xs text-ink cursor-pointer font-medium"
+                    className="w-full text-left px-4 py-2 hover:bg-surface-1 text-xs text-ink cursor-pointer font-medium"
                   >
                     Duplicate
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="w-full text-left px-4 py-2 hover:bg-canvas-muted text-xs text-rose-600 font-semibold cursor-pointer"
+                    className="w-full text-left px-4 py-2 hover:bg-surface-1 text-xs text-rose-500 font-semibold cursor-pointer"
                   >
                     Delete
                   </button>
@@ -505,7 +505,7 @@ const TaskDetailPage = () => {
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); navigate(-1); }}
-              className="p-2 hover:bg-slate-200 border border-slate-100 rounded-tracker-md text-slate-700 transition-all cursor-pointer"
+              className="p-2 hover:bg-surface-2 bg-surface-1 border border-hairline rounded-tracker-md text-ink transition-all cursor-pointer"
             >
               <X size={14} />
             </button>
@@ -516,7 +516,7 @@ const TaskDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 min-h-[600px]">
 
           {/* Left Column (Seamless Main Content Panel) */}
-          <div className="lg:col-span-3 p-8 space-y-8 bg-white select-text">
+          <div className="lg:col-span-3 p-8 space-y-8 bg-surface select-text">
 
             {/* Title & Notes (Seamless Flat Typography) */}
             <div className="space-y-4">
@@ -532,7 +532,7 @@ const TaskDetailPage = () => {
               ) : (
                 <h1
                   onClick={() => setEditingTitle(true)}
-                  className="text-2xl font-bold text-ink tracking-tight cursor-pointer hover:bg-slate-50 rounded px-1 -ml-1 transition-colors"
+                  className="text-2xl font-bold text-ink tracking-tight cursor-pointer hover:bg-surface-1 rounded px-1 -ml-1 transition-colors"
                 >
                   {task.title || "Untitled Task"}
                 </h1>
@@ -544,12 +544,12 @@ const TaskDetailPage = () => {
                   onChange={(e) => setDescInput(e.target.value)}
                   onBlur={saveDesc}
                   autoFocus
-                  className="w-full text-xs text-ink-muted leading-relaxed bg-transparent border border-indigo-400 rounded p-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 min-h-[80px]"
+                  className="w-full text-xs text-ink-muted leading-relaxed bg-surface border border-indigo-500/50 rounded p-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 min-h-[80px]"
                 />
               ) : (
                 <p
                   onClick={() => setEditingDesc(true)}
-                  className={`text-xs leading-relaxed cursor-pointer hover:bg-slate-50 rounded px-1 -ml-1 py-1 transition-colors ${task.userStory ? "text-ink-muted" : "text-ink-subtle italic"
+                  className={`text-xs leading-relaxed cursor-pointer hover:bg-surface-1 rounded px-1 -ml-1 py-1 transition-colors ${task.userStory ? "text-ink-muted" : "text-ink-subtle italic"
                     }`}
                 >
                   {task.userStory || "Add task notes..."}
@@ -558,14 +558,14 @@ const TaskDetailPage = () => {
             </div>
 
             {/* Checklist Section (Seamless inline) */}
-            <div className="space-y-4 pt-4 border-t border-slate-100">
+            <div className="space-y-4 pt-4 border-t border-hairline">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
                   <ListTodo size={14} className="text-indigo-500" /> Checklist
                 </h3>
                 <button
                   onClick={addChecklistItem}
-                  className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-500 hover:text-indigo-400 transition-colors cursor-pointer"
                 >
                   <Plus size={10} /> Add Checklist
                 </button>
@@ -581,18 +581,18 @@ const TaskDetailPage = () => {
                         type="checkbox"
                         checked={item.done}
                         onChange={() => toggleChecklistItem(item.id)}
-                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        className="rounded border-hairline text-indigo-600 focus:ring-indigo-500 cursor-pointer bg-surface"
                       />
                       <input
                         type="text"
                         value={item.text}
                         onChange={(e) => updateChecklistItemText(item.id, e.target.value)}
-                        className={`flex-1 text-xs text-ink bg-transparent border-b border-transparent hover:border-slate-200 focus:border-indigo-500 focus:outline-none py-0.5 ${item.done ? "line-through text-ink-muted" : ""
+                        className={`flex-1 text-xs text-ink bg-transparent border-b border-transparent hover:border-hairline focus:border-indigo-500 focus:outline-none py-0.5 ${item.done ? "line-through text-ink-muted" : ""
                           }`}
                       />
                       <button
                         onClick={() => removeChecklistItem(item.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-600 transition-all cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-500 transition-all cursor-pointer"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -603,7 +603,7 @@ const TaskDetailPage = () => {
             </div>
 
             {/* Attachments Section (Seamless inline) */}
-            <div className="space-y-4 pt-4 border-t border-slate-100">
+            <div className="space-y-4 pt-4 border-t border-hairline">
               <h3 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
                 <Paperclip size={14} className="text-indigo-500" /> Attachments
               </h3>
@@ -618,7 +618,7 @@ const TaskDetailPage = () => {
                       href={`/api/files/${fileUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-tracker-md text-xs font-semibold text-ink transition-all shadow-xs"
+                      className="flex items-center gap-2 p-2.5 bg-surface-1 hover:bg-surface-2 border border-hairline rounded-tracker-md text-xs font-semibold text-ink transition-all shadow-xs"
                     >
                       <FileText size={14} className="text-indigo-500" />
                       <span className="truncate max-w-[150px]">{filename}</span>
@@ -630,7 +630,7 @@ const TaskDetailPage = () => {
                 {/* Upload Button */}
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-3 py-2 border border-dashed border-slate-300 hover:border-indigo-500 bg-slate-50/50 hover:bg-indigo-50/20 rounded-tracker-md text-slate-500 hover:text-indigo-600 transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
+                  className="flex items-center gap-2 px-3 py-2 border border-dashed border-hairline hover:border-indigo-500 bg-surface-1/50 hover:bg-indigo-500/10 rounded-tracker-md text-ink-muted hover:text-indigo-400 transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
                 >
                   <Upload size={14} />
                   <span>Upload File</span>
@@ -646,12 +646,12 @@ const TaskDetailPage = () => {
 
             {/* Ticket Context Reference (Seamless accordion wrapper if linked) */}
             {task.linkedTicketId && (
-              <div className="space-y-4 pt-4 border-t border-slate-100">
+              <div className="space-y-4 pt-4 border-t border-hairline">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xs font-bold text-ink uppercase tracking-wider">Ticket Context</h3>
                   <button
                     onClick={() => navigate(`/Tickets/${task.linkedTicketId._id || task.linkedTicketId}`)}
-                    className="bg-blue-50 hover:bg-blue-100 text-blue-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-blue-100 cursor-pointer transition-colors flex items-center gap-0.5"
+                    className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 text-[10px] font-bold px-1.5 py-0.5 rounded border border-blue-500/20 cursor-pointer transition-colors flex items-center gap-0.5"
                   >
                     {task.linkedTicketId.ticketId}
                   </button>
@@ -660,14 +660,14 @@ const TaskDetailPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-1">Observation</h4>
-                    <div className="bg-slate-50 border border-slate-200 rounded p-3 text-xs text-ink-muted min-h-[40px]">
+                    <div className="bg-surface-1 border border-hairline rounded p-3 text-xs text-ink min-h-[40px]">
                       {task.observation || "-"}
                     </div>
                   </div>
 
                   <div>
                     <h4 className="text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-1">Acceptance Criteria</h4>
-                    <div className="bg-slate-50 border border-slate-200 rounded p-3 text-xs text-ink-muted min-h-[40px]">
+                    <div className="bg-surface-1 border border-hairline rounded p-3 text-xs text-ink min-h-[40px]">
                       {task.acceptanceCreteria || "-"}
                     </div>
                   </div>
@@ -676,7 +676,7 @@ const TaskDetailPage = () => {
             )}
 
             {/* Activities Timeline (Seamless inline) */}
-            <div className="space-y-6 pt-4 border-t border-slate-100">
+            <div className="space-y-6 pt-4 border-t border-hairline">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
                   <MessageSquare size={14} className="text-indigo-500" /> Activities
@@ -684,7 +684,7 @@ const TaskDetailPage = () => {
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); setShowCommentBox(!showCommentBox); }}
-                  className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-500 hover:text-indigo-400 transition-colors cursor-pointer"
                 >
                   <MessageSquare size={12} /> Comment
                 </button>
@@ -692,13 +692,13 @@ const TaskDetailPage = () => {
 
               {/* Toggle Comment Input */}
               {showCommentBox && (
-                <div className="flex gap-2 bg-slate-50 p-2.5 rounded-tracker-md border border-slate-200 max-w-xl animate-fadeIn">
+                <div className="flex gap-2 bg-surface-1 p-2.5 rounded-tracker-md border border-hairline max-w-xl animate-fadeIn">
                   <input
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !submitting && addComment()}
                     placeholder="Write a comment..."
-                    className="flex-1 bg-transparent border-0 focus:outline-none focus:ring-0 text-xs text-ink placeholder-slate-400"
+                    className="flex-1 bg-transparent border-0 focus:outline-none focus:ring-0 text-xs text-ink placeholder-ink-subtle"
                   />
                   <button
                     onClick={addComment}
@@ -711,10 +711,10 @@ const TaskDetailPage = () => {
               )}
 
               {/* Vertical Timeline */}
-              <div className="relative border-l border-slate-200 pl-6 space-y-6 max-w-2xl">
+              <div className="relative border-l border-hairline pl-6 space-y-6 max-w-2xl">
                 {unifiedActivities.map((act, idx) => (
                   <div key={idx} className="relative flex gap-3 items-start">
-                    <div className="absolute -left-[31px] top-0 bg-white p-1 rounded-full border border-slate-200 shadow-xs">
+                    <div className="absolute -left-[31px] top-0 bg-surface p-1 rounded-full border border-hairline shadow-xs">
                       {act.icon}
                     </div>
 
@@ -726,7 +726,7 @@ const TaskDetailPage = () => {
                         </span>
                       </div>
                       {act.message && (
-                        <p className="text-xs text-ink-muted bg-slate-50 rounded-tracker-md border border-slate-100 p-3 mt-1 leading-relaxed">
+                        <p className="text-xs text-ink-muted bg-surface-1 rounded-tracker-md border border-hairline p-3 mt-1 leading-relaxed">
                           {act.message}
                         </p>
                       )}
@@ -739,7 +739,7 @@ const TaskDetailPage = () => {
           </div>
 
           {/* Right Column (Sidebar parameters) */}
-          <div className="lg:col-span-1 p-6 bg-slate-50 border-l border-slate-200 space-y-6">
+          <div className="lg:col-span-1 p-6 bg-surface-1/50 border-l border-hairline space-y-6">
 
             {/* ── Activity Timer (Job Session) ── */}
             <div>
@@ -768,7 +768,7 @@ const TaskDetailPage = () => {
                 <select
                   value={typeof task.projectTypeId === 'object' ? task.projectTypeId?._id : (task.projectTypeId || '')}
                   onChange={(e) => handleUpdate('projectTypeId', e.target.value)}
-                  className="w-full appearance-none bg-white hover:bg-slate-100 border border-slate-200 rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+                  className="w-full appearance-none bg-surface hover:bg-surface-1 border border-hairline rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
                 >
                   <option value="">— Select Category —</option>
                   {projectTypes.map((pt) => (
@@ -788,7 +788,7 @@ const TaskDetailPage = () => {
                 <select
                   value={typeof task.taskTypeId === 'object' ? task.taskTypeId?._id : (task.taskTypeId || '')}
                   onChange={(e) => handleUpdate('taskTypeId', e.target.value)}
-                  className="w-full appearance-none bg-white hover:bg-slate-100 border border-slate-200 rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+                  className="w-full appearance-none bg-surface hover:bg-surface-1 border border-hairline rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
                 >
                   <option value="">— Select Type —</option>
                   {taskTypes.map((tt) => (
@@ -821,7 +821,7 @@ const TaskDetailPage = () => {
                       if (e.key === 'Enter') saveEstHours();
                     }}
                     placeholder="e.g. 4"
-                    className="w-full bg-white hover:bg-slate-100 border border-slate-200 rounded-tracker-md pl-3 pr-8 py-2 text-xs font-bold text-ink focus:outline-none focus:border-indigo-500 shadow-xs"
+                    className="w-full bg-surface hover:bg-surface-1 border border-hairline rounded-tracker-md pl-3 pr-8 py-2 text-xs font-bold text-ink focus:outline-none focus:border-indigo-500 shadow-xs"
                   />
                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-ink-subtle pointer-events-none">
                     hrs
@@ -833,7 +833,7 @@ const TaskDetailPage = () => {
                   onClick={saveEstHours}
                   className={`px-3 py-2 rounded-tracker-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs border ${estHoursInput.trim() !== String(task?.estimatedHours ?? '')
                       ? 'bg-brand text-white border-brand hover:bg-brand-dark'
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400'
+                      : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                     }`}
                   title="Save Estimated Hours"
                 >
@@ -849,7 +849,7 @@ const TaskDetailPage = () => {
                 <select
                   value={task.complexity || ''}
                   onChange={(e) => handleUpdate('complexity', e.target.value || null)}
-                  className="w-full appearance-none bg-white hover:bg-slate-100 border border-slate-200 rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+                  className="w-full appearance-none bg-surface hover:bg-surface-1 border border-hairline rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
                 >
                   <option value="">— Select —</option>
                   <option value="Low">Low</option>
@@ -864,14 +864,14 @@ const TaskDetailPage = () => {
             {task.actualHours > 0 && (
               <div>
                 <label className="text-[10px] font-bold text-ink-subtle uppercase tracking-wider mb-1 block">Logged Hours</label>
-                <span className="text-lg font-bold text-slate-800">{task.actualHours.toFixed(1)}h</span>
+                <span className="text-lg font-bold text-ink">{task.actualHours.toFixed(1)}h</span>
                 {task.estimatedHours > 0 && (
-                  <span className="text-xs text-slate-400 ml-1">/ {task.estimatedHours}h est.</span>
+                  <span className="text-xs text-ink-subtle ml-1">/ {task.estimatedHours}h est.</span>
                 )}
               </div>
             )}
 
-            <div className="border-b border-slate-200" />
+            <div className="border-b border-hairline" />
 
             {/* Priority Select */}
             <div>
@@ -880,7 +880,7 @@ const TaskDetailPage = () => {
                 <select
                   value={task.priorityLevel || "Low"}
                   onChange={(e) => handleUpdate("priorityLevel", e.target.value)}
-                  className="w-full appearance-none bg-white hover:bg-slate-100 border border-slate-200 rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+                  className="w-full appearance-none bg-surface hover:bg-surface-1 border border-hairline rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
@@ -898,7 +898,7 @@ const TaskDetailPage = () => {
                 <select
                   value={task.status || "Backlogs"}
                   onChange={(e) => handleUpdate("status", e.target.value)}
-                  className="w-full appearance-none bg-white hover:bg-slate-100 border border-slate-200 rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+                  className="w-full appearance-none bg-surface hover:bg-surface-1 border border-hairline rounded-tracker-md px-3 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
                 >
                   <option value="Backlogs">Backlogs</option>
                   <option value="To Do">To Do</option>
@@ -917,12 +917,12 @@ const TaskDetailPage = () => {
                 {(task.tags || []).map((tag, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-bold rounded-full"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold rounded-full"
                   >
                     {tag}
                     <button
                       onClick={() => handleRemoveTag(tag)}
-                      className="hover:text-indigo-900 font-bold ml-0.5 cursor-pointer text-xs"
+                      className="hover:text-indigo-300 font-bold ml-0.5 cursor-pointer text-xs"
                     >
                       &times;
                     </button>
@@ -938,12 +938,12 @@ const TaskDetailPage = () => {
                     onBlur={handleAddTag}
                     autoFocus
                     placeholder="Add..."
-                    className="px-2 py-0.5 border border-slate-200 rounded text-[10px] font-semibold text-ink w-16 focus:outline-none"
+                    className="px-2 py-0.5 border border-hairline rounded text-[10px] font-semibold text-ink bg-surface w-16 focus:outline-none"
                   />
                 ) : (
                   <button
                     onClick={() => setShowTagInput(true)}
-                    className="inline-flex items-center justify-center p-1 border border-dashed border-slate-300 hover:border-indigo-500 rounded-full text-slate-400 hover:text-indigo-600 cursor-pointer"
+                    className="inline-flex items-center justify-center p-1 border border-dashed border-hairline hover:border-indigo-500 rounded-full text-ink-subtle hover:text-indigo-400 cursor-pointer"
                   >
                     <Plus size={10} />
                   </button>
@@ -951,18 +951,18 @@ const TaskDetailPage = () => {
               </div>
             </div>
 
-            <div className="border-b border-slate-200" />
+            <div className="border-b border-hairline" />
 
             {/* About the Task Meta Info */}
             <div className="space-y-4 select-text">
               <h3 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
-                <Info size={14} className="text-slate-400" /> About the task
+                <Info size={14} className="text-ink-subtle" /> About the task
               </h3>
 
               <div className="space-y-3">
                 <div>
                   <label className="text-[9px] font-bold text-ink-subtle uppercase tracking-wider block">Created By</label>
-                  <span className="text-xs font-semibold text-slate-800">
+                  <span className="text-xs font-semibold text-ink">
                     {task.createdBy?.basicInfo?.firstName} {task.createdBy?.basicInfo?.lastName}
                   </span>
                 </div>
@@ -970,7 +970,7 @@ const TaskDetailPage = () => {
                 {task.clientId && (
                   <div>
                     <label className="text-[9px] font-bold text-ink-subtle uppercase tracking-wider block">Client / Board</label>
-                    <span className="text-xs font-semibold text-slate-800">
+                    <span className="text-xs font-semibold text-ink">
                       {task.clientId.name}
                     </span>
                   </div>
@@ -979,7 +979,7 @@ const TaskDetailPage = () => {
                 {task.projectTypeId && (
                   <div>
                     <label className="text-[9px] font-bold text-ink-subtle uppercase tracking-wider block">Project Type</label>
-                    <span className="text-xs font-semibold text-slate-800">
+                    <span className="text-xs font-semibold text-ink">
                       {task.projectTypeId.name}
                     </span>
                   </div>
@@ -987,7 +987,7 @@ const TaskDetailPage = () => {
 
                 <div>
                   <label className="text-[9px] font-bold text-ink-subtle uppercase tracking-wider block">Created On</label>
-                  <span className="text-xs font-semibold text-slate-800">
+                  <span className="text-xs font-semibold text-ink">
                     {new Date(task.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                   </span>
                 </div>

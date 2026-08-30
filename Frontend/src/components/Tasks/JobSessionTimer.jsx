@@ -222,34 +222,34 @@ export default function JobSessionTimer({ taskId, userId, onSessionChange }) {
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); setShowSelector(!showSelector); }}
-            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm border rounded-lg hover:border-blue-400 transition-colors bg-white"
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs border border-hairline rounded-lg hover:border-brand transition-colors bg-surface text-ink cursor-pointer"
           >
             <div className="flex items-center gap-2 text-left truncate">
-              <Briefcase size={14} className="text-gray-400 flex-shrink-0" />
+              <Briefcase size={14} className="text-ink-subtle flex-shrink-0" />
               {selectedType ? (
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-1.5 text-ink">
                   <span>{selectedType.icon}</span>
-                  <span className="font-medium">{selectedType.name}</span>
+                  <span className="font-semibold">{selectedType.name}</span>
                 </span>
               ) : (
-                <span className="text-gray-400">What are you doing?</span>
+                <span className="text-ink-subtle">What are you doing?</span>
               )}
             </div>
-            <ChevronDown size={14} className={`text-gray-400 transition-transform ${showSelector ? 'rotate-180' : ''}`} />
+            <ChevronDown size={14} className={`text-ink-subtle transition-transform ${showSelector ? 'rotate-180' : ''}`} />
           </button>
 
           {/* Dropdown */}
           {showSelector && (
-            <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-xl max-h-72 overflow-y-auto">
+            <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-surface border border-hairline rounded-lg shadow-xl max-h-72 overflow-y-auto">
               {loadingTypes ? (
-                <div className="p-4 text-center text-sm text-gray-400">Loading activities...</div>
+                <div className="p-4 text-center text-xs text-ink-subtle">Loading activities...</div>
               ) : groupedTypes.length === 0 ? (
-                <div className="p-4 text-center text-sm text-gray-400">No job types configured</div>
+                <div className="p-4 text-center text-xs text-ink-subtle">No job types configured</div>
               ) : (
                 groupedTypes.map(group => (
                   <div key={group._id}>
                     {/* Category Header */}
-                    <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 border-b sticky top-0 flex items-center gap-1.5">
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-ink-subtle uppercase tracking-wider bg-surface-1 border-b border-hairline sticky top-0 flex items-center gap-1.5">
                       <span>{group.icon}</span>
                       {group.name}
                     </div>
@@ -264,17 +264,17 @@ export default function JobSessionTimer({ taskId, userId, onSessionChange }) {
                           setShowSelector(false);
                         }}
                         className={`
-                          w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-blue-50 transition-colors
-                          ${selectedJobTypeId === jt._id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}
+                          w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-surface-1 transition-colors cursor-pointer
+                          ${selectedJobTypeId === jt._id ? 'bg-brand/10 text-brand font-semibold' : 'text-ink'}
                         `}
                       >
                         <span className="w-5 text-center">{jt.icon}</span>
-                        <span className="flex-1">{jt.name}</span>
+                        <span className="flex-1 truncate">{jt.name}</span>
                         {jt.isBillable && (
-                          <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">₹</span>
+                          <span className="text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">₹</span>
                         )}
                         {jt.defaultDeliveryStage && (
-                          <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">{jt.defaultDeliveryStage}</span>
+                          <span className="text-[10px] text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded">{jt.defaultDeliveryStage}</span>
                         )}
                       </button>
                     ))}

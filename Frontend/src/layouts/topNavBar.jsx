@@ -8,7 +8,7 @@ import { useUserProfile } from "../hooks/useUserProfile.js";
 import { useNotification } from "../context/notificationProvider.jsx";
 import { useNavigate } from "react-router-dom";
 import ChangePasswordModal from "../components/Common/ChangePasswordModal.jsx";
-import { triggerReleaseNotesModal } from "../services/releaseNotesService";
+import { triggerReleaseNotesModal, getLatestRelease } from "../services/releaseNotesService";
 
 const TopNavBar = ({ onToggleSidebar, sidebarOpen }) => {
   const { user, logout } = useAuth();
@@ -144,7 +144,8 @@ const TopNavBar = ({ onToggleSidebar, sidebarOpen }) => {
                   type="button"
                   onClick={() => {
                     setProfileMenuOpen(false);
-                    navigate("/Profile");
+                    const tenantSlug = localStorage.getItem("x-tenant-slug") || user?.tenantSlug || "admin";
+                    navigate(`/${tenantSlug}/profile`);
                   }}
                   className="w-full text-left px-4 py-2 text-xs font-semibold text-[var(--tracker-ink)] hover:bg-[var(--tracker-surface-1)] flex items-center gap-2 transition-colors cursor-pointer"
                 >
@@ -171,7 +172,7 @@ const TopNavBar = ({ onToggleSidebar, sidebarOpen }) => {
                   className="w-full text-left px-4 py-2 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-[var(--tracker-surface-1)] flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-                  What&apos;s New (v3.1.4)
+                  What&apos;s New (v{getLatestRelease()?.version || '3.1.8'})
                 </button>
                 <div className="h-px bg-[var(--tracker-border)] my-1" />
                 <button

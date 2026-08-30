@@ -11,20 +11,24 @@ const STORAGE_KEY_PREFIX = 'tracker_seen_release_';
 let cachedReleases = [];
 
 /**
- * Fetch all published release notes from the database via the Populate API.
+ * Fetch all published release notes dynamically from the database via the Populate API.
  * @returns {Promise<Array>}
  */
 export async function fetchReleaseNotes() {
   try {
-    const res = await axiosInstance.get('/populate/read/release_notes', {
+    const res = await axiosInstance.post('/populate/read/release_notes', {
+      filter: { isPublished: true, metaStatus: { $ne: 'deleted' } },
+      sort: { releaseDate: -1, createdAt: -1 },
+      limit: 50,
+    }).catch(() => axiosInstance.get('/populate/read/release_notes', {
       params: {
         filter: JSON.stringify({ isPublished: true, metaStatus: { $ne: 'deleted' } }),
         sort: JSON.stringify({ releaseDate: -1, createdAt: -1 }),
         limit: 50,
       },
-    });
+    }));
 
-    const dbList = res.data?.data;
+    const dbList = res?.data?.data;
     if (Array.isArray(dbList) && dbList.length > 0) {
       cachedReleases = dbList.map((item) => ({
         _id: item._id,
@@ -44,7 +48,7 @@ export async function fetchReleaseNotes() {
       return cachedReleases;
     }
   } catch (err) {
-    console.debug('[releaseNotesService] Populate API unavailable:', err.message);
+    console.debug('[releaseNotesService] Error fetching release notes from Populate API:', err.message);
   }
 
   return cachedReleases || [];

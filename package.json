@@ -1,6 +1,6 @@
 {
   "name": "workhub-tracker-v2-root",
-  "version": "3.1.8",
+  "version": "3.1.9",
   "private": true,
   "type": "module",
   "scripts": {

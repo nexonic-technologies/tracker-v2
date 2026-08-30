@@ -38,29 +38,29 @@ export default function ActivityTimeline() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Activity Timeline</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Real-time view of what everyone is working on</p>
+            <h1 className="text-xl font-bold text-ink">Activity Timeline</h1>
+            <p className="text-xs text-ink-muted mt-0.5">Real-time view of what everyone is working on</p>
           </div>
 
           <div className="flex items-center gap-3">
             {/* Date Navigator */}
             <div className="flex items-center gap-2">
-              <button onClick={goPrev} className="p-2 hover:bg-white border rounded-lg transition-colors cursor-pointer">
-                <ChevronLeft size={16} className="text-slate-600" />
+              <button onClick={goPrev} className="p-2 bg-surface hover:bg-surface-1 border border-hairline rounded-lg transition-colors cursor-pointer text-ink">
+                <ChevronLeft size={16} />
               </button>
               <button
                 onClick={goToday}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
-                  isToday ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 hover:bg-blue-50 border-slate-200'
+                  isToday ? 'bg-blue-600 text-white border-blue-600' : 'bg-surface text-ink hover:bg-surface-1 border-hairline'
                 }`}
               >
                 Today
               </button>
-              <button onClick={goNext} className="p-2 hover:bg-white border rounded-lg transition-colors cursor-pointer">
-                <ChevronRight size={16} className="text-slate-600" />
+              <button onClick={goNext} className="p-2 bg-surface hover:bg-surface-1 border border-hairline rounded-lg transition-colors cursor-pointer text-ink">
+                <ChevronRight size={16} />
               </button>
-              <div className="flex items-center gap-1.5 ml-1 px-3 py-1.5 bg-white border rounded-lg text-xs font-medium text-slate-700">
-                <Calendar size={12} />
+              <div className="flex items-center gap-1.5 ml-1 px-3 py-1.5 bg-surface border border-hairline rounded-lg text-xs font-medium text-ink">
+                <Calendar size={12} className="text-ink-subtle" />
                 {date.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
               </div>
             </div>

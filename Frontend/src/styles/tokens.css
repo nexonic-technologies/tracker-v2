@@ -1013,76 +1013,30 @@
   }
 }
 
-/* Theme switch — smooth crossfade (ThemeProvider.toggleTheme) */
+/* Theme switch — clean, snappy transition */
 html.theme-transition {
-  --theme-transition-duration: 450ms;
+  --theme-transition-duration: 200ms;
 }
 
-html.theme-transition,
-html.theme-transition *,
-html.theme-transition *::before,
-html.theme-transition *::after {
+html.theme-transition body,
+html.theme-transition .lmx-app-shell,
+html.theme-transition .lmx-topbar,
+html.theme-transition .lmx-sidebar,
+html.theme-transition .lmx-content,
+html.theme-transition .tracker-card,
+html.theme-transition .tracker-card-plain,
+html.theme-transition .bg-surface,
+html.theme-transition .bg-canvas,
+html.theme-transition main {
   transition:
     background-color var(--theme-transition-duration) ease,
-    color calc(var(--theme-transition-duration) * 0.9) ease,
     border-color var(--theme-transition-duration) ease,
-    box-shadow var(--theme-transition-duration) ease,
-    fill var(--theme-transition-duration) ease,
-    stroke var(--theme-transition-duration) ease,
-    outline-color var(--theme-transition-duration) ease !important;
-}
-
-html.theme-transition::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 99998;
-  pointer-events: none;
-  background: var(--tracker-canvas);
-  animation: lmx-theme-crossfade var(--theme-transition-duration) ease forwards;
-}
-
-html.theme-transition .lmx-login-shell {
-  animation: lmx-login-theme-fade var(--theme-transition-duration) ease;
-}
-
-@keyframes lmx-theme-crossfade {
-  0% {
-    opacity: 0;
-  }
-
-  40% {
-    opacity: 0.28;
-  }
-
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes lmx-login-theme-fade {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  45% {
-    opacity: 0.92;
-  }
+    color var(--theme-transition-duration) ease !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-
-  html.theme-transition::before,
-  html.theme-transition .lmx-login-shell {
-    animation: none;
-  }
-
   html.theme-transition,
-  html.theme-transition *,
-  html.theme-transition *::before,
-  html.theme-transition *::after {
+  html.theme-transition * {
     transition: none !important;
   }
 }

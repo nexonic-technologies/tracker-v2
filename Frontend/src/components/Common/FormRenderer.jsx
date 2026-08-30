@@ -858,14 +858,67 @@ const FormRenderer = ({
   const handlePopulate = async (field) => {
     if (!field.dependsOn && dynamicOptions[field.name]?.length > 0) return;
     try {
+      // 1. Resolve country, state, and city options natively via country-state-city library
+      if (field.source === "/countries" || field.name === "basicInfo.address.country" || field.name === "address.country" || field.name === "country") {
+        const countries = Country.getAllCountries().map(c => ({
+          _id: c.name,
+          name: c.name,
+          value: c.name,
+          isoCode: c.isoCode
+        }));
+        setDynamicOptions(prev => ({ ...prev, [field.name]: countries }));
+        return;
+      }
+
+      if (field.source?.startsWith("/states") || field.name === "basicInfo.address.state" || field.name === "address.state" || field.name === "state") {
+        const countryVal = getNestedValue(formData, field.dependsOn || 'basicInfo.address.country') || getNestedValue(formData, 'address.country') || getNestedValue(formData, 'country');
+        const countryName = typeof countryVal === 'object' ? (countryVal?.name || countryVal?.value) : countryVal;
+        const countryCode = getCountryCode(countryName);
+        if (countryCode) {
+          const states = State.getStatesOfCountry(countryCode).map(s => ({
+            _id: s.name,
+            name: s.name,
+            value: s.name,
+            isoCode: s.isoCode
+          }));
+          setDynamicOptions(prev => ({ ...prev, [field.name]: states }));
+        } else {
+          setDynamicOptions(prev => ({ ...prev, [field.name]: [] }));
+        }
+        return;
+      }
+
+      if (field.source?.startsWith("/cities") || field.name === "basicInfo.address.city" || field.name === "address.city" || field.name === "city") {
+        const stateVal = getNestedValue(formData, field.dependsOn || 'basicInfo.address.state') || getNestedValue(formData, 'address.state') || getNestedValue(formData, 'state');
+        const countryVal = getNestedValue(formData, 'basicInfo.address.country') || getNestedValue(formData, 'address.country') || getNestedValue(formData, 'country');
+        const countryName = typeof countryVal === 'object' ? (countryVal?.name || countryVal?.value) : countryVal;
+        const stateName = typeof stateVal === 'object' ? (stateVal?.name || stateVal?.value) : stateVal;
+        const countryCode = getCountryCode(countryName);
+        const stateCode = getStateCode(countryCode, stateName);
+        if (countryCode && stateCode) {
+          const cities = City.getCitiesOfState(countryCode, stateCode).map(c => ({
+            _id: c.name,
+            name: c.name,
+            value: c.name
+          }));
+          setDynamicOptions(prev => ({ ...prev, [field.name]: cities }));
+        } else {
+          setDynamicOptions(prev => ({ ...prev, [field.name]: [] }));
+        }
+        return;
+      }
+
       let url = field.source;
+      if (!url) return;
       if (field.dependsOn) {
         const parentValue = getNestedValue(formData, field.dependsOn);
-        if (!parentValue?._id) return;
-        url = url.replace(/:\w+/g, parentValue._id);
+        if (!parentValue?._id && !parentValue?.value && !parentValue) return;
+        const parentId = parentValue?._id || parentValue?.value || parentValue;
+        url = url.replace(/:\w+/g, parentId);
         if (field.name.includes('city') && field.dependsOn.includes('state')) {
           const countryValue = getNestedValue(formData, field.dependsOn.replace('state', 'country'));
-          if (countryValue?._id) url += `?countryCode=${countryValue._id}`;
+          const countryId = countryValue?._id || countryValue?.value || countryValue;
+          if (countryId) url += `?countryCode=${countryId}`;
         }
       }
       const [baseUrl, queryString] = url.split('?');

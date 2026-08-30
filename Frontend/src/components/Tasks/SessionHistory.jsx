@@ -60,10 +60,10 @@ export default function SessionHistory({ taskId }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+        <label className="text-[10px] font-bold text-ink-subtle uppercase tracking-wider flex items-center gap-1">
           <Clock size={10} /> Session History
         </label>
-        <span className="text-[10px] text-slate-400">
+        <span className="text-[10px] text-ink-muted">
           {totalHours.toFixed(1)}h · ₹{totalCost.toFixed(0)}
         </span>
       </div>
@@ -76,7 +76,7 @@ export default function SessionHistory({ taskId }) {
             : '';
 
           return (
-            <div key={session._id || i} className="flex items-center gap-2 px-2 py-1.5 bg-white rounded border border-slate-100 text-xs">
+            <div key={session._id || i} className="flex items-center gap-2 px-2 py-1.5 bg-surface-1 rounded border border-hairline text-xs">
               {/* Job Type Badge */}
               <span
                 className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-white text-[10px] font-semibold flex-shrink-0"
@@ -86,18 +86,18 @@ export default function SessionHistory({ taskId }) {
               </span>
 
               {/* Employee */}
-              <span className="text-slate-500 truncate flex-1" title={userName}>
+              <span className="text-ink-muted truncate flex-1" title={userName}>
                 {userName}
               </span>
 
               {/* Duration */}
-              <span className="font-mono font-bold text-slate-700 flex-shrink-0">
+              <span className="font-mono font-bold text-ink flex-shrink-0">
                 {formatDuration(session.duration)}
               </span>
 
               {/* Cost */}
               {session.productionCost > 0 && (
-                <span className="text-emerald-600 font-medium flex-shrink-0 flex items-center gap-0.5">
+                <span className="text-emerald-500 font-medium flex-shrink-0 flex items-center gap-0.5">
                   <Zap size={8} />₹{session.productionCost.toFixed(0)}
                 </span>
               )}
@@ -109,7 +109,7 @@ export default function SessionHistory({ taskId }) {
       {sessions.length > 3 && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-[10px] text-blue-600 hover:text-blue-700 font-semibold w-full text-center py-1"
+          className="text-[10px] text-brand hover:underline font-semibold w-full text-center py-1 cursor-pointer"
         >
           {expanded ? 'Show less' : `Show all ${sessions.length} sessions`}
         </button>

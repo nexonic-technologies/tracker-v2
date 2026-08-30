@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import { useAuth } from "../../context/authProvider";
 import FormRenderer from "../../components/Common/FormRenderer";
@@ -99,6 +100,7 @@ const Ring = ({ pct }) => {
 // =============================================================================
 const Profile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -271,7 +273,24 @@ const Profile = () => {
         <div className="absolute inset-0 opacity-15" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,.12) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="absolute -top-16 -right-16 w-56 h-56 bg-cyan-400/20 rounded-full blur-3xl" />
 
-        <div className="relative max-w-5xl mx-auto px-5 pt-8 pb-24">
+        <div className="relative max-w-5xl mx-auto px-5 pt-6 pb-24">
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  const tenantSlug = localStorage.getItem("x-tenant-slug") || "admin";
+                  navigate(`/${tenantSlug}/dashboard`);
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-xs font-semibold border border-white/20 transition cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+              Back
+            </button>
+          </div>
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5">
             {/* Avatar */}
             <div className="relative">
