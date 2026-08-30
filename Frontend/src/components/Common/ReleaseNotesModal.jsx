@@ -62,10 +62,22 @@ export default function ReleaseNotesModal() {
     initReleases();
 
     // Event listener for manual on-demand opening (e.g. from Sidebar or Profile menu)
-    const handleOpenEvent = (e) => {
+    const handleOpenEvent = async (e) => {
       const targetVer = e.detail?.version;
       setIsOpen(true);
-      if (targetVer) setSelectedVersion(targetVer);
+      if (releases.length === 0) {
+        setLoading(true);
+        const data = await fetchReleaseNotes();
+        if (mounted && Array.isArray(data)) {
+          setReleases(data);
+          if (data.length > 0) {
+            setSelectedVersion(targetVer || data[0].version);
+          }
+        }
+        setLoading(false);
+      } else if (targetVer) {
+        setSelectedVersion(targetVer);
+      }
     };
 
     window.addEventListener('tracker:open-release-notes', handleOpenEvent);
