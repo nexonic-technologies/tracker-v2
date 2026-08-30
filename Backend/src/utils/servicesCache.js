@@ -2,6 +2,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import staticModelMap, { MODULE_DEFINITIONS } from "../models/tenantRegistry.js";
 
 let servicesCache = {};
 let lastUpdated = null;
@@ -9,7 +10,15 @@ const SERVICES_DIR = fileURLToPath(new URL("../services", import.meta.url));
 const CACHE_REFRESH_INTERVAL = 20 * 60 * 1000; // 20 minutes
 
 /**
- * Load all service files dynamically into cache with algorithmic name resolution
+ * Normalizes any string to alphanumeric lowercase token for O(1) declarative matching.
+ */
+function normalizeKey(str) {
+  return typeof str === 'string' ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+}
+
+/**
+ * Builds declarative service registry linking file paths directly to canonical model definitions.
+ * Conforms strictly to Sacred Anti-Hardcoding Architecture.
  */
 function loadServices() {
   const cache = {};
@@ -17,30 +26,62 @@ function loadServices() {
     return cache;
   }
 
+  // 1. Index all service files on disk by their raw and normalized names
   const files = fs.readdirSync(SERVICES_DIR).filter((f) => f.endsWith(".js"));
+  const fileMap = new Map();
+
   for (const file of files) {
     const rawName = path.basename(file, ".js");
     const filePath = path.join(SERVICES_DIR, file);
+    const cleanName = normalizeKey(rawName);
+
+    fileMap.set(rawName, filePath);
+    fileMap.set(rawName.toLowerCase(), filePath);
+    fileMap.set(cleanName, filePath);
 
     cache[rawName] = filePath;
     cache[rawName.toLowerCase()] = filePath;
+    cache[cleanName] = filePath;
+  }
 
-    const stripped = rawName.toLowerCase().replace(/[^a-z0-9]/g, "");
-    cache[stripped] = filePath;
+  // 2. Declaratively map all schema model definitions from the tenantRegistry single source of truth
+  if (staticModelMap) {
+    for (const [modelKey, modelRef] of Object.entries(staticModelMap)) {
+      const cleanKey = normalizeKey(modelKey);
+      const modelNameClean = modelRef?.modelName ? normalizeKey(modelRef.modelName) : '';
 
-    // Handle common suffixes (e.g., employeeService -> employee)
-    if (stripped.endsWith("service")) {
-      const core = stripped.replace(/service$/, "");
-      if (core) {
-        cache[core] = filePath;
-        cache[`${core}s`] = filePath;
+      // Direct file match
+      const matchedPath = fileMap.get(cleanKey) ||
+                          fileMap.get(modelNameClean) ||
+                          fileMap.get(modelKey.toLowerCase());
+
+      if (matchedPath) {
+        cache[modelKey] = matchedPath;
+        cache[modelKey.toLowerCase()] = matchedPath;
+        cache[cleanKey] = matchedPath;
+        if (modelRef?.modelName) {
+          cache[modelRef.modelName] = matchedPath;
+          cache[modelRef.modelName.toLowerCase()] = matchedPath;
+          cache[modelNameClean] = matchedPath;
+        }
       }
     }
+  }
 
-    if (stripped.endsWith("s")) {
-      cache[stripped.slice(0, -1)] = filePath;
-    } else {
-      cache[`${stripped}s`] = filePath;
+  // 3. Declaratively index module collection list aliases from MODULE_DEFINITIONS
+  if (MODULE_DEFINITIONS) {
+    for (const collectionList of Object.values(MODULE_DEFINITIONS)) {
+      if (Array.isArray(collectionList)) {
+        for (const col of collectionList) {
+          const cleanCol = normalizeKey(col);
+          const matchedPath = fileMap.get(cleanCol) || fileMap.get(col.toLowerCase());
+          if (matchedPath) {
+            cache[col] = matchedPath;
+            cache[col.toLowerCase()] = matchedPath;
+            cache[cleanCol] = matchedPath;
+          }
+        }
+      }
     }
   }
 
@@ -49,33 +90,21 @@ function loadServices() {
 }
 
 /**
- * Get service file path by model name with algorithmic fallback
+ * Resolves service file path by model name through declarative registry lookup (O(1)).
  * @param {string} modelName
  * @returns {string|null} service file path
  */
 export function getService(modelName) {
   if (!modelName) return null;
-  // Auto-refresh if older than interval
   if (!lastUpdated || Date.now() - lastUpdated > CACHE_REFRESH_INTERVAL) {
     loadServices();
   }
 
-  if (servicesCache[modelName]) return servicesCache[modelName];
+  const raw = String(modelName).trim();
+  const lower = raw.toLowerCase();
+  const clean = normalizeKey(raw);
 
-  const lower = String(modelName).toLowerCase();
-  if (servicesCache[lower]) return servicesCache[lower];
-
-  const stripped = lower.replace(/[^a-z0-9]/g, "");
-  if (servicesCache[stripped]) return servicesCache[stripped];
-
-  if (stripped.endsWith("s") && servicesCache[stripped.slice(0, -1)]) {
-    return servicesCache[stripped.slice(0, -1)];
-  }
-  if (!stripped.endsWith("s") && servicesCache[`${stripped}s`]) {
-    return servicesCache[`${stripped}s`];
-  }
-
-  return null;
+  return servicesCache[raw] || servicesCache[lower] || servicesCache[clean] || null;
 }
 
 /**
@@ -86,7 +115,7 @@ export function refreshServicesCache() {
 }
 
 /**
- * Returns proxy for service cache so dynamic property access also runs algorithmic lookup
+ * Returns proxy for service cache
  */
 export function getAllServices() {
   if (!lastUpdated || Date.now() - lastUpdated > CACHE_REFRESH_INTERVAL) {
@@ -100,9 +129,3 @@ export function getAllServices() {
     }
   });
 }
-
-// Initial load
-loadServices();
-
-// Background auto-refresh
-setInterval(loadServices, CACHE_REFRESH_INTERVAL);

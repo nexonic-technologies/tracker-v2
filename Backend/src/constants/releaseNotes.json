@@ -1,10 +1,42 @@
 [
   {
+    "version": "4.0.0",
+    "releaseDate": "2026-08-30",
+    "title": "Unified CRM V3 Commercial Engine & Enterprise MIS Reporting Architecture",
+    "tagline": "End-to-end commercial lifecycle linkage: Quotation -> Order Acknowledgement -> Tax Invoices -> Cash Collections -> P&L Ledger Drill-Downs with 100% deterministic mathematical audit trails.",
+    "isLatest": true,
+    "type": "Major Enterprise Architecture Release",
+    "categories": {
+      "features": [
+        "Unified CRM Commercial Lifecycle: Complete end-to-end progression from Quotation (C-02 conversion metrics) -> Order Acknowledgement -> Invoices -> Payment Collections",
+        "Executive Management Information System (MIS Cockpit): Real-time Monthly Business Review (MBR / MIS-04) aggregating Invoiced Revenue, Collections, Loaded Payroll, Operational Opex, and Net Operating Margins",
+        "Itemized Ledger Drill-Downs: Interactive slide-over transaction drawers for every financial KPI, auditing individual invoices, collections, payroll disbursements, and expense claims against tenant databases",
+        "Record Inspector Slide-Over: Universal row-level detail inspection drawer across all reporting categories (Daily Attendance, Payroll Statutory, Tasks Velocity, IT Assets, CRM Opportunities)",
+        "Multi-Source Client Profitability Reconciliation (MIS-02): Integrated cash receipts from Payment Journals, Direct Cash Postings, and Client Ledgers alongside commercial tax invoices for imported and domestic client accounts"
+      ],
+      "improvements": [
+        "100% Deterministic Mathematics: Eliminated all hardcoded percentage projections, replacing attendance rates, SLA compliance, and payroll coverage with live database calculation ratios",
+        "Enterprise Vocabulary Standardization: Standardized all UI copy, headers, and tooltips to Tier-1 Fortune-500 ERP conventions (SAP/NetSuite standard)",
+        "Baseline Period MoM Logic: Formatted initial periods and zero-baseline comparisons to clean neutral 'Baseline' badges instead of misleading percentages",
+        "Dynamic Model & Service Registry: Declarative service caching without hardcoded string branching across tenant connection pipelines",
+        "Clean Table Layouts: Suppressed raw hex ObjectIds and deduplicated identical visual headers in dynamic reporting tables"
+      ],
+      "security": [
+        "ABAC Tenant Isolation: Strict schema-driven database policy evaluation across all newly added commercial models and reporting endpoints"
+      ],
+      "fixes": [
+        "Fixed Invoiced Revenue 0 discrepancy on imported clients by reconciling cash collections from accounting journals",
+        "Fixed reportService proxy model resolution for multi-word camelCase and snake_case collections",
+        "Fixed reference error and column sorting in ReportDataGrid"
+      ]
+    }
+  },
+  {
     "version": "3.2.0",
     "releaseDate": "2026-08-30",
     "title": "Ticket Creator Resolution, Created By Mapping & Auth Synchronization",
     "tagline": "Seamless user-to-employee creator mapping across Ticket queues, real-time auth synchronization, and robust fallback resolution.",
-    "isLatest": true,
+    "isLatest": false,
     "type": "Minor Feature & Data Integrity Release",
     "categories": {
       "features": [

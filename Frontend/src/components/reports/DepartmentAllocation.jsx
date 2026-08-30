@@ -14,12 +14,12 @@ export default function DepartmentAllocation({
   onSelectYear
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
+    <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
       {/* Department Allocation Selector */}
-      <div className="flex items-center gap-2">
-        <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Department Scope:</span>
-        <div className="flex flex-wrap gap-1.5">
+      <div className="flex items-center gap-2 flex-wrap">
+        <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Scope:</span>
+        <div className="flex flex-wrap gap-1">
           {departments.map(dept => (
             <button
               key={dept.id}

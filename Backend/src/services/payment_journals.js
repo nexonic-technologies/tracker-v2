@@ -10,16 +10,47 @@ export default function payment_journals() {
     });
 
     if (!existingLedger) {
+      // Calculate running balance
+      const lastEntry = await models.clients_ledgers
+        .findOne({ clientId: payment.clientId })
+        .sort({ date: -1, createdAt: -1 })
+        .lean();
+
+      const prevBalance = lastEntry?.runningBalance || 0;
+      const newBalance = prevBalance - (payment.amount || 0); // Debit decreases client outstanding
+
       await models.clients_ledgers.create({
         clientId: payment.clientId,
+        date: payment.paymentDate || new Date(),
         type: 'Debit',
         amount: payment.amount,
+        runningBalance: newBalance,
         referenceModel: 'payment_journals',
         referenceId: payment._id,
         description: `Payment received: ${payment.receiptNumber}`,
         narration: `Mode: ${payment.paymentMode}. Ref: ${payment.referenceNumber || 'N/A'}.`,
         entryBy: userId || payment.receivedBy
       });
+
+      // If linked to an invoice, reconcile payment
+      if (payment.invoiceId || payment.orderId) {
+        try {
+          const invId = payment.invoiceId || payment.orderId;
+          const invoice = await models.invoices.findById(invId);
+          if (invoice) {
+            const newPaid = (invoice.paidAmount || 0) + payment.amount;
+            const newBal = Math.max(0, invoice.totalAmount - newPaid);
+            const status = newBal === 0 ? 'Paid' : 'Partially Paid';
+            await models.invoices.findByIdAndUpdate(invId, {
+              paidAmount: newPaid,
+              balanceDue: newBal,
+              status
+            });
+          }
+        } catch (invErr) {
+          console.warn('[Payment Journals Service] Error reconciling invoice balance:', invErr.message);
+        }
+      }
     }
   };
 

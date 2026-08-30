@@ -204,9 +204,25 @@ const QuotationFormPage = () => {
 
     setLoading(true);
     try {
+      const lineItems = formData.items.map(item => ({
+        productId: item.productId,
+        description: item.productName ? `${item.productName}: ${item.description || ''}` : item.description || '',
+        quantity: Number(item.quantity) || 1,
+        unitPrice: Number(item.unitPrice) || 0,
+        discount: Number(formData.discountPercent) || 0,
+        taxRate: Number(formData.taxPercent) || 0,
+        lineTotal: item.total || ((Number(item.quantity) || 1) * (Number(item.unitPrice) || 0))
+      }));
+
       const payload = {
         ...formData,
         clientId: formData.clientId,
+        lineItems,
+        subtotal: formData.subtotal,
+        totalDiscount: formData.discountAmount,
+        totalTax: formData.taxAmount,
+        grandTotal: formData.totalAmount,
+        // Legacy compatibility
         items: formData.items.map(item => ({
           productId: item.productId,
           productName: item.productName,
@@ -226,7 +242,7 @@ const QuotationFormPage = () => {
         await axiosInstance.post("/populate/create/quotations", payload);
         toast.success("Quotation created successfully");
       }
-      navigate("/CRM/Quotations");
+      navigate("/crm/quotations");
     } catch (err) {
       console.error("Failed to save quotation:", err);
       toast.error("Failed to save quotation");
@@ -243,7 +259,7 @@ const QuotationFormPage = () => {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => navigate("/CRM/Quotations")}
+              onClick={() => navigate("/crm/quotations")}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />

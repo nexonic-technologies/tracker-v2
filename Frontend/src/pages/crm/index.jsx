@@ -7,7 +7,7 @@ import {
   BadgeDollarSign, Users, Award, Play, CheckCircle,
   Clock, AlertCircle, BarChart3, ListFilter, Kanban,
   TrendingUp, ArrowRight, User, Plus, RefreshCw,
-  FolderMinus, Calendar
+  FolderMinus, Calendar, FileText
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -42,20 +42,26 @@ export default function CRMIndex() {
   const [clients, setClients] = useState([]);
   const [quotations, setQuotations] = useState([]);
   const [meetings, setMeetings] = useState([]);
+  const [opportunities, setOpportunities] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [draggedOverStage, setDraggedOverStage] = useState(null);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [clientsRes, quotationsRes, meetingsRes] = await Promise.all([
+      const [clientsRes, quotationsRes, meetingsRes, oppsRes, invsRes] = await Promise.all([
         read("clients", { limit: 1000 }),
         read("quotations", { limit: 1000 }),
-        read("crm_meetings", { limit: 1000, sort: { scheduledTime: -1 } })
+        read("crm_meetings", { limit: 1000, sort: { scheduledTime: -1 } }),
+        read("opportunities", { limit: 1000 }),
+        read("invoices", { limit: 1000 })
       ]);
       setClients(clientsRes?.data || []);
       setQuotations(quotationsRes?.data || []);
       setMeetings(meetingsRes?.data || []);
+      setOpportunities(oppsRes?.data || []);
+      setInvoices(invsRes?.data || []);
     } catch (err) {
       console.error("Error fetching CRM index data:", err);
       toast.error("Failed to load CRM data");
@@ -75,33 +81,50 @@ export default function CRMIndex() {
       const cid = q.clientId?._id || q.clientId;
       if (cid) {
         if (!map[cid]) map[cid] = { total: 0, count: 0, pending: 0 };
-        map[cid].total += q.totalAmount || 0;
+        const quoteValue = q.grandTotal || q.totalAmount || 0;
+        map[cid].total += quoteValue;
         map[cid].count++;
-        if (q.status === 'Draft' || q.status === 'Sent') {
-          map[cid].pending += q.totalAmount || 0;
+        if (q.status === 'Draft' || q.status === 'Sent' || q.status === 'Under Review' || q.status === 'Internally Approved') {
+          map[cid].pending += quoteValue;
         }
       }
     });
     return map;
   }, [quotations]);
 
-  // Aggregate Stats
+  // Aggregate Stats (6 Revenue Operations Metrics)
   const stats = useMemo(() => {
     const activeLeads = clients.filter(c => c.leadStatus !== 'Closed Won' && c.leadStatus !== 'Closed Lost').length;
     const completedMeetings = meetings.filter(m => m.status === 'Completed').length;
-    const totalPipelineVal = Object.values(clientValues).reduce((acc, cv) => acc + cv.pending, 0);
-    const totalWonVal = quotations
-      .filter(q => q.status === 'Accepted' || q.status === 'Converted to Invoice')
-      .reduce((acc, q) => acc + (q.totalAmount || 0), 0);
+    
+    // Opportunity-based pipeline
+    const oppPipeline = opportunities
+      .filter(o => o.stage !== 'Won' && o.stage !== 'Lost')
+      .reduce((sum, o) => sum + (o.expectedValue || 0), 0);
+
+    const weightedPipeline = opportunities
+      .filter(o => o.stage !== 'Won' && o.stage !== 'Lost')
+      .reduce((sum, o) => sum + ((o.expectedValue || 0) * (o.probability || 0) / 100), 0);
+
+    const totalInvoiced = invoices
+      .filter(i => i.status !== 'Draft' && i.status !== 'Cancelled')
+      .reduce((sum, i) => sum + (i.totalAmount || 0), 0);
+
+    const totalOutstandingAR = invoices
+      .filter(i => i.status !== 'Draft' && i.status !== 'Cancelled' && i.status !== 'Paid')
+      .reduce((sum, i) => sum + (i.balanceDue || 0), 0);
 
     return {
       totalClients: clients.length,
       activeLeads,
       completedMeetings,
-      totalPipelineVal,
-      totalWonVal
+      totalPipelineVal: oppPipeline || Object.values(clientValues).reduce((acc, cv) => acc + cv.pending, 0),
+      weightedPipeline,
+      totalInvoiced,
+      totalOutstandingAR,
+      totalOpps: opportunities.length
     };
-  }, [clients, meetings, clientValues, quotations]);
+  }, [clients, meetings, clientValues, quotations, opportunities, invoices]);
 
   // Funnel Analytics Data
   const stageStats = useMemo(() => {
@@ -206,52 +229,65 @@ export default function CRMIndex() {
         <div className="flex-1 overflow-y-auto space-y-4 pr-1">
           {/* Stat Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatCard title="Total Accounts" value={stats.totalClients} icon={Users} color="blue" />
-            <StatCard title="Active Leads" value={stats.activeLeads} icon={ListFilter} color="yellow" />
-            <StatCard title="Meetings Logged" value={stats.completedMeetings} icon={Calendar} color="purple" />
-            <StatCard title="Est. Pipeline" value={fmtCurrency(stats.totalPipelineVal)} icon={BadgeDollarSign} color="green" />
+            <StatCard title="Active Pipeline" value={fmtCurrency(stats.totalPipelineVal)} icon={TrendingUp} color="blue" />
+            <StatCard title="Weighted Forecast" value={fmtCurrency(stats.weightedPipeline)} icon={BadgeDollarSign} color="purple" />
+            <StatCard title="Total Invoiced" value={fmtCurrency(stats.totalInvoiced)} icon={FileText} color="green" />
+            <StatCard title="Outstanding AR" value={fmtCurrency(stats.totalOutstandingAR)} icon={AlertCircle} color="yellow" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
             {/* Quick Actions */}
             <div className="bg-surface rounded-tracker-card border border-hairline p-4 shadow-sm space-y-2.5">
-              <h3 className="text-[13px] font-semibold text-ink">Quick Links</h3>
+              <h3 className="text-[13px] font-semibold text-ink">Revenue Operations Hub</h3>
               <div className="grid grid-cols-1 gap-2">
-                <Link to="/crm/contacts" className="flex items-center justify-between p-2.5 bg-surface-1 hover:bg-accent/5 border border-hairline-soft rounded-[8px] transition group">
+                <Link to="/crm/opportunities" className="flex items-center justify-between p-2.5 bg-surface-1 hover:bg-accent/5 border border-hairline-soft rounded-[8px] transition group">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-full bg-indigo-100 dark:bg-indigo-950/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                      <TrendingUp className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold text-ink leading-tight">Deal Pipeline (Opportunities)</p>
+                      <p className="text-[10px] text-ink-tertiary mt-0.5">Weighted sales funnel & forecasting</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 text-ink-tertiary group-hover:translate-x-1 transition" />
+                </Link>
+
+                <Link to="/crm/invoices" className="flex items-center justify-between p-2.5 bg-surface-1 hover:bg-accent/5 border border-hairline-soft rounded-[8px] transition group">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-full bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                      <BadgeDollarSign className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold text-ink leading-tight">Tax Invoices & Billing</p>
+                      <p className="text-[10px] text-ink-tertiary mt-0.5">Accounts receivable & payment dues</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 text-ink-tertiary group-hover:translate-x-1 transition" />
+                </Link>
+
+                <Link to="/crm/quotations" className="flex items-center justify-between p-2.5 bg-surface-1 hover:bg-accent/5 border border-hairline-soft rounded-[8px] transition group">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-full bg-amber-100 dark:bg-amber-950/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                      <BarChart3 className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold text-ink leading-tight">Quotations Manager</p>
+                      <p className="text-[10px] text-ink-tertiary mt-0.5">Price proposals & revision logs</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 text-ink-tertiary group-hover:translate-x-1 transition" />
+                </Link>
+
+                <Link to="/crm/ledger" className="flex items-center justify-between p-2.5 bg-surface-1 hover:bg-accent/5 border border-hairline-soft rounded-[8px] transition group">
                   <div className="flex items-center gap-2.5">
                     <div className="h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                       <Users className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-[12px] font-semibold text-ink leading-tight">Manage Contacts</p>
-                      <p className="text-[10px] text-ink-tertiary mt-0.5">Directory of clients and leads</p>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-3.5 w-3.5 text-ink-tertiary group-hover:translate-x-1 transition" />
-                </Link>
-
-                <Link to="/crm/calendar" className="flex items-center justify-between p-2.5 bg-surface-1 hover:bg-accent/5 border border-hairline-soft rounded-[8px] transition group">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-7 w-7 rounded-full bg-purple-100 dark:bg-purple-950/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                      <Calendar className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-[12px] font-semibold text-ink leading-tight">Marketing Calendar</p>
-                      <p className="text-[10px] text-ink-tertiary mt-0.5">Schedule and join client meetings</p>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-3.5 w-3.5 text-ink-tertiary group-hover:translate-x-1 transition" />
-                </Link>
-
-                <Link to="/crm/oa" className="flex items-center justify-between p-2.5 bg-surface-1 hover:bg-accent/5 border border-hairline-soft rounded-[8px] transition group">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-7 w-7 rounded-full bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                      <Award className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-[12px] font-semibold text-ink leading-tight">Order Acknowledgments</p>
-                      <p className="text-[10px] text-ink-tertiary mt-0.5">Approved contracts & activation states</p>
+                      <p className="text-[12px] font-semibold text-ink leading-tight">Client Outstanding Ledger</p>
+                      <p className="text-[10px] text-ink-tertiary mt-0.5">Double-entry statement of accounts</p>
                     </div>
                   </div>
                   <ArrowRight className="h-3.5 w-3.5 text-ink-tertiary group-hover:translate-x-1 transition" />

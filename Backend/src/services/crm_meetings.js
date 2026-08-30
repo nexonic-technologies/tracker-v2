@@ -35,6 +35,18 @@ const crm_meetings = {
         }
       }
     }
+  },
+
+  /**
+   * C-01: CRM Lead & Activity Pipeline Report
+   */
+  async beforeReport(ctx) {
+    const { default: reportService } = await import('./business/reportService.js');
+    const startDate = ctx.query?.startDate || ctx.body?.startDate || null;
+    const endDate = ctx.query?.endDate || ctx.body?.endDate || null;
+
+    const data = await reportService.getCRMActivityPipelineReport(startDate, endDate);
+    return { data };
   }
 };
 
