@@ -21,6 +21,7 @@ const VERSION_FILE = path.join(ROOT_DIR, 'version.json');
 const ROOT_PKG = path.join(ROOT_DIR, 'package.json');
 const BACKEND_PKG = path.join(ROOT_DIR, 'Backend', 'package.json');
 const FRONTEND_PKG = path.join(ROOT_DIR, 'Frontend', 'package.json');
+const FRONTEND_PUBLIC_VERSION = path.join(ROOT_DIR, 'Frontend', 'public', 'version.json');
 const BACKEND_RELEASE_NOTES = path.join(ROOT_DIR, 'Backend', 'src', 'constants', 'releaseNotes.json');
 const MOBILE_PUBSPEC = path.join(ROOT_DIR, 'tracker_mobile', 'pubspec.yaml');
 

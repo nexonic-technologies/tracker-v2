@@ -1,10 +1,32 @@
 [
   {
+    "version": "3.1.7",
+    "releaseDate": "2026-08-30",
+    "title": "Task Details: Job Category & Task Type Selection Fix",
+    "tagline": "Added interactive Job Category and Task Type selector dropdowns in Task details sidebar with delivery stage alignment.",
+    "isLatest": true,
+    "type": "Hotfix & UX Enhancement",
+    "categories": {
+      "features": [
+        "Interactive Job Category (projectTypeId) selector dropdown added to Task details sidebar for 1-click category changes",
+        "Task Type (taskTypeId) selector dropdown integrated directly into Task parameters sidebar"
+      ],
+      "improvements": [
+        "Enhanced Delivery Stage dropdown with click-outside auto-close listener and clean z-index layering",
+        "Activity Timer job selector aligned with Master Populate read endpoints"
+      ],
+      "fixes": [
+        "Fixed DeliveryStageBadge endpoint typo (/populate/read/status_configs) resolving stage pipeline loading errors",
+        "Resolved dropdown layout collisions over Estimated Hours input controls"
+      ]
+    }
+  },
+  {
     "version": "3.1.5",
     "releaseDate": "2026-08-30",
     "title": "Enhanced Ticket & Task Listings, Filter Presets & Dynamic Populate Resolution",
     "tagline": "Universal configurable filter bar, custom filter preset saving, full-width sticky tables, and automated polymorphic reference population.",
-    "isLatest": true,
+    "isLatest": false,
     "type": "Feature & UX Enhancement",
     "categories": {
       "features": [
