@@ -21,6 +21,14 @@ const MONTH_NAMES = [
 
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+const fmtHM = (hrs) => {
+  if (hrs == null || isNaN(hrs)) return "—";
+  const totalMinutes = Math.round(Number(hrs) * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${h}H:${String(m).padStart(2, "0")}M`;
+};
+
 const STATUS_COLORS = {
   "Present": "#10b981",
   "Check-Out": "#10b981",
@@ -723,7 +731,7 @@ export default function AttendanceReports() {
 
                       {/* Work Hours */}
                       <td className="px-3 py-2.5 font-extrabold tabular-nums text-ink">
-                        {rec?.workHours ? `${rec.workHours.toFixed(1)}h` : (firstIn ? "Calc..." : "—")}
+                        {rec?.workHours ? fmtHM(rec.workHours) : (firstIn ? "Calc..." : "—")}
                       </td>
 
                       {/* Punch Location */}
@@ -1079,12 +1087,12 @@ export default function AttendanceReports() {
                     <div>
                       <span className="text-[10px] font-extrabold text-ink-subtle uppercase block mb-0.5">Total Work Hours</span>
                       <span className="text-sm font-extrabold text-ink tabular-nums">
-                        {rec?.workHours ? `${rec.workHours.toFixed(1)}h` : (firstIn ? "Calculating..." : "—")}
+                        {rec?.workHours ? fmtHM(rec.workHours) : (firstIn ? "Calculating..." : "—")}
                       </span>
                     </div>
                     {rec?.overtimeHours > 0 && (
                       <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
-                        +{rec.overtimeHours.toFixed(1)}h OT
+                        +{fmtHM(rec.overtimeHours)} OT
                       </span>
                     )}
                   </div>

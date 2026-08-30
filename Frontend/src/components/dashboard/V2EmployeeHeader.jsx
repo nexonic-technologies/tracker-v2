@@ -70,7 +70,7 @@ export default function V2EmployeeHeader({ attendance: propAttendance, refresh }
       }
       const hours = Math.floor(baseMs / 3600000);
       const mins = Math.floor((baseMs % 3600000) / 60000);
-      setLiveDuration(`${hours}h ${mins}m`);
+      setLiveDuration(`${hours}H:${String(mins).padStart(2, "0")}M`);
     };
 
     const interval = setInterval(calculateLive, 60000);
