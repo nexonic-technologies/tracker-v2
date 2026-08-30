@@ -354,8 +354,8 @@ const TicketsPage = () => {
   const customExport = {
     unread: t => t.unreadCommentsCount || 0,
     type: t => t.type?.name || t.type || "",
-    assignedTo: t => (t.assignedTo || []).map(a => a.basicInfo ? `${a.basicInfo.firstName} ${a.basicInfo.lastName}` : (a.firstName || "")).join(", "),
-    createdBy: t => t.createdBy?.basicInfo ? `${t.createdBy.basicInfo.firstName} ${t.createdBy.basicInfo.lastName}` : "",
+    assignedTo: t => (t.assignedTo || []).map(a => getUserDisplayName(a, '')).filter(Boolean).join(", "),
+    createdBy: t => getUserDisplayName(t.createdBy, ""),
     lastResponse: t => t.updatedAt ? new Date(t.updatedAt).toLocaleString() : "",
   };
 

@@ -80,7 +80,12 @@ const MyTickets = () => {
       setLoading(true);
       const res = await axiosInstance.post("/populate/read/tickets", {
         filter: { $or: [{ createdBy: user.id }, { assignedTo: user.id }] },
-        fields: "title,type,priority,status,dueDate,createdAt,updatedAt,assignedTo,createdBy",
+        fields: "title,type,priority,status,dueDate,createdAt,updatedAt,assignedTo,createdBy,createdByModel",
+        populateFields: {
+          assignedTo: "basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,firstName,lastName,name,profileImage",
+          createdBy: "basicInfo.firstName,basicInfo.lastName,basicInfo.profileImage,firstName,lastName,name,profileImage,email",
+          type: "name,icon,color"
+        }
       });
       setTickets(res.data.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
