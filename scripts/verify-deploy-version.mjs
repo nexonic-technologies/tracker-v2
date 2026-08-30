@@ -115,7 +115,19 @@ async function runGate() {
   const args = process.argv.slice(2);
   let target = 'backend';
   let liveUrl = null;
-  let bypass = process.env.FORCE_DEPLOY === 'true' || process.env.BYPASS_VERSION_GATE === 'true';
+
+  let rootConfig = {};
+  const rootVersionPath = path.join(ROOT_DIR, 'version.json');
+  if (fs.existsSync(rootVersionPath)) {
+    try {
+      rootConfig = JSON.parse(fs.readFileSync(rootVersionPath, 'utf8'));
+    } catch {}
+  }
+
+  let bypass = process.env.FORCE_DEPLOY === 'true' || 
+               process.env.BYPASS_VERSION_GATE === 'true' ||
+               rootConfig.forceDeploy === true ||
+               rootConfig.FORCE_DEPLOY === true;
 
   for (const arg of args) {
     if (arg.startsWith('--target=')) target = arg.split('=')[1].toLowerCase();
