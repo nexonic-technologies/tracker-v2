@@ -24,13 +24,19 @@ isSupported().then((supported) => {
 });
 
 export const requestFirebaseToken = async () => {
+  if (typeof window === "undefined" || !("Notification" in window)) {
+    return null;
+  }
   if (!messaging) {
     console.warn("Firebase Messaging is not supported in this environment");
     return null;
   }
   
   try {
-    const permission = await Notification.requestPermission();
+    const permissionPromise = Notification.requestPermission();
+    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve("default"), 3000));
+    const permission = await Promise.race([permissionPromise, timeoutPromise]);
+
     if (permission === 'granted') {
       let registration;
       if ('serviceWorker' in navigator) {
@@ -45,10 +51,13 @@ export const requestFirebaseToken = async () => {
         registration = await navigator.serviceWorker.register(swUrl);
       }
       
-      const currentToken = await getToken(messaging, { 
+      const tokenPromise = getToken(messaging, { 
         vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
         serviceWorkerRegistration: registration
       });
+      const tokenTimeout = new Promise((resolve) => setTimeout(() => resolve(null), 3000));
+      const currentToken = await Promise.race([tokenPromise, tokenTimeout]);
+
       if (currentToken) {
         return currentToken;
       } else {
@@ -56,7 +65,7 @@ export const requestFirebaseToken = async () => {
         return null;
       }
     } else {
-      console.log('Notification permission denied.');
+      console.log('Notification permission not granted.');
       return null;
     }
   } catch (err) {

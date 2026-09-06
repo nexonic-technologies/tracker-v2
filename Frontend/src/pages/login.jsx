@@ -130,20 +130,26 @@ const Login = () => {
         localStorage.setItem("refresh_token", res.data.refreshToken);
         setUser(decoded);
 
-        try {
-          const fcmToken = await requestFirebaseToken();
-          if (fcmToken) {
-            await axiosInstance.post("/auth/store-push-token", {
-              sessionId: res.data.sessionId,
-              fcmToken,
-            });
-          }
-        } catch (fcmError) {
-          console.error("FCM Token registration failed:", fcmError);
-        }
+        // Non-blocking background FCM push token registration
+        requestFirebaseToken()
+          .then((fcmToken) => {
+            if (fcmToken && res.data?.sessionId) {
+              axiosInstance.post("/auth/store-push-token", {
+                sessionId: res.data.sessionId,
+                fcmToken,
+              }).catch((err) => console.warn("FCM store token failed:", err));
+            }
+          })
+          .catch((fcmError) => {
+            console.warn("Google login FCM registration failed:", fcmError);
+          });
+
+        const isGlobalAdmin = decoded?.userType === "global_admin" || decoded?.isGlobalAdmin;
+        const targetTenant = decoded?.tenantSlug || localStorage.getItem("x-tenant-slug") || "admin";
+        const landingPath = isGlobalAdmin ? "/platform-admin/tenant-management" : `/${targetTenant}/dashboard`;
 
         toast.success("Welcome back!");
-        navigate("/dashboard");
+        navigate(landingPath, { replace: true });
       } else {
         toast.error("Google login failed");
       }
@@ -222,18 +228,26 @@ const Login = () => {
         setUser(decoded);
         if (rememberMe) localStorage.setItem("remembered_email", workEmail);
         else localStorage.removeItem("remembered_email");
-        try {
-          const fcmToken = await requestFirebaseToken();
-          if (fcmToken)
-            await axiosInstance.post("/auth/store-push-token", {
-              sessionId: response.data.sessionId,
-              fcmToken,
-            });
-        } catch (fcmError) {
-          console.error("FCM Token registration failed:", fcmError);
-        }
+        // Non-blocking background FCM push token registration
+        requestFirebaseToken()
+          .then((fcmToken) => {
+            if (fcmToken && response.data?.sessionId) {
+              axiosInstance.post("/auth/store-push-token", {
+                sessionId: response.data.sessionId,
+                fcmToken,
+              }).catch((err) => console.warn("FCM store token failed:", err));
+            }
+          })
+          .catch((fcmError) => {
+            console.warn("FCM Token registration failed:", fcmError);
+          });
+
+        const isGlobalAdmin = decoded?.userType === "global_admin" || decoded?.isGlobalAdmin;
+        const targetTenant = decoded?.tenantSlug || localStorage.getItem("x-tenant-slug") || "admin";
+        const landingPath = isGlobalAdmin ? "/platform-admin/tenant-management" : `/${targetTenant}/dashboard`;
+
         toast.success("Welcome back!");
-        navigate("/dashboard");
+        navigate(landingPath, { replace: true });
       } else {
         toast.error("Login failed");
       }

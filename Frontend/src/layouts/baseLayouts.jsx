@@ -112,7 +112,8 @@ const BaseLayout = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   }, [location.pathname]);
 
-  const publicPaths = ["/login", "/forgot-password", "/reset-password", "/academy"];
+  const authPaths = ["/login", "/forgot-password", "/reset-password"];
+  const publicPaths = [...authPaths, "/academy"];
 
   if (loading) {
     return (
@@ -125,6 +126,13 @@ const BaseLayout = () => {
     );
   }
 
+  // If user is already authenticated and visits an auth page, redirect immediately to dashboard/landing
+  if (user && authPaths.includes(location.pathname)) {
+    const isGlobalAdmin = user.userType === 'global_admin' || user.isGlobalAdmin;
+    const landingPath = isGlobalAdmin ? `/platform-admin/tenant-management` : `/${tenantSlug}/dashboard`;
+    return <Navigate to={landingPath} replace />;
+  }
+
   if (location.pathname === "/login") return <Login />;
   if (location.pathname === "/forgot-password") return <ForgotPassword />;
   if (location.pathname === "/reset-password") return <ResetPassword />;
@@ -135,12 +143,6 @@ const BaseLayout = () => {
   }
 
   const isPlatformAdminRoute = location.pathname.startsWith('/platform-admin');
-
-  if (user && publicPaths.includes(location.pathname)) {
-    const isGlobalAdmin = user.userType === 'global_admin' || user.isGlobalAdmin;
-    const landingPath = isGlobalAdmin ? `/platform-admin/tenant-management` : `/${tenantSlug}/dashboard`;
-    return <Navigate to={landingPath} replace />;
-  }
 
   if (user && !isPlatformAdminRoute) {
     const isTenantPrefixed = location.pathname.startsWith(`/${tenantSlug}/`) || location.pathname === `/${tenantSlug}`;
