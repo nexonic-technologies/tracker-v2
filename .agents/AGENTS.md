@@ -13,6 +13,50 @@ Enforces absolute, uncompromising long-term platform stability over quick tempor
 7. **SACRED LAW: Proactive Architectural Defense & Zero-Drift Engineering**: Even if the user suggests, approves, or asks for an ad-hoc shortcut or temporary denormalization (such as mass-mutating document arrays across thousands of records, procedural fallback chains, or dual sources of truth), the agent MUST NEVER blindly implement it. The agent is duty-bound to proactively debate, defend, and propose superior enterprise architecture (transactional ledgers, pure declarative hierarchies, event-driven derivations, and single sources of truth). Never allow architectural degradation or technical debt under any circumstance.
 8. **SACRED LAW: Pure Page-Only `src/pages` Routing Integrity (ZERO TOLERANCE)**: In the Frontend (`src/pages/`), ONLY files that represent true top-level page routes (screens directly mapped to browser URLs) may exist. Reusable components, sub-components, widgets, data grids, sidebars, layout wrappers, helpers, configs, or utilities MUST NEVER be created inside `src/pages/`. Because the application uses automatic file-based routing (`vite-plugin-pages` / `~react-pages`), every file in `src/pages/` is automatically registered as a live page route. Placing components or utilities in `src/pages/` generates phantom, broken routes. All components must live strictly in `src/components/` (or `src/widgets/`, `src/layouts/`, `src/utils/`, `src/services/`).
 9. **SACRED LAW: Epistemic Gap & Teacher-Bootstrapped Knowledge Growth (ZERO STRING HARDCODING)**: J.A.R.V.I.S. is a self-evolving Neuro-Symbolic Cognitive Brain, NOT a static chatbot or hardcoded string template system. NEVER write ad-hoc string concatenation or heuristic text stitching (`narrative.push(...)`, `sample.join(...)`, `You have X unread...`) in application tools or realizers. When J.A.R.V.I.S. encounters an unknown vocabulary, intention, or novel multi-document synthesis task that it has not yet learned, it delegates the epistemic gap to the LLM Teacher. The teacher's response is immediately ingested into MongoDB Global Brain (`jarvis_memories`) and Knowledge Graph (`jarvis_relationships`) by `LearningAnalyst` to expand J.A.R.V.I.S.'s internal cognitive representation. All subsequent interactions resolve strictly from J.A.R.V.I.S.'s own internal brain in 0 API tokens (<5ms).
+10. **SACRED LAW: Mandatory Version Increment & Dedicated Branch Isolation (ZERO UNVERSIONED UPDATES)**:
+    - **Never Commit on Protected Branches**: The agent MUST NEVER perform work, commit, or complete updates directly on `main` or `staging`. Every update, bug fix, refactor, or feature MUST be developed on a dedicated new branch (e.g. `feat/<name>`, `bug-fix/<issue>`, `refactor/<module>`, `hotfix/<patch>`).
+    - **Mandatory Version Increment Upon Task Completion**: Every completed update, fix, or feature MUST bump and synchronize the project version. The deployment verification gate (`scripts/verify-deploy-version.mjs`) strictly rejects and halts builds on Render (Backend) and Vercel (Frontend) if the codebase SemVer is not strictly higher than the live deployed version. Failure to increment the version blocks deployments.
+    - **Centralized Version Tool Execution**: The version bump MUST ALWAYS be executed via the centralized versioning script (`npm run version:bump patch` for patches/fixes, `npm run version:bump minor` for new features/modules, or `npm run version:bump major` for breaking changes). Never manually edit disparate `version` fields. The script guarantees atomic synchronization across `version.json`, root `package.json`, `Backend/package.json`, `Frontend/package.json`, `Frontend/public/version.json`, `tracker_mobile/pubspec.yaml`, and `releaseNotes.json`.
+    - **Branch Migration Protocol**: Before initiating work or upon completing the task, ensure the working tree is cleanly moved to the new dedicated branch (`git checkout -b <branch-name>`), verify the version gate passes (`npm run verify:backend`, `npm run verify:frontend`), and commit cleanly with SemVer notes.
+
+## SACRED KNOWLEDGE: Versioning & Branch Lifecycle Pipeline
+
+All code changes must adhere to the standard branch isolation and automated version gate pipeline:
+
+```
+[Start Task / Update Request]
+     │
+     ▼
+1. Branch Isolation (`git checkout -b <type>/<task-name>`)
+   - Type conventions: `feat/`, `bug-fix/`, `refactor/`, `hotfix/`.
+   - Never develop or commit directly on `main` or `staging`.
+     │
+     ▼
+2. Implementation & Quality Verification
+   - Implement according to Sacred Laws 1–9.
+   - Run tests and code audits.
+     │
+     ▼
+3. Centralized Version Increment (`npm run version:bump <type>`)
+   - `patch`: Standard bug fixes, minor UI tweaks, or maintenance.
+   - `minor`: New feature modules, schema extensions, or new endpoints.
+   - `major`: Breaking platform or architectural revisions.
+   - Atomically updates:
+     • `version.json`
+     • `package.json` (Root, Backend, Frontend)
+     • `Frontend/public/version.json`
+     • `tracker_mobile/pubspec.yaml`
+     • `Backend/src/constants/releaseNotes.json`
+     │
+     ▼
+4. Deployment Gate Pre-Check (`npm run verify:backend` / `verify:frontend`)
+   - Ensures codebase version strictly exceeds currently deployed live endpoints.
+     │
+     ▼
+5. Commit & Pull Request
+   - Commit changes: `git commit -m "<type>(<scope>): <summary> (vX.Y.Z)"`
+   - Push new branch and prepare PR into target branch (`staging` or `main`).
+```
 
 ## SACRED KNOWLEDGE: Master Populate API Pipeline Architecture
 
