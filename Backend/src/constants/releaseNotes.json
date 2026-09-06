@@ -1,10 +1,49 @@
 [
   {
+    "version": "4.0.3",
+    "releaseDate": "2026-09-06",
+    "title": "Release v4.0.3",
+    "tagline": "Fix login completion navigation and route guard evaluation in BaseLayout.",
+    "isLatest": true,
+    "type": "Bug Fix & Reliability Release",
+    "categories": {
+      "features": [],
+      "improvements": [
+        "Made Firebase push token registration asynchronous and non-blocking during login",
+        "Added safety timeouts to requestFirebaseToken across utilities"
+      ],
+      "security": [],
+      "fixes": [
+        "Fixed route evaluation in BaseLayout so authenticated users on /login immediately redirect to their tenant dashboard",
+        "Navigated directly to tenant-prefixed landing path upon successful credentials verification"
+      ]
+    }
+  },
+  {
+    "version": "4.0.2",
+    "releaseDate": "2026-09-06",
+    "title": "Release v4.0.2",
+    "tagline": "Agent governance rules update for branch isolation and mandatory version incrementation.",
+    "isLatest": false,
+    "type": "Governance & Quality Release",
+    "categories": {
+      "features": [
+        "Enforce mandatory SemVer version bump upon update completion",
+        "Enforce dedicated git branch isolation preventing direct commits to main/staging"
+      ],
+      "improvements": [
+        "Updated AGENTS.md with Sacred Law 10 and Versioning & Branch Lifecycle Pipeline"
+      ],
+      "security": [],
+      "fixes": []
+    }
+  },
+  {
     "version": "4.0.1",
     "releaseDate": "2026-08-30",
     "title": "Release v4.0.1",
     "tagline": "Platform enhancements and continuous improvements.",
-    "isLatest": true,
+    "isLatest": false,
     "type": "Feature & Maintenance Release",
     "categories": {
       "features": [],
