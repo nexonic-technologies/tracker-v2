@@ -32,7 +32,9 @@ export class MongoBrainMemoryStore {
         status: r.status || 'active',
       }));
       this.isLoaded = true;
-    } catch (err) {}
+    } catch (err) {
+      console.warn('[MongoBrainMemoryStore] Load error:', err.message);
+    }
   }
 
   async save(fact) {
@@ -55,7 +57,7 @@ export class MongoBrainMemoryStore {
 
     // Persist to Global MongoDB
     if (this.model) {
-      this.model.updateOne(
+      await this.model.updateOne(
         { id: memoryRecord.id },
         {
           $set: {
@@ -71,9 +73,7 @@ export class MongoBrainMemoryStore {
           },
         },
         { upsert: true }
-      ).catch((err) => {
-        console.warn('[MongoBrainMemoryStore] Persist error:', err.message);
-      });
+      );
     }
 
     return memoryRecord;
@@ -111,6 +111,13 @@ export class MongoBrainMemoryStore {
       return await this.model.findOne({ id }).lean();
     }
     return null;
+  }
+
+  async getAll() {
+    if (!this.isLoaded) {
+      await this.load();
+    }
+    return this.facts;
   }
 }
 

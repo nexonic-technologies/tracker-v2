@@ -18,7 +18,7 @@ This document outlines the current scanning coverage of platform modules, mappin
 
 ## 1. Module Coverage Matrix
 
-The platform is structured into 21 modules, audited for alignment between backend models and frontend SPA pages.
+The platform is structured into 22 modules, audited for alignment between backend models and frontend SPA pages.
 
 | Module Name | Backend Models | Frontend Page Components | Implementation Status |
 | :--- | :--- | :--- | :--- |
@@ -41,3 +41,5 @@ The platform is structured into 21 modules, audited for alignment between backen
 | **Asset Register** | 10 | 10 | IMPLEMENTED |
 | **Feed & Channels** | 4 | 2 | IMPLEMENTED |
 | **Status Registry** | 2 | 0 | IMPLEMENTED |
+| **J.A.R.V.I.S. Cognitive Subsystem** | 6 | 12 | IMPLEMENTED |
+

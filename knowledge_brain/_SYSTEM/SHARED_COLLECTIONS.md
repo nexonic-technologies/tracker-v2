@@ -34,6 +34,12 @@ The table below maps the structural relationships between collections.
 | `clients` | `Agent`, `DailyActivity`, `Expense`, `Tasks`, `Ticket` | None | Client portal registries; consumed by Project Tracking and Billing systems. |
 | `leave_types` | `Attendance`, `Employee`, `Leave`, `LeavePolicy` | None | HR policies config; consumed by attendance logs and payroll calculations. |
 | `project_types` | `Client`, `DailyActivity`, `Tasks`, `Ticket` | None | Project registries; consumed by Task board and time tracking. |
+| `jarvis_tokens` | `jarvis_relationships`, `jarvis_chat_sessions` | None | Global cognitive token dictionary; consumed by J.A.R.V.I.S. Reasoning Engine & TokenRegistry. |
+| `jarvis_relationships` | `GraphReasoner`, `SGLMBrain`, `IntentClassifier` | `jarvis_tokens` (from, to) | Global factual knowledge graph; consumed by multi-hop graph reasoner. |
+| `jarvis_memories` | `MemoryStore`, `SGLMBrain`, `LearningAnalyst` | None | Procedural recipes and learned blueprints in Global MongoDB. |
+| `jarvis_traces` | Audit & Telemetry | `employees` (userId) | Immutable audit log of all cognitive inferences and tool executions. |
+| `jarvis_chat_sessions` | `JarvisChatInterface`, `ConversationContextTracker` | `employees` (userId, employeeId) | Multi-turn conversational session history and discourse context state. |
+
 
 ---
 
